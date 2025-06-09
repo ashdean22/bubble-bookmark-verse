@@ -3,7 +3,7 @@ import { BubbleCanvas } from '@/components/BubbleCanvas';
 import { AddBookmarkModal } from '@/components/AddBookmarkModal';
 import { PricingModal } from '@/components/PricingModal';
 import { Button } from '@/components/ui/button';
-import { Plus, Star, Sparkles } from 'lucide-react';
+import { Plus, Star, Sparkles, ShoppingCart } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export interface Bookmark {
@@ -165,29 +165,33 @@ const Index = () => {
       </div>
 
       {/* Header */}
-      <header className="relative z-20 p-6">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
-              <Sparkles className="w-6 h-6 text-white" />
+      <header className="relative z-20 p-4 md:p-6">
+        <div className="max-w-7xl mx-auto">
+          {/* Top row with logo and bubble count */}
+          <div className="flex items-center justify-between mb-4 md:mb-0">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
+                <Sparkles className="w-4 h-4 md:w-6 md:h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl md:text-2xl font-bold text-white">BubbleMarks</h1>
+                <p className="text-purple-300 text-xs md:text-sm">Your bookmarks in space</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-white">BubbleMarks</h1>
-              <p className="text-purple-300 text-sm">Your bookmarks in space</p>
+            
+            <div className="bg-white/10 backdrop-blur-sm rounded-full px-3 py-1.5 md:px-4 md:py-2 border border-white/20">
+              <span className="text-white font-semibold flex items-center text-sm md:text-base">
+                <Star className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2 text-yellow-400" />
+                {availableBubbles}
+              </span>
             </div>
           </div>
           
-          <div className="flex items-center space-x-4">
-            <div className="bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 border border-white/20">
-              <span className="text-white font-semibold flex items-center">
-                <Star className="w-4 h-4 mr-2 text-yellow-400" />
-                {availableBubbles} bubbles
-              </span>
-            </div>
-            
+          {/* Action buttons row */}
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <Button
               onClick={() => setShowAddModal(true)}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0"
+              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 flex-1 sm:flex-none"
             >
               <Plus className="w-4 h-4 mr-2" />
               Add Bookmark
@@ -195,9 +199,9 @@ const Index = () => {
             
             <Button
               onClick={() => setShowPricingModal(true)}
-              variant="outline"
-              className="border-purple-400 text-purple-300 hover:bg-purple-500 hover:text-white"
+              className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white border-0 flex-1 sm:flex-none font-semibold"
             >
+              <ShoppingCart className="w-4 h-4 mr-2" />
               Buy Bubbles
             </Button>
           </div>
