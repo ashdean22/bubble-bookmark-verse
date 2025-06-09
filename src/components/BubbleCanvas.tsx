@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from 'react';
 import { Bookmark } from '@/pages/Index';
 import { ExternalLink, X } from 'lucide-react';
@@ -11,8 +12,9 @@ interface BubbleCanvasProps {
 export const BubbleCanvas = ({ bookmarks, onRemoveBookmark }: BubbleCanvasProps) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [hoveredBubble, setHoveredBubble] = useState<string | null>(null);
+  const [draggedBubble, setDraggedBubble] = useState<string | null>(null);
   const animationRef = useRef<number>();
-  const mouseInteractionRef = useRef<number>();
+  const dragOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -42,11 +44,23 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark }: BubbleCanvasProps)
       mouseY = e.clientY;
     };
 
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length > 0) {
+        mouseX = e.touches[0].clientX;
+        mouseY = e.touches[0].clientY;
+      }
+    };
+
     const animate = () => {
       bubbles.forEach((bubble) => {
         const element = bubble as HTMLElement;
         const data = bubbleData.get(element);
         if (!data) return;
+
+        // Skip animation for dragged bubble
+        if (draggedBubble === element.getAttribute('data-bubble-id')) {
+          return;
+        }
 
         const rect = element.getBoundingClientRect();
         const bubbleX = rect.left + rect.width / 2;
@@ -105,26 +119,101 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark }: BubbleCanvasProps)
     };
 
     window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('touchmove', handleTouchMove, { passive: false });
     animate();
 
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('touchmove', handleTouchMove);
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [bookmarks]);
+  }, [bookmarks, draggedBubble]);
 
   const handleBubbleClick = (bookmark: Bookmark) => {
-    window.open(bookmark.url, '_blank');
+    if (!draggedBubble) {
+      window.open(bookmark.url, '_blank');
+    }
   };
+
+  const handleDragStart = (e: React.MouseEvent | React.TouchEvent, bookmarkId: string) => {
+    e.preventDefault();
+    setDraggedBubble(bookmarkId);
+    
+    const bubble = e.currentTarget as HTMLElement;
+    const rect = bubble.getBoundingClientRect();
+    
+    let clientX, clientY;
+    if ('touches' in e) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    }
+    
+    dragOffsetRef.current = {
+      x: clientX - rect.left,
+      y: clientY - rect.top
+    };
+  };
+
+  const handleDragMove = (e: MouseEvent | TouchEvent) => {
+    if (!draggedBubble) return;
+    
+    let clientX, clientY;
+    if ('touches' in e) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    }
+    
+    const bubble = document.querySelector(`[data-bubble-id="${draggedBubble}"]`) as HTMLElement;
+    if (bubble) {
+      const newX = clientX - dragOffsetRef.current.x;
+      const newY = clientY - dragOffsetRef.current.y;
+      
+      bubble.style.left = `${newX}px`;
+      bubble.style.top = `${newY}px`;
+    }
+  };
+
+  const handleDragEnd = () => {
+    setDraggedBubble(null);
+  };
+
+  useEffect(() => {
+    if (draggedBubble) {
+      const handleMouseMove = (e: MouseEvent) => handleDragMove(e);
+      const handleTouchMove = (e: TouchEvent) => {
+        e.preventDefault();
+        handleDragMove(e);
+      };
+      
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('touchmove', handleTouchMove, { passive: false });
+      document.addEventListener('mouseup', handleDragEnd);
+      document.addEventListener('touchend', handleDragEnd);
+      
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('touchmove', handleTouchMove);
+        document.removeEventListener('mouseup', handleDragEnd);
+        document.removeEventListener('touchend', handleDragEnd);
+      };
+    }
+  }, [draggedBubble]);
 
   return (
     <div ref={canvasRef} className="absolute inset-0 overflow-hidden">
       {bookmarks.map((bookmark) => (
         <div
           key={bookmark.id}
-          className="bubble absolute cursor-pointer transition-all duration-300 hover:scale-110 group"
+          data-bubble-id={bookmark.id}
+          className="bubble absolute cursor-pointer transition-all duration-300 hover:scale-110 group select-none"
           style={{
             left: bookmark.x,
             top: bookmark.y,
@@ -133,6 +222,8 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark }: BubbleCanvasProps)
           }}
           onMouseEnter={() => setHoveredBubble(bookmark.id)}
           onMouseLeave={() => setHoveredBubble(null)}
+          onMouseDown={(e) => handleDragStart(e, bookmark.id)}
+          onTouchStart={(e) => handleDragStart(e, bookmark.id)}
         >
           {/* Main bubble */}
           <div
@@ -147,7 +238,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark }: BubbleCanvasProps)
             <img
               src={bookmark.favicon}
               alt={bookmark.title}
-              className="w-8 h-8 rounded"
+              className="w-8 h-8 rounded pointer-events-none"
               onError={(e) => {
                 (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMSA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDMgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K';
               }}
@@ -155,28 +246,28 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark }: BubbleCanvasProps)
             
             {/* Glow effect */}
             <div 
-              className="absolute inset-0 rounded-full opacity-20"
+              className="absolute inset-0 rounded-full opacity-20 pointer-events-none"
               style={{
                 background: `radial-gradient(circle at 30% 30%, white, transparent 70%)`,
               }}
             />
             
             {/* External link icon on hover */}
-            <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
               <ExternalLink className="w-3 h-3 text-white" />
             </div>
           </div>
 
           {/* Tooltip */}
-          {hoveredBubble === bookmark.id && (
-            <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-black/80 backdrop-blur-sm text-white px-3 py-1 rounded-lg text-sm whitespace-nowrap z-50 border border-white/20">
+          {hoveredBubble === bookmark.id && !draggedBubble && (
+            <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-black/80 backdrop-blur-sm text-white px-3 py-1 rounded-lg text-sm whitespace-nowrap z-50 border border-white/20 pointer-events-none">
               {bookmark.title}
               <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-black/80"></div>
             </div>
           )}
 
           {/* Remove button */}
-          {hoveredBubble === bookmark.id && (
+          {hoveredBubble === bookmark.id && !draggedBubble && (
             <Button
               size="sm"
               variant="destructive"
