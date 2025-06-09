@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { BubbleCanvas } from '@/components/BubbleCanvas';
 import { AddBookmarkModal } from '@/components/AddBookmarkModal';
@@ -16,6 +15,7 @@ export interface Bookmark {
   y: number;
   size: number;
   color: string;
+  accessCount: number;
 }
 
 const Index = () => {
@@ -29,7 +29,13 @@ const Index = () => {
     // Load bookmarks from localStorage
     const savedBookmarks = localStorage.getItem('bubbleBookmarks');
     if (savedBookmarks) {
-      setBookmarks(JSON.parse(savedBookmarks));
+      const parsed = JSON.parse(savedBookmarks);
+      // Migrate old bookmarks without accessCount
+      const migratedBookmarks = parsed.map((bookmark: any) => ({
+        ...bookmark,
+        accessCount: bookmark.accessCount || 0
+      }));
+      setBookmarks(migratedBookmarks);
     }
     
     // Load available bubbles count
@@ -39,9 +45,32 @@ const Index = () => {
     }
   }, []);
 
+  // Calculate dynamic sizes based on access frequency
+  const calculateBubbleSize = (accessCount: number, allBookmarks: Bookmark[]) => {
+    if (allBookmarks.length === 0) return 60;
+    
+    const maxAccess = Math.max(...allBookmarks.map(b => b.accessCount));
+    const minAccess = Math.min(...allBookmarks.map(b => b.accessCount));
+    
+    if (maxAccess === minAccess) return 60; // All have same access count
+    
+    // Scale between 45 (min) and 90 (max) pixels
+    const minSize = 45;
+    const maxSize = 90;
+    const normalizedAccess = maxAccess > 0 ? (accessCount - minAccess) / (maxAccess - minAccess) : 0;
+    
+    return Math.round(minSize + (normalizedAccess * (maxSize - minSize)));
+  };
+
   const saveBookmarks = (newBookmarks: Bookmark[]) => {
-    setBookmarks(newBookmarks);
-    localStorage.setItem('bubbleBookmarks', JSON.stringify(newBookmarks));
+    // Recalculate sizes based on access frequency
+    const bookmarksWithUpdatedSizes = newBookmarks.map(bookmark => ({
+      ...bookmark,
+      size: calculateBubbleSize(bookmark.accessCount, newBookmarks)
+    }));
+    
+    setBookmarks(bookmarksWithUpdatedSizes);
+    localStorage.setItem('bubbleBookmarks', JSON.stringify(bookmarksWithUpdatedSizes));
   };
 
   const saveAvailableBubbles = (count: number) => {
@@ -49,7 +78,7 @@ const Index = () => {
     localStorage.setItem('availableBubbles', count.toString());
   };
 
-  const addBookmark = (bookmark: Omit<Bookmark, 'id' | 'x' | 'y' | 'size' | 'color'>) => {
+  const addBookmark = (bookmark: Omit<Bookmark, 'id' | 'x' | 'y' | 'size' | 'color' | 'accessCount'>) => {
     if (availableBubbles <= 0) {
       toast({
         title: "No bubbles available",
@@ -74,8 +103,9 @@ const Index = () => {
       id: Date.now().toString(),
       x: Math.random() * (window.innerWidth - 100),
       y: Math.random() * (window.innerHeight - 100),
-      size: 60 + Math.random() * 40,
+      size: 60, // Will be recalculated in saveBookmarks
       color: colors[Math.floor(Math.random() * colors.length)],
+      accessCount: 0,
     };
 
     const newBookmarks = [...bookmarks, newBookmark];
@@ -97,6 +127,15 @@ const Index = () => {
       title: "Bookmark removed",
       description: "Bubble returned to your collection",
     });
+  };
+
+  const incrementAccessCount = (id: string) => {
+    const updatedBookmarks = bookmarks.map(bookmark => 
+      bookmark.id === id 
+        ? { ...bookmark, accessCount: bookmark.accessCount + 1 }
+        : bookmark
+    );
+    saveBookmarks(updatedBookmarks);
   };
 
   const onPurchaseComplete = (bubbleCount: number) => {
@@ -169,6 +208,7 @@ const Index = () => {
       <BubbleCanvas 
         bookmarks={bookmarks} 
         onRemoveBookmark={removeBookmark}
+        onBubbleClick={incrementAccessCount}
       />
 
       {/* Welcome message if no bookmarks */}

@@ -6,9 +6,10 @@ import { Button } from '@/components/ui/button';
 interface BubbleCanvasProps {
   bookmarks: Bookmark[];
   onRemoveBookmark: (id: string) => void;
+  onBubbleClick: (id: string) => void;
 }
 
-export const BubbleCanvas = ({ bookmarks, onRemoveBookmark }: BubbleCanvasProps) => {
+export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: BubbleCanvasProps) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [hoveredBubble, setHoveredBubble] = useState<string | null>(null);
   const [draggedBubble, setDraggedBubble] = useState<string | null>(null);
@@ -170,6 +171,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark }: BubbleCanvasProps)
   const handleBubbleClick = (bookmark: Bookmark) => {
     if (!draggedBubble) {
       setClickedBubble(bookmark.id);
+      onBubbleClick(bookmark.id); // Track access
       setTimeout(() => setClickedBubble(null), 200);
       setTimeout(() => {
         window.open(bookmark.url, '_blank');
@@ -292,6 +294,13 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark }: BubbleCanvasProps)
               }}
             />
             
+            {/* Access count indicator for frequently used bubbles */}
+            {bookmark.accessCount > 0 && (
+              <div className="absolute -top-1 -right-1 bg-yellow-400 text-black text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold pointer-events-none">
+                {bookmark.accessCount > 99 ? '99+' : bookmark.accessCount}
+              </div>
+            )}
+
             {/* Enhanced glow effect */}
             <div 
               className="absolute inset-0 rounded-full opacity-30 pointer-events-none transition-opacity duration-300"
@@ -317,10 +326,15 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark }: BubbleCanvasProps)
             </div>
           </div>
 
-          {/* Enhanced tooltip */}
+          {/* Enhanced tooltip showing access count */}
           {hoveredBubble === bookmark.id && !draggedBubble && (
             <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-black/90 backdrop-blur-sm text-white px-3 py-1 rounded-lg text-sm whitespace-nowrap z-50 border border-white/20 pointer-events-none animate-fade-in">
               {bookmark.title}
+              {bookmark.accessCount > 0 && (
+                <span className="block text-xs text-yellow-300">
+                  Accessed {bookmark.accessCount} time{bookmark.accessCount !== 1 ? 's' : ''}
+                </span>
+              )}
               <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-black/90"></div>
             </div>
           )}
