@@ -3,7 +3,7 @@ import { BubbleCanvas } from '@/components/BubbleCanvas';
 import { AddBookmarkModal } from '@/components/AddBookmarkModal';
 import { PricingModal } from '@/components/PricingModal';
 import { Button } from '@/components/ui/button';
-import { Plus, Star, Sparkles, ShoppingCart } from 'lucide-react';
+import { Plus, Star, Sparkles, ShoppingCart, Circle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export interface Bookmark {
@@ -113,8 +113,8 @@ const Index = () => {
     saveAvailableBubbles(availableBubbles - 1);
     
     toast({
-      title: "Bookmark added!",
-      description: "Your new bubble is floating in space ✨",
+      title: "Bubble created! 🫧",
+      description: "Your new bubble is floating in the bubble universe ✨",
     });
   };
 
@@ -124,8 +124,8 @@ const Index = () => {
     saveAvailableBubbles(availableBubbles + 1);
     
     toast({
-      title: "Bookmark removed",
-      description: "Bubble returned to your collection",
+      title: "Bubble popped! 💥",
+      description: "Bubble returned to your bubble collection",
     });
   };
 
@@ -141,18 +141,34 @@ const Index = () => {
   const onPurchaseComplete = (bubbleCount: number) => {
     saveAvailableBubbles(availableBubbles + bubbleCount);
     toast({
-      title: "Purchase successful! 🎉",
-      description: `${bubbleCount} bubbles added to your collection!`,
+      title: "Bubbles delivered! 🎉",
+      description: `${bubbleCount} fresh bubbles added to your collection!`,
     });
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden font-body">
-      {/* Animated background stars */}
+      {/* Enhanced animated background with more bubble elements */}
       <div className="absolute inset-0 overflow-hidden">
+        {/* Floating bubble background elements */}
+        {[...Array(20)].map((_, i) => (
+          <div
+            key={`bubble-${i}`}
+            className="absolute rounded-full bg-white/5 animate-pulse border border-white/10"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              width: `${20 + Math.random() * 40}px`,
+              height: `${20 + Math.random() * 40}px`,
+              animationDelay: `${Math.random() * 3}s`,
+              animationDuration: `${3 + Math.random() * 2}s`,
+            }}
+          />
+        ))}
+        {/* Stars */}
         {[...Array(50)].map((_, i) => (
           <div
-            key={i}
+            key={`star-${i}`}
             className="absolute w-1 h-1 bg-white rounded-full animate-pulse"
             style={{
               left: `${Math.random() * 100}%`,
@@ -164,45 +180,52 @@ const Index = () => {
         ))}
       </div>
 
-      {/* Header */}
+      {/* Header with enhanced bubble branding */}
       <header className="relative z-20 p-4 md:p-6">
         <div className="max-w-7xl mx-auto">
-          {/* Top row with logo and bubble count */}
+          {/* Top row with enhanced logo and bubble count */}
           <div className="flex items-center justify-between mb-4 md:mb-0">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
-                <Sparkles className="w-4 h-4 md:w-6 md:h-6 text-white" />
+              {/* Enhanced bubble logo with multiple circles */}
+              <div className="relative">
+                <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
+                  <Circle className="w-4 h-4 md:w-5 md:h-5 text-white" />
+                </div>
+                <div className="absolute -top-1 -right-1 w-3 h-3 md:w-4 md:h-4 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 opacity-80"></div>
+                <div className="absolute -bottom-1 -left-1 w-2 h-2 md:w-3 md:h-3 rounded-full bg-gradient-to-r from-emerald-400 to-green-500 opacity-60"></div>
               </div>
               <div>
-                <h1 className="text-xl md:text-2xl font-brand font-bold text-white tracking-tight">BubbleLink</h1>
-                <p className="text-purple-300 text-xs md:text-sm font-body">Your bookmarks in space</p>
+                <h1 className="text-xl md:text-2xl font-brand font-bold text-white tracking-tight">
+                  Bubble<span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Link</span>
+                </h1>
+                <p className="text-purple-300 text-xs md:text-sm font-body">Your bookmarks floating in bubble space 🫧</p>
               </div>
             </div>
             
-            <div className="bg-white/10 backdrop-blur-sm rounded-full px-3 py-1.5 md:px-4 md:py-2 border border-white/20">
+            <div className="bg-white/10 backdrop-blur-sm rounded-full px-3 py-1.5 md:px-4 md:py-2 border border-white/20 shadow-lg">
               <span className="text-white font-semibold flex items-center text-sm md:text-base font-body">
-                <Star className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2 text-yellow-400" />
-                {availableBubbles}
+                <Circle className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2 text-purple-400 fill-current" />
+                {availableBubbles} bubbles
               </span>
             </div>
           </div>
           
-          {/* Action buttons row */}
+          {/* Action buttons row with bubble-themed text */}
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <Button
               onClick={() => setShowAddModal(true)}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 flex-1 sm:flex-none font-body font-medium"
+              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 flex-1 sm:flex-none font-body font-medium shadow-lg hover:shadow-xl transition-all"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Add Bookmark
+              Create Bubble
             </Button>
             
             <Button
               onClick={() => setShowPricingModal(true)}
-              className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white border-0 flex-1 sm:flex-none font-brand font-semibold"
+              className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white border-0 flex-1 sm:flex-none font-brand font-semibold shadow-lg hover:shadow-xl transition-all"
             >
               <ShoppingCart className="w-4 h-4 mr-2" />
-              Buy Bubbles
+              Buy More Bubbles
             </Button>
           </div>
         </div>
@@ -215,24 +238,28 @@ const Index = () => {
         onBubbleClick={incrementAccessCount}
       />
 
-      {/* Welcome message if no bookmarks */}
+      {/* Enhanced welcome message with bubble theme */}
       {bookmarks.length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center z-10">
           <div className="text-center max-w-md mx-auto p-8">
-            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
-              <Sparkles className="w-10 h-10 text-white" />
+            <div className="relative w-20 h-20 mx-auto mb-6">
+              <div className="w-20 h-20 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center shadow-2xl">
+                <Circle className="w-10 h-10 text-white" />
+              </div>
+              <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 opacity-80 animate-pulse"></div>
+              <div className="absolute -bottom-2 -left-2 w-6 h-6 rounded-full bg-gradient-to-r from-emerald-400 to-green-500 opacity-60 animate-pulse" style={{ animationDelay: '0.5s' }}></div>
             </div>
-            <h2 className="text-3xl font-brand font-bold text-white mb-4">Welcome to BubbleLink</h2>
+            <h2 className="text-3xl font-brand font-bold text-white mb-4">Welcome to the Bubble Universe</h2>
             <p className="text-purple-300 mb-6 font-body">
-              Save your favorite websites as beautiful floating bubbles. 
-              Click on any bubble to visit your bookmarked site!
+              Transform your favorite websites into beautiful floating bubbles. 
+              Pop any bubble to visit your bookmarked site instantly! 🫧✨
             </p>
             <Button
               onClick={() => setShowAddModal(true)}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 font-body font-medium"
+              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 font-body font-medium shadow-lg hover:shadow-xl transition-all"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Add Your First Bookmark
+              Create Your First Bubble
             </Button>
           </div>
         </div>
