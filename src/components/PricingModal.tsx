@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Sparkles, Star, Crown, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -90,7 +91,7 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-4xl bg-slate-900 border-purple-500/30">
+      <DialogContent className="sm:max-w-4xl bg-slate-900 border-purple-500/30 max-h-[90vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle className="text-white text-center text-2xl mb-2">
             Choose Your Bubble Pack
@@ -100,86 +101,89 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
           </p>
         </DialogHeader>
         
-        <div className="grid md:grid-cols-3 gap-6 mt-6">
-          {pricingTiers.map((tier) => (
-            <Card 
-              key={tier.id}
-              className={`relative bg-slate-800/50 border transition-all duration-300 hover:scale-105 ${
-                tier.popular 
-                  ? 'border-purple-400 shadow-lg shadow-purple-500/20' 
-                  : 'border-purple-500/30 hover:border-purple-400'
-              }`}
-            >
-              {tier.popular && (
-                <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-                  Most Popular
-                </Badge>
-              )}
-              
-              <CardHeader className="text-center">
-                <div className={`mx-auto w-12 h-12 rounded-full flex items-center justify-center mb-4 ${
+        <ScrollArea className="w-full mt-6">
+          <div className="flex md:grid md:grid-cols-3 gap-6 pb-4">
+            {pricingTiers.map((tier) => (
+              <Card 
+                key={tier.id}
+                className={`relative bg-slate-800/50 border transition-all duration-300 hover:scale-105 min-w-[280px] md:min-w-0 ${
                   tier.popular 
-                    ? 'bg-gradient-to-r from-purple-500 to-pink-500' 
-                    : 'bg-purple-600'
-                } text-white`}>
-                  {tier.icon}
-                </div>
-                
-                <CardTitle className="text-white text-xl">{tier.name}</CardTitle>
-                <CardDescription className="text-purple-300">
-                  {tier.bubbles} bubble bookmarks
-                </CardDescription>
-                
-                <div className="flex items-center justify-center space-x-2 mt-4">
-                  {tier.originalPrice && (
-                    <span className="text-slate-400 line-through text-lg">
-                      ${tier.originalPrice}
-                    </span>
-                  )}
-                  <span className="text-white text-3xl font-bold">
-                    ${tier.price}
-                  </span>
-                </div>
-                
-                {tier.originalPrice && (
-                  <Badge variant="secondary" className="bg-green-600 text-white mt-2">
-                    Save ${(tier.originalPrice - tier.price).toFixed(2)}
+                    ? 'border-purple-400 shadow-lg shadow-purple-500/20' 
+                    : 'border-purple-500/30 hover:border-purple-400'
+                }`}
+              >
+                {tier.popular && (
+                  <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+                    Most Popular
                   </Badge>
                 )}
-              </CardHeader>
-              
-              <CardContent>
-                <ul className="space-y-2 mb-6">
-                  {tier.features.map((feature, index) => (
-                    <li key={index} className="text-purple-300 text-sm flex items-center">
-                      <Sparkles className="w-4 h-4 mr-2 text-purple-400" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
                 
-                <Button
-                  onClick={() => handlePurchase(tier)}
-                  disabled={isProcessing}
-                  className={`w-full ${
-                    tier.popular
-                      ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
-                      : 'bg-purple-600 hover:bg-purple-700'
-                  } text-white`}
-                >
-                  {processingTier === tier.id ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    `Get ${tier.bubbles} Bubbles`
+                <CardHeader className="text-center">
+                  <div className={`mx-auto w-12 h-12 rounded-full flex items-center justify-center mb-4 ${
+                    tier.popular 
+                      ? 'bg-gradient-to-r from-purple-500 to-pink-500' 
+                      : 'bg-purple-600'
+                  } text-white`}>
+                    {tier.icon}
+                  </div>
+                  
+                  <CardTitle className="text-white text-xl">{tier.name}</CardTitle>
+                  <CardDescription className="text-purple-300">
+                    {tier.bubbles} bubble bookmarks
+                  </CardDescription>
+                  
+                  <div className="flex items-center justify-center space-x-2 mt-4">
+                    {tier.originalPrice && (
+                      <span className="text-slate-400 line-through text-lg">
+                        ${tier.originalPrice}
+                      </span>
+                    )}
+                    <span className="text-white text-3xl font-bold">
+                      ${tier.price}
+                    </span>
+                  </div>
+                  
+                  {tier.originalPrice && (
+                    <Badge variant="secondary" className="bg-green-600 text-white mt-2">
+                      Save ${(tier.originalPrice - tier.price).toFixed(2)}
+                    </Badge>
                   )}
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                </CardHeader>
+                
+                <CardContent>
+                  <ul className="space-y-2 mb-6">
+                    {tier.features.map((feature, index) => (
+                      <li key={index} className="text-purple-300 text-sm flex items-center">
+                        <Sparkles className="w-4 h-4 mr-2 text-purple-400" />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                  
+                  <Button
+                    onClick={() => handlePurchase(tier)}
+                    disabled={isProcessing}
+                    className={`w-full ${
+                      tier.popular
+                        ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
+                        : 'bg-purple-600 hover:bg-purple-700'
+                    } text-white`}
+                  >
+                    {processingTier === tier.id ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      `Get ${tier.bubbles} Bubbles`
+                    )}
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
         
         <div className="text-center mt-6 p-4 bg-slate-800/30 rounded-lg border border-purple-500/20">
           <p className="text-purple-300 text-sm">
