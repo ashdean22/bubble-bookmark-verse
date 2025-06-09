@@ -42,21 +42,21 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
     {
       id: 'popular',
       name: 'Popular Pack',
-      bubbles: 20,
+      bubbles: 50,
       price: 14.99,
       originalPrice: 19.99,
       popular: true,
       icon: <Star className="w-6 h-6" />,
-      features: ['20 bubble bookmarks', 'Enhanced animations', 'Favicon auto-detection', 'Priority support']
+      features: ['50 bubble bookmarks', 'Enhanced animations', 'Favicon auto-detection', 'Priority support']
     },
     {
       id: 'premium',
       name: 'Premium Pack',
-      bubbles: 50,
+      bubbles: 150,
       price: 24.99,
       originalPrice: 34.99,
       icon: <Crown className="w-6 h-6" />,
-      features: ['50 bubble bookmarks', 'Premium animations', 'Favicon auto-detection', 'Priority support', 'Future features included']
+      features: ['150 bubble bookmarks', 'Premium animations', 'Favicon auto-detection', 'Priority support', 'Future features included']
     }
   ];
 
