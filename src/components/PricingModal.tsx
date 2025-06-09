@@ -91,12 +91,12 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-4xl bg-slate-900 border-purple-500/30 max-h-[90vh] overflow-hidden">
+      <DialogContent className="sm:max-w-4xl bg-slate-900 border-purple-500/30 max-h-[90vh] overflow-hidden font-body">
         <DialogHeader>
-          <DialogTitle className="text-white text-center text-2xl mb-2">
+          <DialogTitle className="text-white text-center text-2xl mb-2 font-brand font-bold">
             Choose Your Bubble Pack
           </DialogTitle>
-          <p className="text-purple-300 text-center">
+          <p className="text-purple-300 text-center font-body">
             Expand your bookmark universe with more bubbles
           </p>
         </DialogHeader>
@@ -113,7 +113,7 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
                 }`}
               >
                 {tier.popular && (
-                  <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+                  <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-brand font-medium">
                     Most Popular
                   </Badge>
                 )}
@@ -127,24 +127,24 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
                     {tier.icon}
                   </div>
                   
-                  <CardTitle className="text-white text-xl">{tier.name}</CardTitle>
-                  <CardDescription className="text-purple-300">
+                  <CardTitle className="text-white text-xl font-brand font-semibold">{tier.name}</CardTitle>
+                  <CardDescription className="text-purple-300 font-body">
                     {tier.bubbles} bubble bookmarks
                   </CardDescription>
                   
                   <div className="flex items-center justify-center space-x-2 mt-4">
                     {tier.originalPrice && (
-                      <span className="text-slate-400 line-through text-lg">
+                      <span className="text-slate-400 line-through text-lg font-body">
                         ${tier.originalPrice}
                       </span>
                     )}
-                    <span className="text-white text-3xl font-bold">
+                    <span className="text-white text-3xl font-brand font-bold">
                       ${tier.price}
                     </span>
                   </div>
                   
                   {tier.originalPrice && (
-                    <Badge variant="secondary" className="bg-green-600 text-white mt-2">
+                    <Badge variant="secondary" className="bg-green-600 text-white mt-2 font-body font-medium">
                       Save ${(tier.originalPrice - tier.price).toFixed(2)}
                     </Badge>
                   )}
@@ -153,7 +153,7 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
                 <CardContent>
                   <ul className="space-y-2 mb-6">
                     {tier.features.map((feature, index) => (
-                      <li key={index} className="text-purple-300 text-sm flex items-center">
+                      <li key={index} className="text-purple-300 text-sm flex items-center font-body">
                         <Sparkles className="w-4 h-4 mr-2 text-purple-400" />
                         {feature}
                       </li>
@@ -163,7 +163,7 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
                   <Button
                     onClick={() => handlePurchase(tier)}
                     disabled={isProcessing}
-                    className={`w-full ${
+                    className={`w-full font-body font-medium ${
                       tier.popular
                         ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
                         : 'bg-purple-600 hover:bg-purple-700'
@@ -186,7 +186,7 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
         </ScrollArea>
         
         <div className="text-center mt-6 p-4 bg-slate-800/30 rounded-lg border border-purple-500/20">
-          <p className="text-purple-300 text-sm">
+          <p className="text-purple-300 text-sm font-body">
             💳 Secure payment processing • 🔒 No subscription required • ✨ Instant delivery
           </p>
         </div>

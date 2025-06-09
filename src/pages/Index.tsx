@@ -147,7 +147,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden font-body">
       {/* Animated background stars */}
       <div className="absolute inset-0 overflow-hidden">
         {[...Array(50)].map((_, i) => (
@@ -174,13 +174,13 @@ const Index = () => {
                 <Sparkles className="w-4 h-4 md:w-6 md:h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl md:text-2xl font-bold text-white">BubbleMarks</h1>
-                <p className="text-purple-300 text-xs md:text-sm">Your bookmarks in space</p>
+                <h1 className="text-xl md:text-2xl font-brand font-bold text-white tracking-tight">BubbleLink</h1>
+                <p className="text-purple-300 text-xs md:text-sm font-body">Your bookmarks in space</p>
               </div>
             </div>
             
             <div className="bg-white/10 backdrop-blur-sm rounded-full px-3 py-1.5 md:px-4 md:py-2 border border-white/20">
-              <span className="text-white font-semibold flex items-center text-sm md:text-base">
+              <span className="text-white font-semibold flex items-center text-sm md:text-base font-body">
                 <Star className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2 text-yellow-400" />
                 {availableBubbles}
               </span>
@@ -191,7 +191,7 @@ const Index = () => {
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <Button
               onClick={() => setShowAddModal(true)}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 flex-1 sm:flex-none"
+              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 flex-1 sm:flex-none font-body font-medium"
             >
               <Plus className="w-4 h-4 mr-2" />
               Add Bookmark
@@ -199,7 +199,7 @@ const Index = () => {
             
             <Button
               onClick={() => setShowPricingModal(true)}
-              className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white border-0 flex-1 sm:flex-none font-semibold"
+              className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white border-0 flex-1 sm:flex-none font-brand font-semibold"
             >
               <ShoppingCart className="w-4 h-4 mr-2" />
               Buy Bubbles
@@ -222,14 +222,14 @@ const Index = () => {
             <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
               <Sparkles className="w-10 h-10 text-white" />
             </div>
-            <h2 className="text-3xl font-bold text-white mb-4">Welcome to BubbleMarks</h2>
-            <p className="text-purple-300 mb-6">
+            <h2 className="text-3xl font-brand font-bold text-white mb-4">Welcome to BubbleLink</h2>
+            <p className="text-purple-300 mb-6 font-body">
               Save your favorite websites as beautiful floating bubbles. 
               Click on any bubble to visit your bookmarked site!
             </p>
             <Button
               onClick={() => setShowAddModal(true)}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0"
+              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 font-body font-medium"
             >
               <Plus className="w-4 h-4 mr-2" />
               Add Your First Bookmark
