@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from 'react';
 import { Bookmark } from '@/pages/Index';
 import { ExternalLink, X } from 'lucide-react';
@@ -13,6 +12,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark }: BubbleCanvasProps)
   const canvasRef = useRef<HTMLDivElement>(null);
   const [hoveredBubble, setHoveredBubble] = useState<string | null>(null);
   const animationRef = useRef<number>();
+  const mouseInteractionRef = useRef<number>();
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -22,30 +22,83 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark }: BubbleCanvasProps)
     let mouseX = 0;
     let mouseY = 0;
 
+    // Initialize bubble positions and velocities
+    const bubbleData = new Map();
+    bubbles.forEach((bubble, index) => {
+      const element = bubble as HTMLElement;
+      bubbleData.set(element, {
+        x: parseFloat(element.style.left) || Math.random() * (window.innerWidth - 100),
+        y: parseFloat(element.style.top) || Math.random() * (window.innerHeight - 100),
+        vx: (Math.random() - 0.5) * 2, // velocity x
+        vy: (Math.random() - 0.5) * 2, // velocity y
+        baseX: 0,
+        baseY: 0,
+        mouseInfluence: 0
+      });
+    });
+
     const handleMouseMove = (e: MouseEvent) => {
       mouseX = e.clientX;
       mouseY = e.clientY;
     };
 
     const animate = () => {
-      bubbles.forEach((bubble, index) => {
-        const rect = bubble.getBoundingClientRect();
+      bubbles.forEach((bubble) => {
+        const element = bubble as HTMLElement;
+        const data = bubbleData.get(element);
+        if (!data) return;
+
+        const rect = element.getBoundingClientRect();
         const bubbleX = rect.left + rect.width / 2;
         const bubbleY = rect.top + rect.height / 2;
         
+        // Mouse interaction
         const deltaX = mouseX - bubbleX;
         const deltaY = mouseY - bubbleY;
         const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
         
-        if (distance < 200) {
+        let mouseForceX = 0;
+        let mouseForceY = 0;
+        if (distance < 200 && distance > 0) {
           const force = (200 - distance) / 200;
-          const moveX = -deltaX * force * 0.5;
-          const moveY = -deltaY * force * 0.5;
-          
-          bubble.style.transform = `translate(${moveX}px, ${moveY}px)`;
-        } else {
-          bubble.style.transform = 'translate(0, 0)';
+          mouseForceX = -deltaX * force * 0.5;
+          mouseForceY = -deltaY * force * 0.5;
         }
+
+        // Continuous floating animation
+        data.x += data.vx;
+        data.y += data.vy;
+
+        // Boundary collision
+        const padding = 50;
+        if (data.x < padding || data.x > window.innerWidth - padding) {
+          data.vx *= -1;
+          data.x = Math.max(padding, Math.min(window.innerWidth - padding, data.x));
+        }
+        if (data.y < padding || data.y > window.innerHeight - padding) {
+          data.vy *= -1;
+          data.y = Math.max(padding, Math.min(window.innerHeight - padding, data.y));
+        }
+
+        // Apply small random variations to keep movement interesting
+        data.vx += (Math.random() - 0.5) * 0.1;
+        data.vy += (Math.random() - 0.5) * 0.1;
+
+        // Limit velocity
+        const maxVelocity = 1.5;
+        data.vx = Math.max(-maxVelocity, Math.min(maxVelocity, data.vx));
+        data.vy = Math.max(-maxVelocity, Math.min(maxVelocity, data.vy));
+
+        // Apply damping
+        data.vx *= 0.99;
+        data.vy *= 0.99;
+
+        // Combine floating and mouse interaction
+        const finalX = data.x + mouseForceX;
+        const finalY = data.y + mouseForceY;
+
+        element.style.left = `${finalX}px`;
+        element.style.top = `${finalY}px`;
       });
       
       animationRef.current = requestAnimationFrame(animate);
