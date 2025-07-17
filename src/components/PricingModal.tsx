@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -34,29 +33,29 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
     {
       id: 'starter',
       name: 'Bubble Starter',
-      bubbles: 10,
+      bubbles: 5,
       price: 4.99,
       icon: <Circle className="w-6 h-6" />,
-      features: ['10 floating bubbles', 'Basic bubble animations', 'Auto favicon detection', 'Bubble space universe']
+      features: ['5 floating bubbles', 'Basic bubble animations', 'Auto favicon detection', 'Bubble space universe']
     },
     {
       id: 'popular',
       name: 'Bubble Explorer',
-      bubbles: 50,
+      bubbles: 25,
       price: 14.99,
       originalPrice: 19.99,
       popular: true,
       icon: <Star className="w-6 h-6" />,
-      features: ['50 floating bubbles', 'Enhanced bubble effects', 'Auto favicon detection', 'Bubble priority support', 'Expanded bubble universe']
+      features: ['25 floating bubbles', 'Enhanced bubble effects', 'Auto favicon detection', 'Bubble priority support', 'Expanded bubble universe']
     },
     {
       id: 'premium',
       name: 'Bubble Master',
-      bubbles: 150,
+      bubbles: 100,
       price: 24.99,
       originalPrice: 34.99,
       icon: <Crown className="w-6 h-6" />,
-      features: ['150 floating bubbles', 'Premium bubble animations', 'Auto favicon detection', 'Bubble VIP support', 'Unlimited bubble universe', 'Future bubble features']
+      features: ['100 floating bubbles', 'Premium bubble animations', 'Auto favicon detection', 'Bubble VIP support', 'Unlimited bubble universe', 'Future bubble features']
     }
   ];
 

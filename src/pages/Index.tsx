@@ -20,7 +20,7 @@ export interface Bookmark {
 
 const Index = () => {
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
-  const [availableBubbles, setAvailableBubbles] = useState(5); // Free bubbles
+  const [availableBubbles, setAvailableBubbles] = useState(3); // Reduced from 5 to 3 free bubbles
   const [showAddModal, setShowAddModal] = useState(false);
   const [showPricingModal, setShowPricingModal] = useState(false);
   const { toast } = useToast();
