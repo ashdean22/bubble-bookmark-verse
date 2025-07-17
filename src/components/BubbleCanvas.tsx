@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from 'react';
 import { Bookmark } from '@/pages/Index';
 import { ExternalLink, X } from 'lucide-react';
@@ -357,13 +356,6 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
                 (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMSA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDMgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K';
               }}
             />
-            
-            {/* Access count indicator */}
-            {bookmark.accessCount > 0 && (
-              <div className="absolute -top-1 -right-1 bg-yellow-400 text-black text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold pointer-events-none">
-                {bookmark.accessCount > 99 ? '99+' : bookmark.accessCount}
-              </div>
-            )}
 
             {/* Enhanced dynamic glow effect */}
             <div 
@@ -400,15 +392,10 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
             </div>
           </div>
 
-          {/* Enhanced tooltip */}
+          {/* Enhanced tooltip without access count */}
           {hoveredBubble === bookmark.id && !draggedBubble && (
             <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-black/90 backdrop-blur-sm text-white px-3 py-1 rounded-lg text-sm whitespace-nowrap z-50 border border-white/20 pointer-events-none animate-fade-in">
               {bookmark.title}
-              {bookmark.accessCount > 0 && (
-                <span className="block text-xs text-yellow-300">
-                  Accessed {bookmark.accessCount} time{bookmark.accessCount !== 1 ? 's' : ''}
-                </span>
-              )}
               <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-black/90"></div>
             </div>
           )}
