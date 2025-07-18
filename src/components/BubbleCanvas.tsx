@@ -26,6 +26,13 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
     let mouseY = 0;
     let isMouseInCanvas = false;
 
+    // Calculate header height to prevent bubbles from floating above buttons
+    const getHeaderHeight = () => {
+      // Mobile: approximately 120px for header with buttons
+      // Desktop: approximately 100px for header with buttons
+      return window.innerWidth < 640 ? 120 : 100;
+    };
+
     // Initialize bubble positions and velocities with CryptoBubbles-style physics
     const bubbleData = new Map();
     bubbles.forEach((bubble) => {
@@ -33,9 +40,14 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
       const bookmarkId = element.getAttribute('data-bubble-id');
       const bookmark = bookmarks.find(b => b.id === bookmarkId);
       
+      const headerHeight = getHeaderHeight();
+      
       bubbleData.set(element, {
         x: parseFloat(element.style.left) || Math.random() * (window.innerWidth - 100),
-        y: parseFloat(element.style.top) || Math.random() * (window.innerHeight - 100),
+        y: Math.max(
+          parseFloat(element.style.top) || Math.random() * (window.innerHeight - 100),
+          headerHeight + 50 // Ensure bubbles start below header
+        ),
         vx: (Math.random() - 0.5) * 1.5,
         vy: (Math.random() - 0.5) * 1.5,
         baseSize: bookmark?.size || 60,
@@ -47,10 +59,10 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
         attracted: false
       });
       
-      // Store original position for spring-back effect
+      // Store original position for spring-back effect (ensure it's below header)
       const data = bubbleData.get(element);
       data.originalX = data.x;
-      data.originalY = data.y;
+      data.originalY = Math.max(data.y, headerHeight + 50);
     });
 
     const handleMouseMove = (e: MouseEvent) => {
@@ -74,6 +86,8 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
     };
 
     const animate = () => {
+      const headerHeight = getHeaderHeight();
+      
       bubbles.forEach((bubble) => {
         const element = bubble as HTMLElement;
         const data = bubbleData.get(element);
@@ -173,10 +187,11 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
         data.x += data.vx / data.mass;
         data.y += data.vy / data.mass;
 
-        // Enhanced boundary collision with bouncing
+        // Enhanced boundary collision with bouncing - respect header area
         const padding = data.currentSize / 2 + 20;
         const canvasWidth = canvas.clientWidth;
         const canvasHeight = canvas.clientHeight;
+        const topBoundary = headerHeight + padding; // Prevent bubbles from going above header
         
         if (data.x < padding) {
           data.x = padding;
@@ -186,8 +201,9 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
           data.vx *= -0.7;
         }
         
-        if (data.y < padding) {
-          data.y = padding;
+        // Updated top boundary to respect header
+        if (data.y < topBoundary) {
+          data.y = topBoundary;
           data.vy *= -0.7;
         } else if (data.y > canvasHeight - padding) {
           data.y = canvasHeight - padding;
@@ -279,8 +295,9 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
     
     const bubble = document.querySelector(`[data-bubble-id="${draggedBubble}"]`) as HTMLElement;
     if (bubble) {
+      const headerHeight = window.innerWidth < 640 ? 120 : 100;
       const newX = clientX - dragOffsetRef.current.x;
-      const newY = clientY - dragOffsetRef.current.y;
+      const newY = Math.max(clientY - dragOffsetRef.current.y, headerHeight + 20); // Prevent dragging above header
       
       bubble.style.left = `${newX}px`;
       bubble.style.top = `${newY}px`;
@@ -392,7 +409,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
             </div>
           </div>
 
-          {/* Enhanced tooltip without access count */}
+          {/* Enhanced tooltip */}
           {hoveredBubble === bookmark.id && !draggedBubble && (
             <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-black/90 backdrop-blur-sm text-white px-3 py-1 rounded-lg text-sm whitespace-nowrap z-50 border border-white/20 pointer-events-none animate-fade-in">
               {bookmark.title}
