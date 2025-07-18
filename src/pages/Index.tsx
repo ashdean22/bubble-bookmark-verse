@@ -210,21 +210,23 @@ const Index = () => {
             </div>
           </div>
           
-          {/* Action buttons row with bubble-themed text */}
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+          {/* Action buttons row with bubble-themed text - made smaller */}
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
             <Button
               onClick={() => setShowAddModal(true)}
+              size="sm"
               className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 flex-1 sm:flex-none font-body font-medium shadow-lg hover:shadow-xl transition-all"
             >
-              <Plus className="w-4 h-4 mr-2" />
+              <Plus className="w-3 h-3 mr-1.5" />
               Create Bubble
             </Button>
             
             <Button
               onClick={() => setShowPricingModal(true)}
+              size="sm"
               className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white border-0 flex-1 sm:flex-none font-brand font-semibold shadow-lg hover:shadow-xl transition-all"
             >
-              <ShoppingCart className="w-4 h-4 mr-2" />
+              <ShoppingCart className="w-3 h-3 mr-1.5" />
               Buy More Bubbles
             </Button>
           </div>
