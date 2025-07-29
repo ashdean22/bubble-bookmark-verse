@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Circle, Star, Crown, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -17,8 +18,8 @@ interface PricingTier {
   id: string;
   name: string;
   bubbles: number;
-  price: number;
-  originalPrice?: number;
+  monthlyPrice: number;
+  yearlyPrice: number;
   popular?: boolean;
   icon: React.ReactNode;
   features: string[];
@@ -27,6 +28,7 @@ interface PricingTier {
 export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingModalProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingTier, setProcessingTier] = useState<string | null>(null);
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const { toast } = useToast();
 
   const pricingTiers: PricingTier[] = [
@@ -34,7 +36,8 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
       id: 'starter',
       name: 'Bubble Basic',
       bubbles: 20,
-      price: 2.99,
+      monthlyPrice: 2.99,
+      yearlyPrice: 23.99, // 20% off yearly
       icon: <Circle className="w-6 h-6" />,
       features: ['20 floating bubbles', 'Basic bubble animations', 'Auto favicon detection', 'Cloud sync', 'Mobile app access']
     },
@@ -42,8 +45,8 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
       id: 'popular',
       name: 'Bubble Pro',
       bubbles: 100,
-      price: 5.99,
-      originalPrice: 7.99,
+      monthlyPrice: 5.99,
+      yearlyPrice: 47.99, // 33% off yearly
       popular: true,
       icon: <Star className="w-6 h-6" />,
       features: ['100 floating bubbles', 'Enhanced bubble effects', 'Priority sync', 'Advanced customization', 'Export/import bookmarks', 'Priority support']
@@ -52,12 +55,29 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
       id: 'premium',
       name: 'Bubble Unlimited',
       bubbles: 999,
-      price: 9.99,
-      originalPrice: 14.99,
+      monthlyPrice: 9.99,
+      yearlyPrice: 79.99, // 33% off yearly
       icon: <Crown className="w-6 h-6" />,
       features: ['Unlimited bubbles', 'Premium animations & themes', 'Team collaboration', 'Advanced analytics', 'API access', 'White-label options', 'VIP support']
     }
   ];
+
+  const getCurrentPrice = (tier: PricingTier) => {
+    return billingCycle === 'monthly' ? tier.monthlyPrice : tier.yearlyPrice;
+  };
+
+  const getMonthlyEquivalent = (tier: PricingTier) => {
+    return billingCycle === 'yearly' ? (tier.yearlyPrice / 12).toFixed(2) : tier.monthlyPrice.toFixed(2);
+  };
+
+  const getSavings = (tier: PricingTier) => {
+    if (billingCycle === 'yearly') {
+      const monthlyCost = tier.monthlyPrice * 12;
+      const yearlyCost = tier.yearlyPrice;
+      return monthlyCost - yearlyCost;
+    }
+    return 0;
+  };
 
   const handlePurchase = async (tier: PricingTier) => {
     setIsProcessing(true);
@@ -98,9 +118,26 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
             <Circle className="w-4 h-4 text-pink-400" />
           </DialogTitle>
           <p className="text-purple-300 text-center font-body">
-            Unlock your bubble universe with monthly subscription plans 🫧
+            Unlock your bubble universe with flexible pricing plans 🫧
           </p>
         </DialogHeader>
+        
+        {/* Billing Toggle */}
+        <div className="flex justify-center mt-6">
+          <Tabs value={billingCycle} onValueChange={(value) => setBillingCycle(value as 'monthly' | 'yearly')} className="w-auto">
+            <TabsList className="grid w-full grid-cols-2 bg-slate-800 border border-purple-500/30">
+              <TabsTrigger value="monthly" className="text-purple-300 data-[state=active]:bg-purple-600 data-[state=active]:text-white">
+                Monthly
+              </TabsTrigger>
+              <TabsTrigger value="yearly" className="text-purple-300 data-[state=active]:bg-purple-600 data-[state=active]:text-white relative">
+                Yearly
+                <Badge className="absolute -top-2 -right-2 bg-green-600 text-white text-xs px-1 py-0.5">
+                  Save up to 33%
+                </Badge>
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
         
         <ScrollArea className="w-full mt-6">
           <div className="flex md:grid md:grid-cols-3 gap-6 pb-4">
@@ -133,23 +170,27 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
                     {tier.bubbles === 999 ? 'Unlimited' : tier.bubbles} floating bubbles
                   </CardDescription>
                   
-                  <div className="flex items-center justify-center space-x-2 mt-4">
-                    {tier.originalPrice && (
-                      <span className="text-slate-400 line-through text-lg font-body">
-                        ${tier.originalPrice}/mo
+                  <div className="flex flex-col items-center space-y-2 mt-4">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-white text-3xl font-brand font-bold">
+                        ${getCurrentPrice(tier).toFixed(2)}
                       </span>
+                      <span className="text-purple-300 text-lg font-body">
+                        {billingCycle === 'yearly' ? '/year' : '/mo'}
+                      </span>
+                    </div>
+                    
+                    {billingCycle === 'yearly' && (
+                      <div className="text-center">
+                        <div className="text-purple-300 text-sm font-body">
+                          ${getMonthlyEquivalent(tier)}/mo when billed annually
+                        </div>
+                        <Badge className="bg-green-600 text-white mt-1 font-body font-medium">
+                          Save ${getSavings(tier).toFixed(2)} per year
+                        </Badge>
+                      </div>
                     )}
-                    <span className="text-white text-3xl font-brand font-bold">
-                      ${tier.price}
-                    </span>
-                    <span className="text-purple-300 text-lg font-body">/mo</span>
                   </div>
-                  
-                  {tier.originalPrice && (
-                    <Badge variant="secondary" className="bg-green-600 text-white mt-2 font-body font-medium">
-                      Save ${(tier.originalPrice - tier.price).toFixed(2)}
-                    </Badge>
-                  )}
                 </CardHeader>
                 
                 <CardContent>
