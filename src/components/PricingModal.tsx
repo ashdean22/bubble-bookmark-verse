@@ -32,30 +32,30 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
   const pricingTiers: PricingTier[] = [
     {
       id: 'starter',
-      name: 'Bubble Starter',
-      bubbles: 5,
-      price: 4.99,
+      name: 'Bubble Basic',
+      bubbles: 20,
+      price: 2.99,
       icon: <Circle className="w-6 h-6" />,
-      features: ['5 floating bubbles', 'Basic bubble animations', 'Auto favicon detection', 'Bubble space universe']
+      features: ['20 floating bubbles', 'Basic bubble animations', 'Auto favicon detection', 'Cloud sync', 'Mobile app access']
     },
     {
       id: 'popular',
-      name: 'Bubble Explorer',
-      bubbles: 25,
-      price: 14.99,
-      originalPrice: 19.99,
+      name: 'Bubble Pro',
+      bubbles: 100,
+      price: 5.99,
+      originalPrice: 7.99,
       popular: true,
       icon: <Star className="w-6 h-6" />,
-      features: ['25 floating bubbles', 'Enhanced bubble effects', 'Auto favicon detection', 'Bubble priority support', 'Expanded bubble universe']
+      features: ['100 floating bubbles', 'Enhanced bubble effects', 'Priority sync', 'Advanced customization', 'Export/import bookmarks', 'Priority support']
     },
     {
       id: 'premium',
-      name: 'Bubble Master',
-      bubbles: 100,
-      price: 24.99,
-      originalPrice: 34.99,
+      name: 'Bubble Unlimited',
+      bubbles: 999,
+      price: 9.99,
+      originalPrice: 14.99,
       icon: <Crown className="w-6 h-6" />,
-      features: ['100 floating bubbles', 'Premium bubble animations', 'Auto favicon detection', 'Bubble VIP support', 'Unlimited bubble universe', 'Future bubble features']
+      features: ['Unlimited bubbles', 'Premium animations & themes', 'Team collaboration', 'Advanced analytics', 'API access', 'White-label options', 'VIP support']
     }
   ];
 
@@ -94,11 +94,11 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
         <DialogHeader>
           <DialogTitle className="text-white text-center text-2xl mb-2 font-brand font-bold flex items-center justify-center gap-2">
             <Circle className="w-6 h-6 text-purple-400" />
-            Choose Your Bubble Pack
+            Choose Your Plan
             <Circle className="w-4 h-4 text-pink-400" />
           </DialogTitle>
           <p className="text-purple-300 text-center font-body">
-            Expand your bubble universe with more floating bubbles 🫧
+            Unlock your bubble universe with monthly subscription plans 🫧
           </p>
         </DialogHeader>
         
@@ -130,18 +130,19 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
                   
                   <CardTitle className="text-white text-xl font-brand font-semibold">{tier.name}</CardTitle>
                   <CardDescription className="text-purple-300 font-body">
-                    {tier.bubbles} floating bubbles
+                    {tier.bubbles === 999 ? 'Unlimited' : tier.bubbles} floating bubbles
                   </CardDescription>
                   
                   <div className="flex items-center justify-center space-x-2 mt-4">
                     {tier.originalPrice && (
                       <span className="text-slate-400 line-through text-lg font-body">
-                        ${tier.originalPrice}
+                        ${tier.originalPrice}/mo
                       </span>
                     )}
                     <span className="text-white text-3xl font-brand font-bold">
                       ${tier.price}
                     </span>
+                    <span className="text-purple-300 text-lg font-body">/mo</span>
                   </div>
                   
                   {tier.originalPrice && (
@@ -176,7 +177,7 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
                         Creating Bubbles...
                       </>
                     ) : (
-                      `Get ${tier.bubbles} Bubbles`
+                      `Start ${tier.name}`
                     )}
                   </Button>
                 </CardContent>
@@ -188,7 +189,7 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
         
         <div className="text-center mt-6 p-4 bg-slate-800/30 rounded-lg border border-purple-500/20">
           <p className="text-purple-300 text-sm font-body">
-            🫧 Secure bubble delivery • 🔒 No subscription required • ✨ Instant bubble activation
+            🫧 Monthly subscription • 🔒 Cancel anytime • ✨ Instant plan activation
           </p>
         </div>
       </DialogContent>
