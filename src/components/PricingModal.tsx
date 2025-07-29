@@ -33,32 +33,41 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
 
   const pricingTiers: PricingTier[] = [
     {
-      id: 'starter',
-      name: 'Bubble Basic',
-      bubbles: 20,
-      monthlyPrice: 2.99,
-      yearlyPrice: 23.99, // 20% off yearly
+      id: 'free',
+      name: 'Bubble Free',
+      bubbles: 10,
+      monthlyPrice: 0,
+      yearlyPrice: 0,
       icon: <Circle className="w-6 h-6" />,
-      features: ['20 floating bubbles', 'Basic bubble animations', 'Auto favicon detection', 'Cloud sync', 'Mobile app access']
+      features: ['10 floating bubbles', 'Basic animations', 'Auto favicon detection', 'Mobile app access', 'Community support']
+    },
+    {
+      id: 'basic',
+      name: 'Bubble Basic',
+      bubbles: 50,
+      monthlyPrice: 1.99,
+      yearlyPrice: 19.99, // 17% off yearly
+      icon: <Circle className="w-6 h-6" />,
+      features: ['50 floating bubbles', 'Enhanced animations', 'Cloud sync', 'Priority loading', 'Email support']
     },
     {
       id: 'popular',
       name: 'Bubble Pro',
-      bubbles: 100,
-      monthlyPrice: 5.99,
-      yearlyPrice: 47.99, // 33% off yearly
+      bubbles: 999,
+      monthlyPrice: 4.99,
+      yearlyPrice: 49.99, // 17% off yearly
       popular: true,
       icon: <Star className="w-6 h-6" />,
-      features: ['100 floating bubbles', 'Enhanced bubble effects', 'Priority sync', 'Advanced customization', 'Export/import bookmarks', 'Priority support']
+      features: ['Unlimited bubbles', 'Premium effects', 'Advanced customization', 'Export/import bookmarks', 'Priority sync', 'Priority support']
     },
     {
       id: 'premium',
-      name: 'Bubble Unlimited',
+      name: 'Bubble Premium',
       bubbles: 999,
-      monthlyPrice: 9.99,
-      yearlyPrice: 79.99, // 33% off yearly
+      monthlyPrice: 7.99,
+      yearlyPrice: 79.99, // 17% off yearly
       icon: <Crown className="w-6 h-6" />,
-      features: ['Unlimited bubbles', 'Premium animations & themes', 'Team collaboration', 'Advanced analytics', 'API access', 'White-label options', 'VIP support']
+      features: ['Everything in Pro', 'Team collaboration', 'Advanced analytics', 'API access', 'Custom themes', 'White-label options', 'VIP support']
     }
   ];
 
@@ -132,7 +141,7 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
               <TabsTrigger value="yearly" className="text-purple-300 data-[state=active]:bg-purple-600 data-[state=active]:text-white relative">
                 Yearly
                 <Badge className="absolute -top-2 -right-2 bg-green-600 text-white text-xs px-1 py-0.5">
-                  Save up to 33%
+                  Save up to 17%
                 </Badge>
               </TabsTrigger>
             </TabsList>
@@ -140,7 +149,7 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
         </div>
         
         <ScrollArea className="w-full mt-6">
-          <div className="flex md:grid md:grid-cols-3 gap-6 pb-4">
+          <div className="flex md:grid md:grid-cols-4 gap-6 pb-4">
             {pricingTiers.map((tier) => (
               <Card 
                 key={tier.id}
@@ -170,27 +179,31 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
                     {tier.bubbles === 999 ? 'Unlimited' : tier.bubbles} floating bubbles
                   </CardDescription>
                   
-                  <div className="flex flex-col items-center space-y-2 mt-4">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-white text-3xl font-brand font-bold">
-                        ${getCurrentPrice(tier).toFixed(2)}
-                      </span>
-                      <span className="text-purple-300 text-lg font-body">
-                        {billingCycle === 'yearly' ? '/year' : '/mo'}
-                      </span>
-                    </div>
-                    
-                    {billingCycle === 'yearly' && (
-                      <div className="text-center">
-                        <div className="text-purple-300 text-sm font-body">
-                          ${getMonthlyEquivalent(tier)}/mo when billed annually
-                        </div>
-                        <Badge className="bg-green-600 text-white mt-1 font-body font-medium">
-                          Save ${getSavings(tier).toFixed(2)} per year
-                        </Badge>
-                      </div>
-                    )}
-                  </div>
+                   <div className="flex flex-col items-center space-y-2 mt-4">
+                     <div className="flex items-center space-x-2">
+                       <span className="text-white text-3xl font-brand font-bold">
+                         {tier.monthlyPrice === 0 ? 'Free' : `$${getCurrentPrice(tier).toFixed(2)}`}
+                       </span>
+                       {tier.monthlyPrice > 0 && (
+                         <span className="text-purple-300 text-lg font-body">
+                           {billingCycle === 'yearly' ? '/year' : '/mo'}
+                         </span>
+                       )}
+                     </div>
+                     
+                     {billingCycle === 'yearly' && tier.monthlyPrice > 0 && (
+                       <div className="text-center">
+                         <div className="text-purple-300 text-sm font-body">
+                           ${getMonthlyEquivalent(tier)}/mo when billed annually
+                         </div>
+                         {getSavings(tier) > 0 && (
+                           <Badge className="bg-green-600 text-white mt-1 font-body font-medium">
+                             Save ${getSavings(tier).toFixed(2)} per year
+                           </Badge>
+                         )}
+                       </div>
+                     )}
+                   </div>
                 </CardHeader>
                 
                 <CardContent>
@@ -203,24 +216,28 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
                     ))}
                   </ul>
                   
-                  <Button
-                    onClick={() => handlePurchase(tier)}
-                    disabled={isProcessing}
-                    className={`w-full font-body font-medium shadow-lg hover:shadow-xl transition-all ${
-                      tier.popular
-                        ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
-                        : 'bg-purple-600 hover:bg-purple-700'
-                    } text-white`}
-                  >
-                    {processingTier === tier.id ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Creating Bubbles...
-                      </>
-                    ) : (
-                      `Start ${tier.name}`
-                    )}
-                  </Button>
+                   <Button
+                     onClick={() => handlePurchase(tier)}
+                     disabled={isProcessing}
+                     className={`w-full font-body font-medium shadow-lg hover:shadow-xl transition-all ${
+                       tier.monthlyPrice === 0 
+                         ? 'bg-slate-700 hover:bg-slate-600 border border-purple-500/30'
+                         : tier.popular
+                         ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
+                         : 'bg-purple-600 hover:bg-purple-700'
+                     } text-white`}
+                   >
+                     {processingTier === tier.id ? (
+                       <>
+                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                         Creating Bubbles...
+                       </>
+                     ) : tier.monthlyPrice === 0 ? (
+                       'Get Started Free'
+                     ) : (
+                       `Start ${tier.name}`
+                     )}
+                   </Button>
                 </CardContent>
               </Card>
             ))}
