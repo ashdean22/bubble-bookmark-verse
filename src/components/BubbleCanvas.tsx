@@ -398,23 +398,17 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
           onMouseDown={(e) => handleDragStart(e, bookmark.id)}
           onTouchStart={(e) => handleDragStart(e, bookmark.id)}
         >
-          {/* Natural bubble with glass effect */}
+          {/* Natural organic bubble */}
           <div
-            className="w-full h-full rounded-full flex flex-col items-center justify-center relative overflow-hidden transition-all duration-300"
+            className="w-full h-full rounded-full flex flex-col items-center justify-center relative overflow-hidden transition-all duration-200"
             style={{
-              background: `radial-gradient(circle at 30% 30%, 
-                rgba(255,255,255,0.9), 
-                rgba(255,255,255,0.1) 70%, 
-                transparent),
-                ${getPerformanceColor(bookmark.accessCount)}`,
-              backdropFilter: 'blur(10px)',
-              border: `1px solid rgba(255,255,255,0.3)`,
+              background: `radial-gradient(circle at 40% 30%, 
+                rgba(255,255,255,0.15), 
+                ${getPerformanceColor(bookmark.accessCount)} 60%)`,
+              border: `1px solid rgba(255,255,255,0.1)`,
               boxShadow: hoveredBubble === bookmark.id 
-                ? `0 8px 32px rgba(0,0,0,0.15), 
-                   0 0 0 1px rgba(255,255,255,0.2), 
-                   inset 0 1px 0 rgba(255,255,255,0.6)`
-                : `0 4px 20px rgba(0,0,0,0.1), 
-                   inset 0 1px 0 rgba(255,255,255,0.4)`,
+                ? `0 6px 20px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.1)`
+                : `0 3px 12px rgba(0,0,0,0.08)`,
             }}
             onClick={() => handleBubbleClick(bookmark)}
           >
@@ -441,29 +435,14 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
               {getPerformancePercentage(bookmark.accessCount)}
             </div>
 
-            {/* Natural reflection highlight */}
+            {/* Simple natural highlight */}
             <div 
-              className="absolute inset-2 rounded-full pointer-events-none transition-opacity duration-300"
+              className="absolute top-2 left-2 w-1/3 h-1/3 rounded-full pointer-events-none transition-opacity duration-200"
               style={{
-                background: `radial-gradient(ellipse 60% 40% at 30% 20%, 
-                  rgba(255,255,255,0.8), 
-                  rgba(255,255,255,0.3) 50%, 
+                background: `radial-gradient(circle, 
+                  rgba(255,255,255,0.3), 
                   transparent 70%)`,
-                opacity: hoveredBubble === bookmark.id ? 0.9 : 0.6,
-              }}
-            />
-            
-            {/* Subtle rim light */}
-            <div 
-              className="absolute inset-0 rounded-full pointer-events-none"
-              style={{
-                background: `conic-gradient(from 0deg at 50% 50%, 
-                  transparent 0deg, 
-                  rgba(255,255,255,0.2) 90deg, 
-                  transparent 180deg, 
-                  rgba(255,255,255,0.1) 270deg, 
-                  transparent 360deg)`,
-                opacity: 0.7,
+                opacity: hoveredBubble === bookmark.id ? 0.5 : 0.3,
               }}
             />
 
