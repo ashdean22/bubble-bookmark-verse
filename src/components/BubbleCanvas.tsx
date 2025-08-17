@@ -398,53 +398,37 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
           onMouseDown={(e) => handleDragStart(e, bookmark.id)}
           onTouchStart={(e) => handleDragStart(e, bookmark.id)}
         >
-          {/* Natural organic bubble */}
+          {/* CryptoBubbles style bubble */}
           <div
-            className="w-full h-full rounded-full flex flex-col items-center justify-center relative overflow-hidden transition-all duration-200"
+            className="w-full h-full rounded-full flex flex-col items-center justify-center relative transition-all duration-200"
             style={{
-              background: `radial-gradient(circle at 40% 30%, 
-                rgba(255,255,255,0.15), 
-                ${getPerformanceColor(bookmark.accessCount)} 60%)`,
-              border: `1px solid rgba(255,255,255,0.1)`,
+              background: getPerformanceColor(bookmark.accessCount),
+              border: `2px solid ${getPerformanceBorderColor(bookmark.accessCount)}`,
               boxShadow: hoveredBubble === bookmark.id 
-                ? `0 6px 20px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.1)`
-                : `0 3px 12px rgba(0,0,0,0.08)`,
+                ? `0 0 20px ${getPerformanceBorderColor(bookmark.accessCount)}88, 0 0 40px ${getPerformanceBorderColor(bookmark.accessCount)}44`
+                : `0 0 10px ${getPerformanceBorderColor(bookmark.accessCount)}44`,
             }}
             onClick={() => handleBubbleClick(bookmark)}
           >
-            {/* Favicon - smaller and positioned at top */}
+            {/* Favicon - small and at top */}
             <img
               src={bookmark.favicon}
               alt={bookmark.title}
-              className="w-4 h-4 rounded pointer-events-none transition-all duration-200 mb-1"
-              style={{
-                transform: hoveredBubble === bookmark.id ? 'scale(1.1)' : 'scale(1)',
-              }}
+              className="w-4 h-4 rounded pointer-events-none mb-1 opacity-90"
               onError={(e) => {
                 (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMSA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDMgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K';
               }}
             />
 
-            {/* Site name - CryptoBubbles style */}
-            <div className="text-white font-bold text-xs text-center leading-none mb-1 pointer-events-none">
+            {/* Site ticker/name - large and prominent like CryptoBubbles */}
+            <div className="text-white font-bold text-sm text-center leading-none mb-1 pointer-events-none tracking-wide">
               {getSiteName(bookmark.title, bookmark.url)}
             </div>
 
-            {/* Performance percentage */}
-            <div className="text-white text-xs font-medium pointer-events-none">
+            {/* Performance percentage - CryptoBubbles style */}
+            <div className="text-white text-xs font-semibold pointer-events-none">
               {getPerformancePercentage(bookmark.accessCount)}
             </div>
-
-            {/* Simple natural highlight */}
-            <div 
-              className="absolute top-2 left-2 w-1/3 h-1/3 rounded-full pointer-events-none transition-opacity duration-200"
-              style={{
-                background: `radial-gradient(circle, 
-                  rgba(255,255,255,0.3), 
-                  transparent 70%)`,
-                opacity: hoveredBubble === bookmark.id ? 0.5 : 0.3,
-              }}
-            />
 
             {/* External link icon on hover */}
             <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
