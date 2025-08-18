@@ -148,23 +148,32 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
         const isHovered = hoveredBubble === bookmarkId;
         const isClicked = clickedBubble === bookmarkId;
         
-        // Strong attraction zone (like CryptoBubbles)
-        const attractionRadius = 200;
-        const repulsionRadius = 80;
+        // Get bookmark for access count-based animation
+        const bookmark = bookmarks.find(b => b.id === bookmarkId);
+        const accessCount = bookmark?.accessCount || 0;
+        
+        // Scale animation intensity based on access count (more accessed = more animated)
+        const animationMultiplier = Math.min(1 + (accessCount * 0.15), 2.5);
+        
+        // Dynamic zones based on access count - more accessed bubbles have larger interaction zones
+        const baseAttractionRadius = 200;
+        const baseRepulsionRadius = 80;
+        const attractionRadius = baseAttractionRadius * animationMultiplier;
+        const repulsionRadius = baseRepulsionRadius * animationMultiplier;
         
         if (isMouseInCanvas && distance < attractionRadius && distance > 0) {
           const normalizedX = deltaX / distance;
           const normalizedY = deltaY / distance;
           
           if (distance < repulsionRadius) {
-            // Strong repulsion when too close
-            const repulsionForce = (repulsionRadius - distance) / repulsionRadius * 8;
+            // Strong repulsion when too close - scale with access count
+            const repulsionForce = (repulsionRadius - distance) / repulsionRadius * 8 * animationMultiplier;
             data.vx -= normalizedX * repulsionForce;
             data.vy -= normalizedY * repulsionForce;
             data.attracted = false;
           } else {
-            // Attraction force (stronger than before)
-            const attractionForce = Math.pow((attractionRadius - distance) / attractionRadius, 2) * 3;
+            // Attraction force - scale with access count for more responsive bubbles
+            const attractionForce = Math.pow((attractionRadius - distance) / attractionRadius, 2) * 3 * animationMultiplier;
             data.vx += normalizedX * attractionForce;
             data.vy += normalizedY * attractionForce;
             data.attracted = true;
@@ -252,8 +261,9 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
         data.vx *= dampingFactor;
         data.vy *= dampingFactor;
 
-        // Velocity limits
-        const maxVelocity = data.attracted ? 8 : 4;
+        // Velocity limits - scale with access count for more dynamic movement
+        const baseMaxVelocity = data.attracted ? 8 : 4;
+        const maxVelocity = baseMaxVelocity * animationMultiplier;
         const velocityMagnitude = Math.sqrt(data.vx * data.vx + data.vy * data.vy);
         if (velocityMagnitude > maxVelocity) {
           data.vx = (data.vx / velocityMagnitude) * maxVelocity;
@@ -392,9 +402,17 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
             style={{
               background: getTransparentBubbleColor(),
               border: `3px solid ${getTransparentBorderColor()}`,
-              boxShadow: hoveredBubble === bookmark.id 
-                ? `0 0 25px rgba(59, 130, 246, 0.6), 0 0 50px rgba(59, 130, 246, 0.3), inset 0 2px 10px rgba(255,255,255,0.1)`
-                : `0 0 15px rgba(59, 130, 246, 0.4), inset 0 1px 5px rgba(255,255,255,0.1)`,
+              boxShadow: (() => {
+                const accessCount = bookmark.accessCount || 0;
+                const glowIntensity = Math.min(1 + (accessCount * 0.1), 2);
+                const baseGlow = `0 0 ${15 * glowIntensity}px rgba(59, 130, 246, ${0.4 * glowIntensity})`;
+                const hoverGlow = `0 0 ${25 * glowIntensity}px rgba(59, 130, 246, ${0.6 * glowIntensity}), 0 0 ${50 * glowIntensity}px rgba(59, 130, 246, ${0.3 * glowIntensity})`;
+                const innerGlow = `inset 0 ${hoveredBubble === bookmark.id ? 2 : 1}px ${hoveredBubble === bookmark.id ? 10 : 5}px rgba(255,255,255,0.1)`;
+                
+                return hoveredBubble === bookmark.id 
+                  ? `${hoverGlow}, ${innerGlow}`
+                  : `${baseGlow}, ${innerGlow}`;
+              })(),
               transform: hoveredBubble === bookmark.id ? 'scale(1.05)' : 'scale(1)',
               filter: hoveredBubble === bookmark.id ? 'brightness(1.1)' : 'brightness(1)',
             }}
