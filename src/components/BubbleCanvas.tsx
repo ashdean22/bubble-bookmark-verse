@@ -9,45 +9,15 @@ interface BubbleCanvasProps {
   onBubbleClick: (id: string) => void;
 }
 
-// Helper functions for natural bubble colors
-const getNaturalBubbleColor = (id: string) => {
-  // Generate consistent natural colors based on bookmark ID
-  const hash = id.split('').reduce((a, b) => {
-    a = ((a << 5) - a) + b.charCodeAt(0);
-    return a & a;
-  }, 0);
-  
-  const naturalColors = [
-    'linear-gradient(135deg, #3b82f6, #1d4ed8)', // Ocean blue
-    'linear-gradient(135deg, #10b981, #047857)', // Forest green
-    'linear-gradient(135deg, #8b5cf6, #7c3aed)', // Lavender purple
-    'linear-gradient(135deg, #f59e0b, #d97706)', // Sunset orange
-    'linear-gradient(135deg, #ef4444, #dc2626)', // Coral red
-    'linear-gradient(135deg, #06b6d4, #0891b2)', // Turquoise
-    'linear-gradient(135deg, #84cc16, #65a30d)', // Lime green
-    'linear-gradient(135deg, #f97316, #ea580c)', // Amber
-    'linear-gradient(135deg, #ec4899, #db2777)', // Pink
-    'linear-gradient(135deg, #6366f1, #4f46e5)', // Indigo
-    'linear-gradient(135deg, #14b8a6, #0d9488)', // Teal
-    'linear-gradient(135deg, #a855f7, #9333ea)', // Violet
-  ];
-  
-  return naturalColors[Math.abs(hash) % naturalColors.length];
+// Helper functions for transparent light blue bubble colors
+const getTransparentBubbleColor = () => {
+  // Light blue transparent gradient
+  return 'linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(29, 78, 216, 0.4))';
 };
 
-const getNaturalBorderColor = (id: string) => {
-  const hash = id.split('').reduce((a, b) => {
-    a = ((a << 5) - a) + b.charCodeAt(0);
-    return a & a;
-  }, 0);
-  
-  const borderColors = [
-    '#1d4ed8', '#047857', '#7c3aed', '#d97706', '#dc2626',
-    '#0891b2', '#65a30d', '#ea580c', '#db2777', '#4f46e5',
-    '#0d9488', '#9333ea'
-  ];
-  
-  return borderColors[Math.abs(hash) % borderColors.length];
+const getTransparentBorderColor = () => {
+  // Light blue border
+  return 'rgba(59, 130, 246, 0.6)';
 };
 
 const getPerformancePercentage = (accessCount: number) => {
@@ -420,11 +390,11 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
           <div
             className="w-full h-full rounded-full flex flex-col items-center justify-center relative transition-all duration-300 ease-out"
             style={{
-              background: getNaturalBubbleColor(bookmark.id),
-              border: `3px solid ${getNaturalBorderColor(bookmark.id)}`,
+              background: getTransparentBubbleColor(),
+              border: `3px solid ${getTransparentBorderColor()}`,
               boxShadow: hoveredBubble === bookmark.id 
-                ? `0 0 25px ${getNaturalBorderColor(bookmark.id)}66, 0 0 50px ${getNaturalBorderColor(bookmark.id)}33, inset 0 2px 10px rgba(255,255,255,0.1)`
-                : `0 0 15px ${getNaturalBorderColor(bookmark.id)}44, inset 0 1px 5px rgba(255,255,255,0.1)`,
+                ? `0 0 25px rgba(59, 130, 246, 0.6), 0 0 50px rgba(59, 130, 246, 0.3), inset 0 2px 10px rgba(255,255,255,0.1)`
+                : `0 0 15px rgba(59, 130, 246, 0.4), inset 0 1px 5px rgba(255,255,255,0.1)`,
               transform: hoveredBubble === bookmark.id ? 'scale(1.05)' : 'scale(1)',
               filter: hoveredBubble === bookmark.id ? 'brightness(1.1)' : 'brightness(1)',
             }}
