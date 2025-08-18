@@ -152,12 +152,12 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
         const bookmark = bookmarks.find(b => b.id === bookmarkId);
         const accessCount = bookmark?.accessCount || 0;
         
-        // Scale animation intensity based on access count (more accessed = more animated)
-        const animationMultiplier = Math.min(1 + (accessCount * 0.15), 2.5);
+        // Scale animation intensity based on access count (more accessed = slightly more animated)
+        const animationMultiplier = Math.min(1 + (accessCount * 0.05), 1.3);
         
-        // Dynamic zones based on access count - more accessed bubbles have larger interaction zones
-        const baseAttractionRadius = 200;
-        const baseRepulsionRadius = 80;
+        // Dynamic zones based on access count - more accessed bubbles have slightly larger interaction zones
+        const baseAttractionRadius = 150;
+        const baseRepulsionRadius = 60;
         const attractionRadius = baseAttractionRadius * animationMultiplier;
         const repulsionRadius = baseRepulsionRadius * animationMultiplier;
         
@@ -166,14 +166,14 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
           const normalizedY = deltaY / distance;
           
           if (distance < repulsionRadius) {
-            // Strong repulsion when too close - scale with access count
-            const repulsionForce = (repulsionRadius - distance) / repulsionRadius * 8 * animationMultiplier;
+            // Gentle repulsion when too close - scale with access count
+            const repulsionForce = (repulsionRadius - distance) / repulsionRadius * 3 * animationMultiplier;
             data.vx -= normalizedX * repulsionForce;
             data.vy -= normalizedY * repulsionForce;
             data.attracted = false;
           } else {
-            // Attraction force - scale with access count for more responsive bubbles
-            const attractionForce = Math.pow((attractionRadius - distance) / attractionRadius, 2) * 3 * animationMultiplier;
+            // Gentle attraction force - scale with access count for more responsive bubbles
+            const attractionForce = Math.pow((attractionRadius - distance) / attractionRadius, 2) * 1.5 * animationMultiplier;
             data.vx += normalizedX * attractionForce;
             data.vy += normalizedY * attractionForce;
             data.attracted = true;
@@ -261,8 +261,8 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
         data.vx *= dampingFactor;
         data.vy *= dampingFactor;
 
-        // Velocity limits - scale with access count for more dynamic movement
-        const baseMaxVelocity = data.attracted ? 8 : 4;
+        // Velocity limits - scale with access count for graceful movement
+        const baseMaxVelocity = data.attracted ? 4 : 2;
         const maxVelocity = baseMaxVelocity * animationMultiplier;
         const velocityMagnitude = Math.sqrt(data.vx * data.vx + data.vy * data.vy);
         if (velocityMagnitude > maxVelocity) {
