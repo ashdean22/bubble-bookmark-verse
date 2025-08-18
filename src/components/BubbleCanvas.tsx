@@ -410,25 +410,15 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
             }}
             onClick={() => handleBubbleClick(bookmark)}
           >
-            {/* Favicon - small and at top */}
+            {/* Favicon - centered */}
             <img
               src={bookmark.favicon}
               alt={bookmark.title}
-              className="w-4 h-4 rounded pointer-events-none mb-1 opacity-90"
+              className="w-6 h-6 rounded pointer-events-none opacity-90"
               onError={(e) => {
                 (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMSA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDMgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K';
               }}
             />
-
-            {/* Site ticker/name - large and prominent like CryptoBubbles */}
-            <div className="text-white font-bold text-sm text-center leading-none mb-1 pointer-events-none tracking-wide">
-              {getSiteName(bookmark.title, bookmark.url)}
-            </div>
-
-            {/* Performance percentage - CryptoBubbles style */}
-            <div className="text-white text-xs font-semibold pointer-events-none">
-              {getPerformancePercentage(bookmark.accessCount)}
-            </div>
 
             {/* External link icon on hover */}
             <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
