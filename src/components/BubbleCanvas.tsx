@@ -9,27 +9,45 @@ interface BubbleCanvasProps {
   onBubbleClick: (id: string) => void;
 }
 
-// Helper functions for CryptoBubbles-style styling
-const getPerformanceColor = (accessCount: number) => {
-  // Simulate performance based on access count
-  // Higher access = better performance (green), lower = worse (red)
-  const performance = accessCount - 5; // Normalize around 5 clicks
+// Helper functions for natural bubble colors
+const getNaturalBubbleColor = (id: string) => {
+  // Generate consistent natural colors based on bookmark ID
+  const hash = id.split('').reduce((a, b) => {
+    a = ((a << 5) - a) + b.charCodeAt(0);
+    return a & a;
+  }, 0);
   
-  if (performance > 3) return 'linear-gradient(135deg, #10b981, #059669)'; // Strong green
-  if (performance > 1) return 'linear-gradient(135deg, #22c55e, #16a34a)'; // Medium green  
-  if (performance > -1) return 'linear-gradient(135deg, #6b7280, #4b5563)'; // Neutral gray
-  if (performance > -3) return 'linear-gradient(135deg, #f59e0b, #d97706)'; // Orange
-  return 'linear-gradient(135deg, #ef4444, #dc2626)'; // Red
+  const naturalColors = [
+    'linear-gradient(135deg, #3b82f6, #1d4ed8)', // Ocean blue
+    'linear-gradient(135deg, #10b981, #047857)', // Forest green
+    'linear-gradient(135deg, #8b5cf6, #7c3aed)', // Lavender purple
+    'linear-gradient(135deg, #f59e0b, #d97706)', // Sunset orange
+    'linear-gradient(135deg, #ef4444, #dc2626)', // Coral red
+    'linear-gradient(135deg, #06b6d4, #0891b2)', // Turquoise
+    'linear-gradient(135deg, #84cc16, #65a30d)', // Lime green
+    'linear-gradient(135deg, #f97316, #ea580c)', // Amber
+    'linear-gradient(135deg, #ec4899, #db2777)', // Pink
+    'linear-gradient(135deg, #6366f1, #4f46e5)', // Indigo
+    'linear-gradient(135deg, #14b8a6, #0d9488)', // Teal
+    'linear-gradient(135deg, #a855f7, #9333ea)', // Violet
+  ];
+  
+  return naturalColors[Math.abs(hash) % naturalColors.length];
 };
 
-const getPerformanceBorderColor = (accessCount: number) => {
-  const performance = accessCount - 5;
+const getNaturalBorderColor = (id: string) => {
+  const hash = id.split('').reduce((a, b) => {
+    a = ((a << 5) - a) + b.charCodeAt(0);
+    return a & a;
+  }, 0);
   
-  if (performance > 3) return '#059669';
-  if (performance > 1) return '#16a34a';
-  if (performance > -1) return '#6b7280';
-  if (performance > -3) return '#d97706';
-  return '#dc2626';
+  const borderColors = [
+    '#1d4ed8', '#047857', '#7c3aed', '#d97706', '#dc2626',
+    '#0891b2', '#65a30d', '#ea580c', '#db2777', '#4f46e5',
+    '#0d9488', '#9333ea'
+  ];
+  
+  return borderColors[Math.abs(hash) % borderColors.length];
 };
 
 const getPerformancePercentage = (accessCount: number) => {
@@ -398,15 +416,17 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
           onMouseDown={(e) => handleDragStart(e, bookmark.id)}
           onTouchStart={(e) => handleDragStart(e, bookmark.id)}
         >
-          {/* CryptoBubbles style bubble */}
+          {/* Natural CryptoBubbles style bubble */}
           <div
-            className="w-full h-full rounded-full flex flex-col items-center justify-center relative transition-all duration-200"
+            className="w-full h-full rounded-full flex flex-col items-center justify-center relative transition-all duration-300 ease-out"
             style={{
-              background: getPerformanceColor(bookmark.accessCount),
-              border: `2px solid ${getPerformanceBorderColor(bookmark.accessCount)}`,
+              background: getNaturalBubbleColor(bookmark.id),
+              border: `3px solid ${getNaturalBorderColor(bookmark.id)}`,
               boxShadow: hoveredBubble === bookmark.id 
-                ? `0 0 20px ${getPerformanceBorderColor(bookmark.accessCount)}88, 0 0 40px ${getPerformanceBorderColor(bookmark.accessCount)}44`
-                : `0 0 10px ${getPerformanceBorderColor(bookmark.accessCount)}44`,
+                ? `0 0 25px ${getNaturalBorderColor(bookmark.id)}66, 0 0 50px ${getNaturalBorderColor(bookmark.id)}33, inset 0 2px 10px rgba(255,255,255,0.1)`
+                : `0 0 15px ${getNaturalBorderColor(bookmark.id)}44, inset 0 1px 5px rgba(255,255,255,0.1)`,
+              transform: hoveredBubble === bookmark.id ? 'scale(1.05)' : 'scale(1)',
+              filter: hoveredBubble === bookmark.id ? 'brightness(1.1)' : 'brightness(1)',
             }}
             onClick={() => handleBubbleClick(bookmark)}
           >
