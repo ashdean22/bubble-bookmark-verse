@@ -167,7 +167,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
         
         data.attracted = false;
 
-        // Bubble-to-bubble collision detection and avoidance
+        // Natural bubble-to-bubble collision with momentum exchange
         bubbles.forEach((otherBubble) => {
           if (otherBubble === bubble) return;
           
@@ -180,15 +180,39 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
           const dx = bubbleX - otherX;
           const dy = bubbleY - otherY;
           const distance = Math.sqrt(dx * dx + dy * dy);
-          const minDistance = (data.currentSize + otherData.currentSize) / 2 + 10;
+          const minDistance = (data.currentSize + otherData.currentSize) / 2 + 5;
           
           if (distance < minDistance && distance > 0) {
-            const force = (minDistance - distance) / minDistance * 0.5;
-            const normalizedX = dx / distance;
-            const normalizedY = dy / distance;
+            // Calculate collision normal
+            const normalX = dx / distance;
+            const normalY = dy / distance;
             
-            data.vx += normalizedX * force;
-            data.vy += normalizedY * force;
+            // Separate overlapping bubbles
+            const overlap = minDistance - distance;
+            const separation = overlap * 0.5;
+            
+            data.x += normalX * separation * (otherData.mass / (data.mass + otherData.mass));
+            data.y += normalY * separation * (otherData.mass / (data.mass + otherData.mass));
+            otherData.x -= normalX * separation * (data.mass / (data.mass + otherData.mass));
+            otherData.y -= normalY * separation * (data.mass / (data.mass + otherData.mass));
+            
+            // Calculate relative velocity in collision normal direction
+            const relativeVelX = data.vx - otherData.vx;
+            const relativeVelY = data.vy - otherData.vy;
+            const speed = relativeVelX * normalX + relativeVelY * normalY;
+            
+            // Do not resolve if velocities are separating
+            if (speed < 0) return;
+            
+            // Calculate restitution (bounciness) - slightly less than 1 for natural feel
+            const restitution = 0.8;
+            const impulse = 2 * speed * restitution / (data.mass + otherData.mass);
+            
+            // Apply impulse to velocities
+            data.vx -= impulse * otherData.mass * normalX;
+            data.vy -= impulse * otherData.mass * normalY;
+            otherData.vx += impulse * data.mass * normalX;
+            otherData.vy += impulse * data.mass * normalY;
           }
         });
 
@@ -210,27 +234,29 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
         data.x += data.vx / data.mass;
         data.y += data.vy / data.mass;
 
-        // Enhanced boundary collision with bouncing - respect header area
-        const padding = data.currentSize / 2 + 20;
+        // Enhanced boundary collision with realistic bouncing - respect header area
+        const radius = data.currentSize / 2;
         const canvasWidth = canvas.clientWidth;
         const canvasHeight = canvas.clientHeight;
-        const topBoundary = headerHeight + padding; // Prevent bubbles from going above header
+        const topBoundary = headerHeight + radius; // Prevent bubbles from going above header
+        const restitution = 0.7; // Bounciness factor
         
-        if (data.x < padding) {
-          data.x = padding;
-          data.vx *= -0.7;
-        } else if (data.x > canvasWidth - padding) {
-          data.x = canvasWidth - padding;
-          data.vx *= -0.7;
+        // Left and right boundaries
+        if (data.x < radius) {
+          data.x = radius;
+          data.vx = Math.abs(data.vx) * restitution; // Ensure positive velocity (bouncing right)
+        } else if (data.x > canvasWidth - radius) {
+          data.x = canvasWidth - radius;
+          data.vx = -Math.abs(data.vx) * restitution; // Ensure negative velocity (bouncing left)
         }
         
-        // Updated top boundary to respect header
+        // Top and bottom boundaries
         if (data.y < topBoundary) {
           data.y = topBoundary;
-          data.vy *= -0.7;
-        } else if (data.y > canvasHeight - padding) {
-          data.y = canvasHeight - padding;
-          data.vy *= -0.7;
+          data.vy = Math.abs(data.vy) * restitution; // Ensure positive velocity (bouncing down)
+        } else if (data.y > canvasHeight - radius) {
+          data.y = canvasHeight - radius;
+          data.vy = -Math.abs(data.vy) * restitution; // Ensure negative velocity (bouncing up)
         }
 
         // Velocity damping (less damping when attracted for more responsive movement)
