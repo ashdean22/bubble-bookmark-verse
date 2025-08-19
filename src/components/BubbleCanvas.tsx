@@ -140,55 +140,32 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
         const bubbleX = data.x + data.currentSize / 2;
         const bubbleY = data.y + data.currentSize / 2;
         
-        // CryptoBubbles-style mouse interaction
-        const deltaX = mouseX - bubbleX;
-        const deltaY = mouseY - bubbleY;
-        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-        
         const isHovered = hoveredBubble === bookmarkId;
         const isClicked = clickedBubble === bookmarkId;
         
-        // Get bookmark for access count-based animation
+        // Get bookmark for access count-based floating behavior
         const bookmark = bookmarks.find(b => b.id === bookmarkId);
         const accessCount = bookmark?.accessCount || 0;
         
-        // Scale animation intensity based on access count (more accessed = slightly more animated)
-        const animationMultiplier = Math.min(1 + (accessCount * 0.05), 1.3);
+        // Add natural floating movement with gentle random drift
+        const time = Date.now() * 0.001; // Convert to seconds
+        const uniqueOffset = parseFloat(bookmarkId.slice(-4)) || 1; // Use part of ID for unique drift patterns
         
-        // Dynamic zones based on access count - more accessed bubbles have slightly larger interaction zones
-        const baseAttractionRadius = 150;
-        const baseRepulsionRadius = 60;
-        const attractionRadius = baseAttractionRadius * animationMultiplier;
-        const repulsionRadius = baseRepulsionRadius * animationMultiplier;
+        // Create gentle, natural floating forces
+        const floatX = Math.sin(time * 0.3 + uniqueOffset) * 0.1;
+        const floatY = Math.cos(time * 0.2 + uniqueOffset * 1.5) * 0.08;
         
-        if (isMouseInCanvas && distance < attractionRadius && distance > 0) {
-          const normalizedX = deltaX / distance;
-          const normalizedY = deltaY / distance;
-          
-          if (distance < repulsionRadius) {
-            // Gentle repulsion when too close - scale with access count
-            const repulsionForce = (repulsionRadius - distance) / repulsionRadius * 3 * animationMultiplier;
-            data.vx -= normalizedX * repulsionForce;
-            data.vy -= normalizedY * repulsionForce;
-            data.attracted = false;
-          } else {
-            // Gentle attraction force - scale with access count for more responsive bubbles
-            const attractionForce = Math.pow((attractionRadius - distance) / attractionRadius, 2) * 1.5 * animationMultiplier;
-            data.vx += normalizedX * attractionForce;
-            data.vy += normalizedY * attractionForce;
-            data.attracted = true;
-          }
-        } else {
-          data.attracted = false;
-          
-          // Spring back to original position when mouse is far
-          if (!isMouseInCanvas || distance > attractionRadius) {
-            const springX = (data.originalX - data.x) * 0.01;
-            const springY = (data.originalY - data.y) * 0.01;
-            data.vx += springX;
-            data.vy += springY;
-          }
+        // Add occasional gentle drift changes
+        if (Math.random() < 0.005) { // 0.5% chance per frame for direction change
+          data.vx += (Math.random() - 0.5) * 0.3;
+          data.vy += (Math.random() - 0.5) * 0.3;
         }
+        
+        // Apply floating forces
+        data.vx += floatX;
+        data.vy += floatY;
+        
+        data.attracted = false;
 
         // Bubble-to-bubble collision detection and avoidance
         bubbles.forEach((otherBubble) => {
@@ -261,9 +238,8 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
         data.vx *= dampingFactor;
         data.vy *= dampingFactor;
 
-        // Velocity limits - scale with access count for graceful movement
-        const baseMaxVelocity = data.attracted ? 4 : 2;
-        const maxVelocity = baseMaxVelocity * animationMultiplier;
+        // Velocity limits for gentle floating movement
+        const maxVelocity = 1.5;
         const velocityMagnitude = Math.sqrt(data.vx * data.vx + data.vy * data.vy);
         if (velocityMagnitude > maxVelocity) {
           data.vx = (data.vx / velocityMagnitude) * maxVelocity;
