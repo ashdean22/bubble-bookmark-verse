@@ -168,11 +168,18 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
         data.attracted = false;
 
         // Natural bubble-to-bubble collision with momentum exchange
+        // Reduce collision sensitivity when bubbles are hovered to prevent chain reactions
         bubbles.forEach((otherBubble) => {
           if (otherBubble === bubble) return;
           
           const otherData = bubbleData.get(otherBubble);
           if (!otherData) return;
+          
+          const otherBookmarkId = (otherBubble as HTMLElement).getAttribute('data-bubble-id');
+          const otherIsHovered = hoveredBubble === otherBookmarkId;
+          
+          // Skip collision if either bubble is hovered to prevent chain reactions
+          if (isHovered || otherIsHovered) return;
           
           const otherX = otherData.x + otherData.currentSize / 2;
           const otherY = otherData.y + otherData.currentSize / 2;
