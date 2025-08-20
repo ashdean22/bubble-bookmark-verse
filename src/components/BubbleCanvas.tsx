@@ -147,23 +147,29 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
         const bookmark = bookmarks.find(b => b.id === bookmarkId);
         const accessCount = bookmark?.accessCount || 0;
         
-        // Add natural floating movement with gentle random drift
-        const time = Date.now() * 0.001; // Convert to seconds
-        const uniqueOffset = parseFloat(bookmarkId.slice(-4)) || 1; // Use part of ID for unique drift patterns
-        
-        // Create gentle, natural floating forces
-        const floatX = Math.sin(time * 0.3 + uniqueOffset) * 0.1;
-        const floatY = Math.cos(time * 0.2 + uniqueOffset * 1.5) * 0.08;
-        
-        // Add occasional gentle drift changes
-        if (Math.random() < 0.005) { // 0.5% chance per frame for direction change
-          data.vx += (Math.random() - 0.5) * 0.3;
-          data.vy += (Math.random() - 0.5) * 0.3;
+        // Only apply natural floating to non-hovered bubbles for subtle background movement
+        if (!hoveredBubble || hoveredBubble === bookmarkId) {
+          // Add natural floating movement with gentle random drift (reduced for non-hovered)
+          const time = Date.now() * 0.001;
+          const uniqueOffset = parseFloat(bookmarkId.slice(-4)) || 1;
+          
+          // Reduced floating forces for background bubbles, enhanced for hovered bubble
+          const intensity = isHovered ? 0.3 : 0.05;
+          const floatX = Math.sin(time * 0.3 + uniqueOffset) * intensity;
+          const floatY = Math.cos(time * 0.2 + uniqueOffset * 1.5) * (intensity * 0.8);
+          
+          // Reduced drift changes for non-hovered bubbles
+          const driftChance = isHovered ? 0.01 : 0.001;
+          if (Math.random() < driftChance) {
+            const driftIntensity = isHovered ? 0.3 : 0.1;
+            data.vx += (Math.random() - 0.5) * driftIntensity;
+            data.vy += (Math.random() - 0.5) * driftIntensity;
+          }
+          
+          // Apply floating forces
+          data.vx += floatX;
+          data.vy += floatY;
         }
-        
-        // Apply floating forces
-        data.vx += floatX;
-        data.vy += floatY;
         
         data.attracted = false;
 
