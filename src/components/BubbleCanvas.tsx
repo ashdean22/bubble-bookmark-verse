@@ -147,34 +147,34 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
         data.x += data.vx;
         data.y += data.vy;
 
-        // Boundary collision with realistic bouncing - respect header area
+        // Enhanced boundary collision with more noticeable bouncing
         const radius = data.currentSize / 2;
         const canvasWidth = canvas.clientWidth;
         const canvasHeight = canvas.clientHeight;
         const topBoundary = headerHeight + radius; // Prevent bubbles from going above header
-        const restitution = 0.7; // Bounciness factor
+        const restitution = 0.85; // Increased bounciness factor
         
-        // Left and right boundaries
+        // Left and right boundaries with enhanced bouncing
         if (data.x < radius) {
           data.x = radius;
-          data.vx = Math.abs(data.vx) * restitution; // Ensure positive velocity (bouncing right)
+          data.vx = Math.abs(data.vx) * restitution + 0.5; // Add minimum bounce velocity
         } else if (data.x > canvasWidth - radius) {
           data.x = canvasWidth - radius;
-          data.vx = -Math.abs(data.vx) * restitution; // Ensure negative velocity (bouncing left)
+          data.vx = -Math.abs(data.vx) * restitution - 0.5; // Add minimum bounce velocity
         }
         
-        // Top and bottom boundaries
+        // Top and bottom boundaries with enhanced bouncing
         if (data.y < topBoundary) {
           data.y = topBoundary;
-          data.vy = Math.abs(data.vy) * restitution; // Ensure positive velocity (bouncing down)
+          data.vy = Math.abs(data.vy) * restitution + 0.5; // Add minimum bounce velocity
         } else if (data.y > canvasHeight - radius) {
           data.y = canvasHeight - radius;
-          data.vy = -Math.abs(data.vy) * restitution; // Ensure negative velocity (bouncing up)
+          data.vy = -Math.abs(data.vy) * restitution - 0.5; // Add minimum bounce velocity
         }
 
-        // Velocity damping
-        data.vx *= 0.98;
-        data.vy *= 0.98;
+        // Reduced velocity damping to preserve bouncing energy
+        data.vx *= 0.995;
+        data.vy *= 0.995;
 
         // Velocity limits for gentle floating movement
         const maxVelocity = 1.0;
