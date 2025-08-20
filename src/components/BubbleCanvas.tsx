@@ -77,9 +77,9 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
       const headerHeight = getHeaderHeight();
       
       bubbleData.set(element, {
-        x: parseFloat(element.style.left) || Math.random() * (window.innerWidth - 100),
+        x: bookmark?.x || Math.random() * (window.innerWidth - 100),
         y: Math.max(
-          parseFloat(element.style.top) || Math.random() * (window.innerHeight - 100),
+          bookmark?.y || Math.random() * (window.innerHeight - 100),
           headerHeight + 50 // Ensure bubbles start below header
         ),
         vx: (Math.random() - 0.5) * 0.5, // Reduced initial velocity
@@ -252,11 +252,10 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
         const data = bubbleData.get(element);
         if (!data) return;
 
-        // Apply final position and size
-        element.style.left = `${data.x - data.currentSize / 2}px`;
-        element.style.top = `${data.y - data.currentSize / 2}px`;
-        element.style.width = `${data.currentSize}px`;
-        element.style.height = `${data.currentSize}px`;
+        // Apply final position and size using GPU-accelerated transforms
+        element.style.transform = `translate3d(${data.x - data.currentSize / 2}px, ${data.y - data.currentSize / 2}px, 0) scale(${data.currentSize / data.baseSize})`;
+        element.style.width = `${data.baseSize}px`;
+        element.style.height = `${data.baseSize}px`;
       });
       
       animationRef.current = requestAnimationFrame(animate);
@@ -322,8 +321,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
       const newX = clientX - dragOffsetRef.current.x;
       const newY = Math.max(clientY - dragOffsetRef.current.y, headerHeight + 20); // Prevent dragging above header
       
-      bubble.style.left = `${newX}px`;
-      bubble.style.top = `${newY}px`;
+      bubble.style.transform = `translate3d(${newX}px, ${newY}px, 0)`;
     }
   };
 
@@ -361,8 +359,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
           data-bubble-id={bookmark.id}
           className="bubble absolute cursor-pointer transition-all duration-150 group select-none"
           style={{
-            left: bookmark.x,
-            top: bookmark.y,
+            transform: `translate3d(${bookmark.x}px, ${bookmark.y}px, 0)`,
             width: bookmark.size,
             height: bookmark.size,
             zIndex: hoveredBubble === bookmark.id ? 20 : draggedBubble === bookmark.id ? 30 : 10,
