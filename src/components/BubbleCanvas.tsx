@@ -59,9 +59,6 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
     if (!canvas) return;
 
     const bubbles = canvas.querySelectorAll('.bubble');
-    let mouseX = 0;
-    let mouseY = 0;
-    let isMouseInCanvas = false;
 
     // Calculate header height to prevent bubbles from floating above buttons
     const getHeaderHeight = () => {
@@ -70,7 +67,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
       return window.innerWidth < 640 ? 120 : 100;
     };
 
-    // Initialize bubble positions and velocities with CryptoBubbles-style physics
+    // Initialize bubble positions and velocities with independent physics
     const bubbleData = new Map();
     bubbles.forEach((bubble) => {
       const element = bubble as HTMLElement;
@@ -85,42 +82,13 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
           parseFloat(element.style.top) || Math.random() * (window.innerHeight - 100),
           headerHeight + 50 // Ensure bubbles start below header
         ),
-        vx: (Math.random() - 0.5) * 1.5,
-        vy: (Math.random() - 0.5) * 1.5,
+        vx: (Math.random() - 0.5) * 0.5, // Reduced initial velocity
+        vy: (Math.random() - 0.5) * 0.5,
         baseSize: bookmark?.size || 60,
         currentSize: bookmark?.size || 60,
         targetSize: bookmark?.size || 60,
-        originalX: 0,
-        originalY: 0,
-        mass: (bookmark?.size || 60) / 60, // Larger bubbles have more mass
-        attracted: false
       });
-      
-      // Store original position for spring-back effect (ensure it's below header)
-      const data = bubbleData.get(element);
-      data.originalX = data.x;
-      data.originalY = Math.max(data.y, headerHeight + 50);
     });
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      mouseX = e.clientX - rect.left;
-      mouseY = e.clientY - rect.top;
-      isMouseInCanvas = true;
-    };
-
-    const handleMouseLeave = () => {
-      isMouseInCanvas = false;
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (e.touches.length > 0) {
-        const rect = canvas.getBoundingClientRect();
-        mouseX = e.touches[0].clientX - rect.left;
-        mouseY = e.touches[0].clientY - rect.top;
-        isMouseInCanvas = true;
-      }
-    };
 
     const animate = () => {
       const headerHeight = getHeaderHeight();
@@ -136,128 +104,50 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
         if (draggedBubble === bookmarkId) {
           return;
         }
-
-        const bubbleX = data.x + data.currentSize / 2;
-        const bubbleY = data.y + data.currentSize / 2;
         
         const isHovered = hoveredBubble === bookmarkId;
         const isClicked = clickedBubble === bookmarkId;
-        
-        // Get bookmark for access count-based floating behavior
-        const bookmark = bookmarks.find(b => b.id === bookmarkId);
-        const accessCount = bookmark?.accessCount || 0;
-        
-        // Only apply natural floating to non-hovered bubbles for subtle background movement
-        if (!hoveredBubble || hoveredBubble === bookmarkId) {
-          // Add natural floating movement with gentle random drift (reduced for non-hovered)
-          const time = Date.now() * 0.001;
-          const uniqueOffset = parseFloat(bookmarkId.slice(-4)) || 1;
-          
-          // Reduced floating forces for background bubbles, enhanced for hovered bubble
-          const intensity = isHovered ? 0.3 : 0.05;
-          const floatX = Math.sin(time * 0.3 + uniqueOffset) * intensity;
-          const floatY = Math.cos(time * 0.2 + uniqueOffset * 1.5) * (intensity * 0.8);
-          
-          // Reduced drift changes for non-hovered bubbles
-          const driftChance = isHovered ? 0.01 : 0.001;
-          if (Math.random() < driftChance) {
-            const driftIntensity = isHovered ? 0.3 : 0.1;
-            data.vx += (Math.random() - 0.5) * driftIntensity;
-            data.vy += (Math.random() - 0.5) * driftIntensity;
-          }
-          
-          // Apply floating forces
-          data.vx += floatX;
-          data.vy += floatY;
-        }
-        
-        data.attracted = false;
 
-        // Natural bubble-to-bubble collision with momentum exchange
-        // Reduce collision sensitivity when bubbles are hovered to prevent chain reactions
-        bubbles.forEach((otherBubble) => {
-          if (otherBubble === bubble) return;
-          
-          const otherData = bubbleData.get(otherBubble);
-          if (!otherData) return;
-          
-          const otherBookmarkId = (otherBubble as HTMLElement).getAttribute('data-bubble-id');
-          const otherIsHovered = hoveredBubble === otherBookmarkId;
-          
-          // Skip collision if either bubble is hovered to prevent chain reactions
-          if (isHovered || otherIsHovered) return;
-          
-          const otherX = otherData.x + otherData.currentSize / 2;
-          const otherY = otherData.y + otherData.currentSize / 2;
-          
-          const dx = bubbleX - otherX;
-          const dy = bubbleY - otherY;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-          const minDistance = (data.currentSize + otherData.currentSize) / 2 + 5;
-          
-          if (distance < minDistance && distance > 0) {
-            // Calculate collision normal
-            const normalX = dx / distance;
-            const normalY = dy / distance;
-            
-            // Separate overlapping bubbles
-            const overlap = minDistance - distance;
-            const separation = overlap * 0.5;
-            
-            data.x += normalX * separation * (otherData.mass / (data.mass + otherData.mass));
-            data.y += normalY * separation * (otherData.mass / (data.mass + otherData.mass));
-            otherData.x -= normalX * separation * (data.mass / (data.mass + otherData.mass));
-            otherData.y -= normalY * separation * (data.mass / (data.mass + otherData.mass));
-            
-            // Calculate relative velocity in collision normal direction
-            const relativeVelX = data.vx - otherData.vx;
-            const relativeVelY = data.vy - otherData.vy;
-            const speed = relativeVelX * normalX + relativeVelY * normalY;
-            
-            // Do not resolve if velocities are separating
-            if (speed < 0) return;
-            
-            // More natural restitution with slight randomness
-            const baseRestitution = 0.4 + Math.random() * 0.2; // 0.4-0.6 range for softer bounces
-            const impulse = 2 * speed * baseRestitution / (data.mass + otherData.mass);
-            
-            // Add slight randomness to collision angle for organic feel
-            const randomAngle = (Math.random() - 0.5) * 0.1;
-            const adjustedNormalX = normalX * Math.cos(randomAngle) - normalY * Math.sin(randomAngle);
-            const adjustedNormalY = normalX * Math.sin(randomAngle) + normalY * Math.cos(randomAngle);
-            
-            // Apply softer impulse with adjusted normals
-            data.vx -= impulse * otherData.mass * adjustedNormalX * 0.8;
-            data.vy -= impulse * otherData.mass * adjustedNormalY * 0.8;
-            otherData.vx += impulse * data.mass * adjustedNormalX * 0.8;
-            otherData.vy += impulse * data.mass * adjustedNormalY * 0.8;
-          }
-        });
-
-        // Individual bubble reactions - isolated from other bubbles
-        if (isHovered && !draggedBubble) {
-          // Individual hover reaction with gentle pulsing
+        // Individual bubble floating movement - completely independent
+        if (isHovered) {
+          // Enhanced floating for hovered bubble only
           const time = Date.now() * 0.003;
+          const uniqueOffset = parseFloat(bookmarkId?.slice(-4) || '1') || 1;
+          
+          // Gentle pulsing and floating when hovered
           const pulseEffect = Math.sin(time * 2) * 0.05 + 1;
           data.targetSize = data.baseSize * 1.3 * pulseEffect;
           
-          // Gentle individual float when hovered
-          data.vx += Math.sin(time) * 0.02;
-          data.vy += Math.cos(time * 1.2) * 0.02;
-        } else if (isClicked) {
-          data.targetSize = data.baseSize * 0.85;
+          // Individual floating motion
+          data.vx += Math.sin(time + uniqueOffset) * 0.02;
+          data.vy += Math.cos(time * 1.2 + uniqueOffset) * 0.02;
         } else {
+          // Minimal natural floating for non-hovered bubbles
+          const time = Date.now() * 0.001;
+          const uniqueOffset = parseFloat(bookmarkId?.slice(-4) || '1') || 1;
+          
+          // Very subtle floating
+          const floatX = Math.sin(time * 0.2 + uniqueOffset) * 0.02;
+          const floatY = Math.cos(time * 0.15 + uniqueOffset * 1.5) * 0.015;
+          
+          data.vx += floatX;
+          data.vy += floatY;
+          
           data.targetSize = data.baseSize;
+        }
+
+        if (isClicked) {
+          data.targetSize = data.baseSize * 0.85;
         }
 
         // Smooth size interpolation
         data.currentSize += (data.targetSize - data.currentSize) * 0.12;
 
-        // Apply velocity with mass consideration
-        data.x += data.vx / data.mass;
-        data.y += data.vy / data.mass;
+        // Apply velocity
+        data.x += data.vx;
+        data.y += data.vy;
 
-        // Enhanced boundary collision with realistic bouncing - respect header area
+        // Boundary collision with realistic bouncing - respect header area
         const radius = data.currentSize / 2;
         const canvasWidth = canvas.clientWidth;
         const canvasHeight = canvas.clientHeight;
@@ -282,13 +172,12 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
           data.vy = -Math.abs(data.vy) * restitution; // Ensure negative velocity (bouncing up)
         }
 
-        // Velocity damping (less damping when attracted for more responsive movement)
-        const dampingFactor = data.attracted ? 0.92 : 0.96;
-        data.vx *= dampingFactor;
-        data.vy *= dampingFactor;
+        // Velocity damping
+        data.vx *= 0.98;
+        data.vy *= 0.98;
 
         // Velocity limits for gentle floating movement
-        const maxVelocity = 1.5;
+        const maxVelocity = 1.0;
         const velocityMagnitude = Math.sqrt(data.vx * data.vx + data.vy * data.vy);
         if (velocityMagnitude > maxVelocity) {
           data.vx = (data.vx / velocityMagnitude) * maxVelocity;
@@ -305,15 +194,9 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
       animationRef.current = requestAnimationFrame(animate);
     };
 
-    canvas.addEventListener('mousemove', handleMouseMove);
-    canvas.addEventListener('mouseleave', handleMouseLeave);
-    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
     animate();
 
     return () => {
-      canvas.removeEventListener('mousemove', handleMouseMove);
-      canvas.removeEventListener('mouseleave', handleMouseLeave);
-      canvas.removeEventListener('touchmove', handleTouchMove);
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
