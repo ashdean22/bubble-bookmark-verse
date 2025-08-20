@@ -204,15 +204,20 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
             // Do not resolve if velocities are separating
             if (speed < 0) return;
             
-            // Calculate restitution (bounciness) - slightly less than 1 for natural feel
-            const restitution = 0.8;
-            const impulse = 2 * speed * restitution / (data.mass + otherData.mass);
+            // More natural restitution with slight randomness
+            const baseRestitution = 0.4 + Math.random() * 0.2; // 0.4-0.6 range for softer bounces
+            const impulse = 2 * speed * baseRestitution / (data.mass + otherData.mass);
             
-            // Apply impulse to velocities
-            data.vx -= impulse * otherData.mass * normalX;
-            data.vy -= impulse * otherData.mass * normalY;
-            otherData.vx += impulse * data.mass * normalX;
-            otherData.vy += impulse * data.mass * normalY;
+            // Add slight randomness to collision angle for organic feel
+            const randomAngle = (Math.random() - 0.5) * 0.1;
+            const adjustedNormalX = normalX * Math.cos(randomAngle) - normalY * Math.sin(randomAngle);
+            const adjustedNormalY = normalX * Math.sin(randomAngle) + normalY * Math.cos(randomAngle);
+            
+            // Apply softer impulse with adjusted normals
+            data.vx -= impulse * otherData.mass * adjustedNormalX * 0.8;
+            data.vy -= impulse * otherData.mass * adjustedNormalY * 0.8;
+            otherData.vx += impulse * data.mass * adjustedNormalX * 0.8;
+            otherData.vy += impulse * data.mass * adjustedNormalY * 0.8;
           }
         });
 
