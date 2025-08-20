@@ -185,7 +185,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
         }
       });
 
-      // Bubble-to-bubble collision detection
+      // Enhanced bubble-to-bubble collision detection
       bubbles.forEach((bubbleA, indexA) => {
         const elementA = bubbleA as HTMLElement;
         const dataA = bubbleData.get(elementA);
@@ -198,20 +198,25 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
           const dataB = bubbleData.get(elementB);
           if (!dataB) return;
 
+          // Skip collision for dragged bubbles
+          const bookmarkIdA = elementA.getAttribute('data-bubble-id');
+          const bookmarkIdB = elementB.getAttribute('data-bubble-id');
+          if (draggedBubble === bookmarkIdA || draggedBubble === bookmarkIdB) return;
+
           // Calculate distance between bubble centers
           const dx = dataB.x - dataA.x;
           const dy = dataB.y - dataA.y;
           const distance = Math.sqrt(dx * dx + dy * dy);
           const minDistance = (dataA.currentSize + dataB.currentSize) / 2;
 
-          // Check for collision
-          if (distance < minDistance && distance > 0) {
+          // Check for collision with slight buffer for better detection
+          if (distance < minDistance + 2 && distance > 0) {
             // Calculate collision normal
             const normalX = dx / distance;
             const normalY = dy / distance;
 
             // Separate bubbles to prevent overlap
-            const overlap = minDistance - distance;
+            const overlap = minDistance - distance + 4; // Add buffer
             const separationX = (normalX * overlap) / 2;
             const separationY = (normalY * overlap) / 2;
             
@@ -225,20 +230,18 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
             const relativeVy = dataB.vy - dataA.vy;
             const relativeSpeed = relativeVx * normalX + relativeVy * normalY;
 
-            // Don't resolve if velocities are separating
-            if (relativeSpeed > 0) return;
-
-            // Collision response with restitution
-            const restitution = 0.8;
+            // Enhanced collision response with higher restitution
+            const restitution = 0.9; // Increased bounciness
             const impulse = 2 * relativeSpeed / (1 + 1); // Assuming equal mass
             const impulseX = impulse * normalX * restitution;
             const impulseY = impulse * normalY * restitution;
 
-            // Apply impulse to velocities
-            dataA.vx += impulseX;
-            dataA.vy += impulseY;
-            dataB.vx -= impulseX;
-            dataB.vy -= impulseY;
+            // Apply impulse to velocities with minimum bounce
+            const minBounce = 0.3;
+            dataA.vx += impulseX + (Math.random() - 0.5) * minBounce;
+            dataA.vy += impulseY + (Math.random() - 0.5) * minBounce;
+            dataB.vx -= impulseX + (Math.random() - 0.5) * minBounce;
+            dataB.vy -= impulseY + (Math.random() - 0.5) * minBounce;
           }
         });
       });
