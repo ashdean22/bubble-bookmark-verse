@@ -122,13 +122,13 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
           data.vx += Math.sin(time + uniqueOffset) * 0.02;
           data.vy += Math.cos(time * 1.2 + uniqueOffset) * 0.02;
         } else {
-          // Minimal natural floating for non-hovered bubbles
-          const time = Date.now() * 0.001;
+          // Natural floating for all bubbles
+          const time = Date.now() * 0.002;
           const uniqueOffset = parseFloat(bookmarkId?.slice(-4) || '1') || 1;
           
-          // Very subtle floating
-          const floatX = Math.sin(time * 0.2 + uniqueOffset) * 0.02;
-          const floatY = Math.cos(time * 0.15 + uniqueOffset * 1.5) * 0.015;
+          // Gentle natural floating movement
+          const floatX = Math.sin(time * 0.5 + uniqueOffset) * 0.08;
+          const floatY = Math.cos(time * 0.3 + uniqueOffset * 1.5) * 0.06;
           
           data.vx += floatX;
           data.vy += floatY;
