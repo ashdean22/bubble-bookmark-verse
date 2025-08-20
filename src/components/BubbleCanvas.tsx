@@ -344,16 +344,30 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
         });
       });
 
-      // Apply final positions and sizes
+      // Batch all DOM updates together for better performance
+      const styleUpdates: Array<{ element: HTMLElement; transform: string; width: string; height: string }> = [];
+      
       bubbles.forEach((bubble) => {
         const element = bubble as HTMLElement;
         const data = bubbleData.get(element);
         if (!data) return;
 
-        // Apply final position and size using GPU-accelerated transforms
-        element.style.transform = `translate3d(${data.x - data.currentSize / 2}px, ${data.y - data.currentSize / 2}px, 0) scale(${data.currentSize / data.baseSize})`;
-        element.style.width = `${data.baseSize}px`;
-        element.style.height = `${data.baseSize}px`;
+        // Collect all style changes without applying them yet
+        styleUpdates.push({
+          element,
+          transform: `translate3d(${data.x - data.currentSize / 2}px, ${data.y - data.currentSize / 2}px, 0) scale(${data.currentSize / data.baseSize})`,
+          width: `${data.baseSize}px`,
+          height: `${data.baseSize}px`
+        });
+      });
+
+      // Apply all DOM updates in a single batch to minimize style recalculations
+      requestAnimationFrame(() => {
+        styleUpdates.forEach(({ element, transform, width, height }) => {
+          element.style.transform = transform;
+          element.style.width = width;
+          element.style.height = height;
+        });
       });
       
       animationRef.current = requestAnimationFrame(animate);
