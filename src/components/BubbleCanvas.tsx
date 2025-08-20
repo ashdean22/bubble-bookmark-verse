@@ -228,13 +228,18 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
           }
         });
 
-        // Dynamic sizing based on interaction
-        if (isClicked) {
+        // Individual bubble reactions - isolated from other bubbles
+        if (isHovered && !draggedBubble) {
+          // Individual hover reaction with gentle pulsing
+          const time = Date.now() * 0.003;
+          const pulseEffect = Math.sin(time * 2) * 0.05 + 1;
+          data.targetSize = data.baseSize * 1.3 * pulseEffect;
+          
+          // Gentle individual float when hovered
+          data.vx += Math.sin(time) * 0.02;
+          data.vy += Math.cos(time * 1.2) * 0.02;
+        } else if (isClicked) {
           data.targetSize = data.baseSize * 0.85;
-        } else if (isHovered) {
-          data.targetSize = data.baseSize * 1.5;
-        } else if (data.attracted) {
-          data.targetSize = data.baseSize * 1.2;
         } else {
           data.targetSize = data.baseSize;
         }
