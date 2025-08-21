@@ -160,10 +160,8 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
     if (!draggedBubble) {
       setClickedBubble(bookmark.id);
       onBubbleClick(bookmark.id); // Track access
+      window.open(bookmark.url, '_blank'); // Immediate website access
       setTimeout(() => setClickedBubble(null), 200);
-      setTimeout(() => {
-        window.open(bookmark.url, '_blank');
-      }, 100);
     }
   };
 
