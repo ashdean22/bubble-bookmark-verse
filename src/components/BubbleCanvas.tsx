@@ -9,55 +9,6 @@ interface BubbleCanvasProps {
   onBubbleClick: (id: string) => void;
 }
 
-// Helper functions for CryptoBubbles-style styling
-const getPerformanceColor = (accessCount: number) => {
-  // Simulate performance based on access count
-  // Higher access = better performance (green), lower = worse (red)
-  const performance = accessCount - 5; // Normalize around 5 clicks
-  
-  if (performance > 3) return 'linear-gradient(135deg, #10b981, #059669)'; // Strong green
-  if (performance > 1) return 'linear-gradient(135deg, #22c55e, #16a34a)'; // Medium green  
-  if (performance > -1) return 'linear-gradient(135deg, #6b7280, #4b5563)'; // Neutral gray
-  if (performance > -3) return 'linear-gradient(135deg, #f59e0b, #d97706)'; // Orange
-  return 'linear-gradient(135deg, #ef4444, #dc2626)'; // Red
-};
-
-const getPerformanceBorderColor = (accessCount: number) => {
-  const performance = accessCount - 5;
-  
-  if (performance > 3) return '#059669';
-  if (performance > 1) return '#16a34a';
-  if (performance > -1) return '#6b7280';
-  if (performance > -3) return '#d97706';
-  return '#dc2626';
-};
-
-const getPerformancePercentage = (accessCount: number) => {
-  // Convert access count to a percentage-like display
-  const performance = accessCount - 5;
-  const percentage = Math.max(-99, Math.min(99, performance * 10 + Math.random() * 20 - 10));
-  return `${percentage > 0 ? '+' : ''}${percentage.toFixed(1)}%`;
-};
-
-const getSiteName = (title: string, url: string) => {
-  // Extract short site name from title or URL
-  if (title && title.length > 0) {
-    // Take first word or abbreviation
-    const words = title.split(' ');
-    if (words[0].length <= 6) return words[0].toUpperCase();
-    return words[0].substring(0, 4).toUpperCase();
-  }
-  
-  // Fallback to domain
-  try {
-    const domain = new URL(url).hostname.replace('www.', '');
-    const parts = domain.split('.');
-    return parts[0].substring(0, 4).toUpperCase();
-  } catch {
-    return 'SITE';
-  }
-};
-
 export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: BubbleCanvasProps) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [hoveredBubble, setHoveredBubble] = useState<string | null>(null);
@@ -398,54 +349,60 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
           onMouseDown={(e) => handleDragStart(e, bookmark.id)}
           onTouchStart={(e) => handleDragStart(e, bookmark.id)}
         >
-          {/* Natural organic bubble */}
+          {/* Main bubble with CryptoBubbles-style effects */}
           <div
-            className="w-full h-full rounded-full flex flex-col items-center justify-center relative overflow-hidden transition-all duration-200"
+            className="w-full h-full rounded-full flex items-center justify-center shadow-2xl backdrop-blur-sm border-2 border-white/30 relative overflow-hidden transition-all duration-200"
             style={{
-              background: `radial-gradient(circle at 40% 30%, 
-                rgba(255,255,255,0.15), 
-                ${getPerformanceColor(bookmark.accessCount)} 60%)`,
-              border: `1px solid rgba(255,255,255,0.1)`,
+              background: `linear-gradient(135deg, ${bookmark.color}88, ${bookmark.color}CC)`,
               boxShadow: hoveredBubble === bookmark.id 
-                ? `0 6px 20px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.1)`
-                : `0 3px 12px rgba(0,0,0,0.08)`,
+                ? `0 0 60px ${bookmark.color}77, 0 0 120px ${bookmark.color}44`
+                : `0 0 40px ${bookmark.color}55`,
+              filter: hoveredBubble === bookmark.id ? 'brightness(1.3) saturate(1.2)' : 'brightness(1)',
             }}
             onClick={() => handleBubbleClick(bookmark)}
           >
-            {/* Favicon - smaller and positioned at top */}
+            {/* Enhanced favicon */}
             <img
               src={bookmark.favicon}
               alt={bookmark.title}
-              className="w-4 h-4 rounded pointer-events-none transition-all duration-200 mb-1"
+              className="w-8 h-8 rounded pointer-events-none transition-all duration-200"
               style={{
-                transform: hoveredBubble === bookmark.id ? 'scale(1.1)' : 'scale(1)',
+                transform: hoveredBubble === bookmark.id ? 'scale(1.3)' : 'scale(1)',
               }}
               onError={(e) => {
                 (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMSA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDMgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K';
               }}
             />
 
-            {/* Site name - CryptoBubbles style */}
-            <div className="text-white font-bold text-xs text-center leading-none mb-1 pointer-events-none">
-              {getSiteName(bookmark.title, bookmark.url)}
-            </div>
-
-            {/* Performance percentage */}
-            <div className="text-white text-xs font-medium pointer-events-none">
-              {getPerformancePercentage(bookmark.accessCount)}
-            </div>
-
-            {/* Simple natural highlight */}
+            {/* Enhanced dynamic glow effect */}
             <div 
-              className="absolute top-2 left-2 w-1/3 h-1/3 rounded-full pointer-events-none transition-opacity duration-200"
+              className="absolute inset-0 rounded-full opacity-40 pointer-events-none transition-opacity duration-200"
               style={{
-                background: `radial-gradient(circle, 
-                  rgba(255,255,255,0.3), 
-                  transparent 70%)`,
-                opacity: hoveredBubble === bookmark.id ? 0.5 : 0.3,
+                background: `radial-gradient(circle at 30% 30%, white, transparent 70%)`,
+                opacity: hoveredBubble === bookmark.id ? 0.6 : 0.3,
               }}
             />
 
+            {/* Stronger pulsing ring effect on hover */}
+            {hoveredBubble === bookmark.id && (
+              <>
+                <div 
+                  className="absolute inset-0 rounded-full border-3 animate-ping pointer-events-none"
+                  style={{
+                    borderColor: `${bookmark.color}AA`,
+                    animationDuration: '1s'
+                  }}
+                />
+                <div 
+                  className="absolute inset-0 rounded-full border-2 animate-pulse pointer-events-none"
+                  style={{
+                    borderColor: `${bookmark.color}66`,
+                    animationDuration: '2s'
+                  }}
+                />
+              </>
+            )}
+            
             {/* External link icon on hover */}
             <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
               <ExternalLink className="w-3 h-3 text-white drop-shadow-lg" />
