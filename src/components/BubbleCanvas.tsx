@@ -46,80 +46,7 @@ const getSiteName = (title: string, url: string) => {
   }
 };
 
-  // Spatial partitioning system for efficient collision detection
-  class SpatialGrid {
-    private cellSize: number;
-    private grid: Map<string, HTMLElement[]>;
-    private canvasWidth: number;
-    private canvasHeight: number;
-
-    constructor(cellSize: number, canvasWidth: number, canvasHeight: number) {
-      this.cellSize = cellSize;
-      this.grid = new Map();
-      this.canvasWidth = canvasWidth;
-      this.canvasHeight = canvasHeight;
-    }
-
-    private getCellKey(x: number, y: number): string {
-      const cellX = Math.floor(x / this.cellSize);
-      const cellY = Math.floor(y / this.cellSize);
-      return `${cellX},${cellY}`;
-    }
-
-    clear() {
-      this.grid.clear();
-    }
-
-    addBubble(element: HTMLElement, x: number, y: number, radius: number) {
-      // Add bubble to all cells it might occupy
-      const minX = Math.max(0, x - radius);
-      const maxX = Math.min(this.canvasWidth, x + radius);
-      const minY = Math.max(0, y - radius);
-      const maxY = Math.min(this.canvasHeight, y + radius);
-
-      const startCellX = Math.floor(minX / this.cellSize);
-      const endCellX = Math.floor(maxX / this.cellSize);
-      const startCellY = Math.floor(minY / this.cellSize);
-      const endCellY = Math.floor(maxY / this.cellSize);
-
-      for (let cellX = startCellX; cellX <= endCellX; cellX++) {
-        for (let cellY = startCellY; cellY <= endCellY; cellY++) {
-          const key = `${cellX},${cellY}`;
-          if (!this.grid.has(key)) {
-            this.grid.set(key, []);
-          }
-          this.grid.get(key)!.push(element);
-        }
-      }
-    }
-
-    getNearbyBubbles(x: number, y: number, radius: number): HTMLElement[] {
-      const nearby = new Set<HTMLElement>();
-      
-      // Check all cells that this bubble might interact with
-      const minX = Math.max(0, x - radius - this.cellSize);
-      const maxX = Math.min(this.canvasWidth, x + radius + this.cellSize);
-      const minY = Math.max(0, y - radius - this.cellSize);
-      const maxY = Math.min(this.canvasHeight, y + radius + this.cellSize);
-
-      const startCellX = Math.floor(minX / this.cellSize);
-      const endCellX = Math.floor(maxX / this.cellSize);
-      const startCellY = Math.floor(minY / this.cellSize);
-      const endCellY = Math.floor(maxY / this.cellSize);
-
-      for (let cellX = startCellX; cellX <= endCellX; cellX++) {
-        for (let cellY = startCellY; cellY <= endCellY; cellY++) {
-          const key = `${cellX},${cellY}`;
-          const cellBubbles = this.grid.get(key);
-          if (cellBubbles) {
-            cellBubbles.forEach(bubble => nearby.add(bubble));
-          }
-        }
-      }
-
-      return Array.from(nearby);
-    }
-  }
+  // Removed spatial grid - bubbles now move independently
 
 export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: BubbleCanvasProps) => {
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -172,11 +99,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
       const canvasWidth = canvas.clientWidth;
       const canvasHeight = canvas.clientHeight;
       
-      // Create spatial grid with cell size based on average bubble size
-      const averageBubbleSize = bookmarks.reduce((sum, b) => sum + (b.size || 60), 0) / (bookmarks.length || 1);
-      const cellSize = Math.max(averageBubbleSize * 2, 100); // Ensure reasonable cell size
-      const spatialGrid = new SpatialGrid(cellSize, canvasWidth, canvasHeight);
-      
+      // Independent bubble animation - no collision detection
       bubbles.forEach((bubble) => {
         const element = bubble as HTMLElement;
         const data = bubbleData.get(element);
@@ -267,83 +190,6 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
           data.vx = (data.vx / velocityMagnitude) * maxVelocity;
           data.vy = (data.vy / velocityMagnitude) * maxVelocity;
         }
-      });
-
-      // Populate spatial grid with current bubble positions
-      bubbles.forEach((bubble) => {
-        const element = bubble as HTMLElement;
-        const data = bubbleData.get(element);
-        if (!data) return;
-
-        const bookmarkId = element.getAttribute('data-bubble-id');
-        if (draggedBubble === bookmarkId) return; // Skip dragged bubbles
-
-        const radius = data.currentSize / 2;
-        spatialGrid.addBubble(element, data.x, data.y, radius);
-      });
-
-      // Efficient spatial-partitioned collision detection
-      bubbles.forEach((bubbleA) => {
-        const elementA = bubbleA as HTMLElement;
-        const dataA = bubbleData.get(elementA);
-        if (!dataA) return;
-
-        const bookmarkIdA = elementA.getAttribute('data-bubble-id');
-        if (draggedBubble === bookmarkIdA) return; // Skip dragged bubbles
-
-        const radiusA = dataA.currentSize / 2;
-        const nearbyBubbles = spatialGrid.getNearbyBubbles(dataA.x, dataA.y, radiusA);
-        
-        nearbyBubbles.forEach((elementB) => {
-          if (elementA === elementB) return; // Skip self
-          
-          const dataB = bubbleData.get(elementB);
-          if (!dataB) return;
-
-          const bookmarkIdB = elementB.getAttribute('data-bubble-id');
-          if (draggedBubble === bookmarkIdB) return; // Skip dragged bubbles
-
-          // Calculate distance between bubble centers
-          const dx = dataB.x - dataA.x;
-          const dy = dataB.y - dataA.y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-          const minDistance = (dataA.currentSize + dataB.currentSize) / 2;
-
-          // Check for collision with slight buffer for better detection
-          if (distance < minDistance + 2 && distance > 0) {
-            // Calculate collision normal
-            const normalX = dx / distance;
-            const normalY = dy / distance;
-
-            // Separate bubbles to prevent overlap
-            const overlap = minDistance - distance + 4; // Add buffer
-            const separationX = (normalX * overlap) / 2;
-            const separationY = (normalY * overlap) / 2;
-            
-            dataA.x -= separationX;
-            dataA.y -= separationY;
-            dataB.x += separationX;
-            dataB.y += separationY;
-
-            // Calculate relative velocity
-            const relativeVx = dataB.vx - dataA.vx;
-            const relativeVy = dataB.vy - dataA.vy;
-            const relativeSpeed = relativeVx * normalX + relativeVy * normalY;
-
-            // Enhanced collision response with higher restitution
-            const restitution = 0.9; // Increased bounciness
-            const impulse = 2 * relativeSpeed / (1 + 1); // Assuming equal mass
-            const impulseX = impulse * normalX * restitution;
-            const impulseY = impulse * normalY * restitution;
-
-            // Apply impulse to velocities with minimum bounce
-            const minBounce = 0.3;
-            dataA.vx += impulseX + (Math.random() - 0.5) * minBounce;
-            dataA.vy += impulseY + (Math.random() - 0.5) * minBounce;
-            dataB.vx -= impulseX + (Math.random() - 0.5) * minBounce;
-            dataB.vy -= impulseY + (Math.random() - 0.5) * minBounce;
-          }
-        });
       });
 
       // Batch all DOM updates together for better performance
