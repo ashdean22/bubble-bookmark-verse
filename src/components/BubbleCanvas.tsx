@@ -157,19 +157,34 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
   }, [bubblePositions, draggedBubble, bookmarks]);
 
   const handleBubbleClick = (bookmark: Bookmark, e: React.MouseEvent) => {
+    console.log('Bubble clicked!', { 
+      id: bookmark.id, 
+      url: bookmark.url, 
+      title: bookmark.title,
+      draggedBubble: draggedBubble 
+    });
+    
     e.preventDefault();
     e.stopPropagation();
+    
+    if (draggedBubble) {
+      console.log('Click blocked - bubble is being dragged');
+      return;
+    }
+    
     setClickedBubble(bookmark.id);
     onBubbleClick(bookmark.id); // Track access
-    window.open(bookmark.url, '_blank'); // Immediate website access
+    
+    console.log('Opening URL:', bookmark.url);
+    const opened = window.open(bookmark.url, '_blank');
+    console.log('Window.open result:', opened);
+    
     setTimeout(() => setClickedBubble(null), 200);
   };
 
   const handleDragStart = (e: React.MouseEvent | React.TouchEvent, bookmarkId: string) => {
-    // Only start drag after a short delay to allow clicks
-    setTimeout(() => {
-      setDraggedBubble(bookmarkId);
-    }, 150);
+    console.log('Drag start attempted for:', bookmarkId);
+    e.preventDefault();
     
     const bubble = e.currentTarget as HTMLElement;
     const rect = bubble.getBoundingClientRect();
@@ -187,6 +202,15 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
       x: clientX - rect.left,
       y: clientY - rect.top
     };
+    
+    // Only start drag after a short delay to allow clicks
+    const dragTimeout = setTimeout(() => {
+      console.log('Setting dragged bubble:', bookmarkId);
+      setDraggedBubble(bookmarkId);
+    }, 150);
+    
+    // Store timeout so we can clear it if needed
+    (e.currentTarget as HTMLElement).dataset.dragTimeout = dragTimeout.toString();
   };
 
   const handleDragMove = (e: MouseEvent | TouchEvent) => {
