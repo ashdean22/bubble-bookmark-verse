@@ -71,7 +71,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
       return window.innerWidth < 640 ? 120 : 100;
     };
 
-    // Initialize bubble positions and velocities with independent physics
+    // Initialize bubble positions and velocities with completely independent physics
     const bubbleData = new Map();
     bubbles.forEach((bubble) => {
       const element = bubble as HTMLElement;
@@ -79,18 +79,21 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
       const bookmark = bookmarks.find(b => b.id === bookmarkId);
       
       const headerHeight = getHeaderHeight();
+      const uniqueSeed = bookmarkId ? parseInt(bookmarkId.slice(-8), 16) || 1 : Math.random() * 1000;
       
       bubbleData.set(element, {
         x: bookmark?.x || Math.random() * (window.innerWidth - 100),
         y: Math.max(
           bookmark?.y || Math.random() * (window.innerHeight - 100),
-          headerHeight + 50 // Ensure bubbles start below header
+          headerHeight + 50
         ),
-        vx: (Math.random() - 0.5) * 0.5, // Reduced initial velocity
+        vx: (Math.random() - 0.5) * 0.5,
         vy: (Math.random() - 0.5) * 0.5,
         baseSize: bookmark?.size || 60,
         currentSize: bookmark?.size || 60,
         targetSize: bookmark?.size || 60,
+        startTime: Date.now() + (uniqueSeed % 10000), // Unique start time
+        phase: uniqueSeed * 0.001, // Unique phase offset
       });
     });
 
@@ -117,25 +120,23 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
 
         // Individual bubble floating movement - completely independent
         if (isHovered) {
-          // Enhanced floating for hovered bubble only
-          const time = Date.now() * 0.003;
-          const uniqueOffset = parseFloat(bookmarkId?.slice(-4) || '1') || 1;
+          // Enhanced floating for hovered bubble only using individual timing
+          const currentTime = (Date.now() - data.startTime) * 0.003;
           
           // Gentle pulsing and floating when hovered
-          const pulseEffect = Math.sin(time * 2) * 0.05 + 1;
+          const pulseEffect = Math.sin(currentTime * 2 + data.phase) * 0.05 + 1;
           data.targetSize = data.baseSize * 1.3 * pulseEffect;
           
-          // Individual floating motion
-          data.vx += Math.sin(time + uniqueOffset) * 0.02;
-          data.vy += Math.cos(time * 1.2 + uniqueOffset) * 0.02;
+          // Individual floating motion with unique phase
+          data.vx += Math.sin(currentTime + data.phase) * 0.02;
+          data.vy += Math.cos(currentTime * 1.2 + data.phase * 2) * 0.02;
         } else {
-          // Natural floating for all bubbles
-          const time = Date.now() * 0.002;
-          const uniqueOffset = parseFloat(bookmarkId?.slice(-4) || '1') || 1;
+          // Natural floating for all bubbles using individual timing
+          const currentTime = (Date.now() - data.startTime) * 0.002;
           
-          // Gentle natural floating movement
-          const floatX = Math.sin(time * 0.5 + uniqueOffset) * 0.08;
-          const floatY = Math.cos(time * 0.3 + uniqueOffset * 1.5) * 0.06;
+          // Gentle natural floating movement with unique phase
+          const floatX = Math.sin(currentTime * 0.5 + data.phase) * 0.08;
+          const floatY = Math.cos(currentTime * 0.3 + data.phase * 1.5) * 0.06;
           
           data.vx += floatX;
           data.vy += floatY;
