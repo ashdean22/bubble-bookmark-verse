@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Bookmark } from '@/pages/Index';
 import { ExternalLink, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import './BubbleCanvas.css';
 
 interface BubbleCanvasProps {
   bookmarks: Bookmark[];
@@ -123,7 +124,6 @@ const getSiteName = (title: string, url: string) => {
 
 export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: BubbleCanvasProps) => {
   const canvasRef = useRef<HTMLDivElement>(null);
-  const [hoveredBubble, setHoveredBubble] = useState<string | null>(null);
   const [draggedBubble, setDraggedBubble] = useState<string | null>(null);
   const [clickedBubble, setClickedBubble] = useState<string | null>(null);
   const animationRef = useRef<number>();
@@ -187,36 +187,20 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
           return;
         }
         
-        const isHovered = hoveredBubble === bookmarkId;
         const isClicked = clickedBubble === bookmarkId;
 
-        // Individual bubble floating movement - completely independent
-        if (isHovered) {
-          // Enhanced floating for hovered bubble only
-          const time = Date.now() * 0.003;
-          const uniqueOffset = parseFloat(bookmarkId?.slice(-4) || '1') || 1;
-          
-          // Gentle pulsing and floating when hovered
-          const pulseEffect = Math.sin(time * 2) * 0.05 + 1;
-          data.targetSize = data.baseSize * 1.3 * pulseEffect;
-          
-          // Individual floating motion
-          data.vx += Math.sin(time + uniqueOffset) * 0.02;
-          data.vy += Math.cos(time * 1.2 + uniqueOffset) * 0.02;
-        } else {
-          // Natural floating for all bubbles
-          const time = Date.now() * 0.002;
-          const uniqueOffset = parseFloat(bookmarkId?.slice(-4) || '1') || 1;
-          
-          // Gentle natural floating movement
-          const floatX = Math.sin(time * 0.5 + uniqueOffset) * 0.08;
-          const floatY = Math.cos(time * 0.3 + uniqueOffset * 1.5) * 0.06;
-          
-          data.vx += floatX;
-          data.vy += floatY;
-          
-          data.targetSize = data.baseSize;
-        }
+        // Natural floating for all bubbles
+        const time = Date.now() * 0.002;
+        const uniqueOffset = parseFloat(bookmarkId?.slice(-4) || '1') || 1;
+        
+        // Gentle natural floating movement
+        const floatX = Math.sin(time * 0.5 + uniqueOffset) * 0.08;
+        const floatY = Math.cos(time * 0.3 + uniqueOffset * 1.5) * 0.06;
+        
+        data.vx += floatX;
+        data.vy += floatY;
+        
+        data.targetSize = data.baseSize;
 
         if (isClicked) {
           data.targetSize = data.baseSize * 0.85;
@@ -380,7 +364,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [bookmarks, draggedBubble, hoveredBubble, clickedBubble]);
+  }, [bookmarks, draggedBubble, clickedBubble]);
 
   const handleBubbleClick = (bookmark: Bookmark) => {
     if (!draggedBubble) {
@@ -469,15 +453,23 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
         <div
           key={bookmark.id}
           data-bubble-id={bookmark.id}
-          className="bubble absolute cursor-pointer transition-all duration-150 group select-none"
+          className="bubble absolute cursor-pointer select-none bubble-hover-effect"
           style={{
-            transform: `translate3d(${bookmark.x}px, ${bookmark.y}px, 0)`,
-            width: bookmark.size,
-            height: bookmark.size,
-            zIndex: hoveredBubble === bookmark.id ? 20 : draggedBubble === bookmark.id ? 30 : 10,
+            width: `${bookmark.size}px`,
+            height: `${bookmark.size}px`,
+            background: getTransparentBubbleColor(),
+            border: `2px solid ${getTransparentBorderColor()}`,
+            borderRadius: '50%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backdropFilter: 'blur(8px)',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+            zIndex: 10,
+            transform: 'translate3d(0, 0, 0)', // Enable GPU acceleration
+            willChange: 'transform', // Optimize for animations
           }}
-          onMouseEnter={() => setHoveredBubble(bookmark.id)}
-          onMouseLeave={() => setHoveredBubble(null)}
           onMouseDown={(e) => handleDragStart(e, bookmark.id)}
           onTouchStart={(e) => handleDragStart(e, bookmark.id)}
         >
@@ -491,15 +483,10 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
                 const accessCount = bookmark.accessCount || 0;
                 const glowIntensity = Math.min(1 + (accessCount * 0.1), 2);
                 const baseGlow = `0 0 ${15 * glowIntensity}px rgba(59, 130, 246, ${0.4 * glowIntensity})`;
-                const hoverGlow = `0 0 ${25 * glowIntensity}px rgba(59, 130, 246, ${0.6 * glowIntensity}), 0 0 ${50 * glowIntensity}px rgba(59, 130, 246, ${0.3 * glowIntensity})`;
-                const innerGlow = `inset 0 ${hoveredBubble === bookmark.id ? 2 : 1}px ${hoveredBubble === bookmark.id ? 10 : 5}px rgba(255,255,255,0.1)`;
+                const innerGlow = `inset 0 1px 5px rgba(255,255,255,0.1)`;
                 
-                return hoveredBubble === bookmark.id 
-                  ? `${hoverGlow}, ${innerGlow}`
-                  : `${baseGlow}, ${innerGlow}`;
+                return `${baseGlow}, ${innerGlow}`;
               })(),
-              transform: hoveredBubble === bookmark.id ? 'scale(1.05)' : 'scale(1)',
-              filter: hoveredBubble === bookmark.id ? 'brightness(1.1)' : 'brightness(1)',
             }}
             onClick={() => handleBubbleClick(bookmark)}
           >
@@ -514,33 +501,29 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
             />
 
             {/* External link icon on hover */}
-            <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+            <div className="external-link-icon absolute top-1 right-1 opacity-0 transition-opacity pointer-events-none">
               <ExternalLink className="w-3 h-3 text-white drop-shadow-lg" />
             </div>
           </div>
 
-          {/* Enhanced tooltip */}
-          {hoveredBubble === bookmark.id && !draggedBubble && (
-            <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-black/90 backdrop-blur-sm text-white px-3 py-1 rounded-lg text-sm whitespace-nowrap z-50 border border-white/20 pointer-events-none animate-fade-in">
-              {bookmark.title}
-              <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-black/90"></div>
-            </div>
-          )}
+          {/* Enhanced tooltip - now CSS controlled */}
+          <div className="bubble-tooltip absolute -top-12 left-1/2 transform -translate-x-1/2 bg-black/90 backdrop-blur-sm text-white px-3 py-1 rounded-lg text-sm whitespace-nowrap z-50 border border-white/20 pointer-events-none opacity-0 transition-opacity">
+            {bookmark.title}
+            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-black/90"></div>
+          </div>
 
-          {/* Enhanced remove button */}
-          {hoveredBubble === bookmark.id && !draggedBubble && (
-            <Button
-              size="sm"
-              variant="destructive"
-              className="absolute -top-2 -right-2 w-6 h-6 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-lg hover:scale-110"
-              onClick={(e) => {
-                e.stopPropagation();
-                onRemoveBookmark(bookmark.id);
-              }}
-            >
-              <X className="w-3 h-3" />
-            </Button>
-          )}
+          {/* Enhanced remove button - now CSS controlled */}
+          <Button
+            size="sm"
+            variant="destructive"
+            className="remove-button absolute -top-2 -right-2 w-6 h-6 rounded-full p-0 shadow-lg hover:scale-110"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemoveBookmark(bookmark.id);
+            }}
+          >
+            <X className="w-3 h-3" />
+          </Button>
         </div>
       ))}
     </div>
