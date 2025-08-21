@@ -7,6 +7,7 @@ interface BubbleCanvasProps {
   bookmarks: Bookmark[];
   onRemoveBookmark: (id: string) => void;
   onBubbleClick: (id: string) => void;
+  currentSubscription?: string | null;
 }
 
 // Helper functions for transparent light blue bubble colors
@@ -48,7 +49,7 @@ const getSiteName = (title: string, url: string) => {
 
   // Removed spatial grid - bubbles now move independently
 
-export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: BubbleCanvasProps) => {
+export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, currentSubscription }: BubbleCanvasProps) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [hoveredBubble, setHoveredBubble] = useState<string | null>(null);
   const [draggedBubble, setDraggedBubble] = useState<string | null>(null);
@@ -436,6 +437,17 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
               background: getTransparentBubbleColor(),
               border: `3px solid ${getTransparentBorderColor()}`,
               boxShadow: (() => {
+                // Premium feature - performance data and enhanced glows
+                const isPremium = currentSubscription === 'Premium';
+                
+                if (!isPremium) {
+                  // Basic glow for non-premium users
+                  const basicGlow = `0 0 10px rgba(59, 130, 246, 0.3)`;
+                  const innerGlow = `inset 0 1px 5px rgba(255,255,255,0.1)`;
+                  return `${basicGlow}, ${innerGlow}`;
+                }
+                
+                // Premium performance-based glows
                 const accessCount = bookmark.accessCount || 0;
                 const glowIntensity = Math.min(1 + (accessCount * 0.1), 2);
                 const baseGlow = `0 0 ${15 * glowIntensity}px rgba(59, 130, 246, ${0.4 * glowIntensity})`;

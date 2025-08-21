@@ -276,6 +276,7 @@ const Index = () => {
         bookmarks={bookmarks} 
         onRemoveBookmark={removeBookmark}
         onBubbleClick={incrementAccessCount}
+        currentSubscription={currentSubscription}
       />
 
       {/* Enhanced welcome message with bubble theme */}
