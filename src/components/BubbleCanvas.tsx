@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Bookmark } from '@/pages/Index';
 import { ExternalLink, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import './BubbleCanvas.css';
 
 interface BubbleCanvasProps {
   bookmarks: Bookmark[];
@@ -46,9 +47,83 @@ const getSiteName = (title: string, url: string) => {
   }
 };
 
+  // Spatial partitioning system for efficient collision detection
+  class SpatialGrid {
+    private cellSize: number;
+    private grid: Map<string, HTMLElement[]>;
+    private canvasWidth: number;
+    private canvasHeight: number;
+
+    constructor(cellSize: number, canvasWidth: number, canvasHeight: number) {
+      this.cellSize = cellSize;
+      this.grid = new Map();
+      this.canvasWidth = canvasWidth;
+      this.canvasHeight = canvasHeight;
+    }
+
+    private getCellKey(x: number, y: number): string {
+      const cellX = Math.floor(x / this.cellSize);
+      const cellY = Math.floor(y / this.cellSize);
+      return `${cellX},${cellY}`;
+    }
+
+    clear() {
+      this.grid.clear();
+    }
+
+    addBubble(element: HTMLElement, x: number, y: number, radius: number) {
+      // Add bubble to all cells it might occupy
+      const minX = Math.max(0, x - radius);
+      const maxX = Math.min(this.canvasWidth, x + radius);
+      const minY = Math.max(0, y - radius);
+      const maxY = Math.min(this.canvasHeight, y + radius);
+
+      const startCellX = Math.floor(minX / this.cellSize);
+      const endCellX = Math.floor(maxX / this.cellSize);
+      const startCellY = Math.floor(minY / this.cellSize);
+      const endCellY = Math.floor(maxY / this.cellSize);
+
+      for (let cellX = startCellX; cellX <= endCellX; cellX++) {
+        for (let cellY = startCellY; cellY <= endCellY; cellY++) {
+          const key = `${cellX},${cellY}`;
+          if (!this.grid.has(key)) {
+            this.grid.set(key, []);
+          }
+          this.grid.get(key)!.push(element);
+        }
+      }
+    }
+
+    getNearbyBubbles(x: number, y: number, radius: number): HTMLElement[] {
+      const nearby = new Set<HTMLElement>();
+      
+      // Check all cells that this bubble might interact with
+      const minX = Math.max(0, x - radius - this.cellSize);
+      const maxX = Math.min(this.canvasWidth, x + radius + this.cellSize);
+      const minY = Math.max(0, y - radius - this.cellSize);
+      const maxY = Math.min(this.canvasHeight, y + radius + this.cellSize);
+
+      const startCellX = Math.floor(minX / this.cellSize);
+      const endCellX = Math.floor(maxX / this.cellSize);
+      const startCellY = Math.floor(minY / this.cellSize);
+      const endCellY = Math.floor(maxY / this.cellSize);
+
+      for (let cellX = startCellX; cellX <= endCellX; cellX++) {
+        for (let cellY = startCellY; cellY <= endCellY; cellY++) {
+          const key = `${cellX},${cellY}`;
+          const cellBubbles = this.grid.get(key);
+          if (cellBubbles) {
+            cellBubbles.forEach(bubble => nearby.add(bubble));
+          }
+        }
+      }
+
+      return Array.from(nearby);
+    }
+  }
+
 export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: BubbleCanvasProps) => {
   const canvasRef = useRef<HTMLDivElement>(null);
-  const [hoveredBubble, setHoveredBubble] = useState<string | null>(null);
   const [draggedBubble, setDraggedBubble] = useState<string | null>(null);
   const [clickedBubble, setClickedBubble] = useState<string | null>(null);
   const animationRef = useRef<number>();
@@ -92,6 +167,13 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
 
     const animate = () => {
       const headerHeight = getHeaderHeight();
+      const canvasWidth = canvas.clientWidth;
+      const canvasHeight = canvas.clientHeight;
+      
+      // Create spatial grid with cell size based on average bubble size
+      const averageBubbleSize = bookmarks.reduce((sum, b) => sum + (b.size || 60), 0) / (bookmarks.length || 1);
+      const cellSize = Math.max(averageBubbleSize * 2, 100); // Ensure reasonable cell size
+      const spatialGrid = new SpatialGrid(cellSize, canvasWidth, canvasHeight);
       
       bubbles.forEach((bubble) => {
         const element = bubble as HTMLElement;
@@ -105,36 +187,20 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
           return;
         }
         
-        const isHovered = hoveredBubble === bookmarkId;
         const isClicked = clickedBubble === bookmarkId;
 
-        // Individual bubble floating movement - completely independent
-        if (isHovered) {
-          // Enhanced floating for hovered bubble only
-          const time = Date.now() * 0.003;
-          const uniqueOffset = parseFloat(bookmarkId?.slice(-4) || '1') || 1;
-          
-          // Gentle pulsing and floating when hovered
-          const pulseEffect = Math.sin(time * 2) * 0.05 + 1;
-          data.targetSize = data.baseSize * 1.3 * pulseEffect;
-          
-          // Individual floating motion
-          data.vx += Math.sin(time + uniqueOffset) * 0.02;
-          data.vy += Math.cos(time * 1.2 + uniqueOffset) * 0.02;
-        } else {
-          // Natural floating for all bubbles
-          const time = Date.now() * 0.002;
-          const uniqueOffset = parseFloat(bookmarkId?.slice(-4) || '1') || 1;
-          
-          // Gentle natural floating movement
-          const floatX = Math.sin(time * 0.5 + uniqueOffset) * 0.08;
-          const floatY = Math.cos(time * 0.3 + uniqueOffset * 1.5) * 0.06;
-          
-          data.vx += floatX;
-          data.vy += floatY;
-          
-          data.targetSize = data.baseSize;
-        }
+        // Natural floating for all bubbles
+        const time = Date.now() * 0.002;
+        const uniqueOffset = parseFloat(bookmarkId?.slice(-4) || '1') || 1;
+        
+        // Gentle natural floating movement
+        const floatX = Math.sin(time * 0.5 + uniqueOffset) * 0.08;
+        const floatY = Math.cos(time * 0.3 + uniqueOffset * 1.5) * 0.06;
+        
+        data.vx += floatX;
+        data.vy += floatY;
+        
+        data.targetSize = data.baseSize;
 
         if (isClicked) {
           data.targetSize = data.baseSize * 0.85;
@@ -185,23 +251,39 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
         }
       });
 
-      // Enhanced bubble-to-bubble collision detection
-      bubbles.forEach((bubbleA, indexA) => {
+      // Populate spatial grid with current bubble positions
+      bubbles.forEach((bubble) => {
+        const element = bubble as HTMLElement;
+        const data = bubbleData.get(element);
+        if (!data) return;
+
+        const bookmarkId = element.getAttribute('data-bubble-id');
+        if (draggedBubble === bookmarkId) return; // Skip dragged bubbles
+
+        const radius = data.currentSize / 2;
+        spatialGrid.addBubble(element, data.x, data.y, radius);
+      });
+
+      // Efficient spatial-partitioned collision detection
+      bubbles.forEach((bubbleA) => {
         const elementA = bubbleA as HTMLElement;
         const dataA = bubbleData.get(elementA);
         if (!dataA) return;
 
-        bubbles.forEach((bubbleB, indexB) => {
-          if (indexA >= indexB) return; // Avoid duplicate checks and self-collision
+        const bookmarkIdA = elementA.getAttribute('data-bubble-id');
+        if (draggedBubble === bookmarkIdA) return; // Skip dragged bubbles
+
+        const radiusA = dataA.currentSize / 2;
+        const nearbyBubbles = spatialGrid.getNearbyBubbles(dataA.x, dataA.y, radiusA);
+        
+        nearbyBubbles.forEach((elementB) => {
+          if (elementA === elementB) return; // Skip self
           
-          const elementB = bubbleB as HTMLElement;
           const dataB = bubbleData.get(elementB);
           if (!dataB) return;
 
-          // Skip collision for dragged bubbles
-          const bookmarkIdA = elementA.getAttribute('data-bubble-id');
           const bookmarkIdB = elementB.getAttribute('data-bubble-id');
-          if (draggedBubble === bookmarkIdA || draggedBubble === bookmarkIdB) return;
+          if (draggedBubble === bookmarkIdB) return; // Skip dragged bubbles
 
           // Calculate distance between bubble centers
           const dx = dataB.x - dataA.x;
@@ -246,16 +328,30 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
         });
       });
 
-      // Apply final positions and sizes
+      // Batch all DOM updates together for better performance
+      const styleUpdates: Array<{ element: HTMLElement; transform: string; width: string; height: string }> = [];
+      
       bubbles.forEach((bubble) => {
         const element = bubble as HTMLElement;
         const data = bubbleData.get(element);
         if (!data) return;
 
-        // Apply final position and size using GPU-accelerated transforms
-        element.style.transform = `translate3d(${data.x - data.currentSize / 2}px, ${data.y - data.currentSize / 2}px, 0) scale(${data.currentSize / data.baseSize})`;
-        element.style.width = `${data.baseSize}px`;
-        element.style.height = `${data.baseSize}px`;
+        // Collect all style changes without applying them yet
+        styleUpdates.push({
+          element,
+          transform: `translate3d(${data.x - data.currentSize / 2}px, ${data.y - data.currentSize / 2}px, 0) scale(${data.currentSize / data.baseSize})`,
+          width: `${data.baseSize}px`,
+          height: `${data.baseSize}px`
+        });
+      });
+
+      // Apply all DOM updates in a single batch to minimize style recalculations
+      requestAnimationFrame(() => {
+        styleUpdates.forEach(({ element, transform, width, height }) => {
+          element.style.transform = transform;
+          element.style.width = width;
+          element.style.height = height;
+        });
       });
       
       animationRef.current = requestAnimationFrame(animate);
@@ -268,7 +364,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [bookmarks, draggedBubble, hoveredBubble, clickedBubble]);
+  }, [bookmarks, draggedBubble, clickedBubble]);
 
   const handleBubbleClick = (bookmark: Bookmark) => {
     if (!draggedBubble) {
@@ -357,15 +453,23 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
         <div
           key={bookmark.id}
           data-bubble-id={bookmark.id}
-          className="bubble absolute cursor-pointer transition-all duration-150 group select-none"
+          className="bubble absolute cursor-pointer select-none bubble-hover-effect"
           style={{
-            transform: `translate3d(${bookmark.x}px, ${bookmark.y}px, 0)`,
-            width: bookmark.size,
-            height: bookmark.size,
-            zIndex: hoveredBubble === bookmark.id ? 20 : draggedBubble === bookmark.id ? 30 : 10,
+            width: `${bookmark.size}px`,
+            height: `${bookmark.size}px`,
+            background: getTransparentBubbleColor(),
+            border: `2px solid ${getTransparentBorderColor()}`,
+            borderRadius: '50%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backdropFilter: 'blur(8px)',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+            zIndex: 10,
+            transform: 'translate3d(0, 0, 0)', // Enable GPU acceleration
+            willChange: 'transform', // Optimize for animations
           }}
-          onMouseEnter={() => setHoveredBubble(bookmark.id)}
-          onMouseLeave={() => setHoveredBubble(null)}
           onMouseDown={(e) => handleDragStart(e, bookmark.id)}
           onTouchStart={(e) => handleDragStart(e, bookmark.id)}
         >
@@ -379,15 +483,10 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
                 const accessCount = bookmark.accessCount || 0;
                 const glowIntensity = Math.min(1 + (accessCount * 0.1), 2);
                 const baseGlow = `0 0 ${15 * glowIntensity}px rgba(59, 130, 246, ${0.4 * glowIntensity})`;
-                const hoverGlow = `0 0 ${25 * glowIntensity}px rgba(59, 130, 246, ${0.6 * glowIntensity}), 0 0 ${50 * glowIntensity}px rgba(59, 130, 246, ${0.3 * glowIntensity})`;
-                const innerGlow = `inset 0 ${hoveredBubble === bookmark.id ? 2 : 1}px ${hoveredBubble === bookmark.id ? 10 : 5}px rgba(255,255,255,0.1)`;
+                const innerGlow = `inset 0 1px 5px rgba(255,255,255,0.1)`;
                 
-                return hoveredBubble === bookmark.id 
-                  ? `${hoverGlow}, ${innerGlow}`
-                  : `${baseGlow}, ${innerGlow}`;
+                return `${baseGlow}, ${innerGlow}`;
               })(),
-              transform: hoveredBubble === bookmark.id ? 'scale(1.05)' : 'scale(1)',
-              filter: hoveredBubble === bookmark.id ? 'brightness(1.1)' : 'brightness(1)',
             }}
             onClick={() => handleBubbleClick(bookmark)}
           >
@@ -402,33 +501,29 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
             />
 
             {/* External link icon on hover */}
-            <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+            <div className="external-link-icon absolute top-1 right-1 opacity-0 transition-opacity pointer-events-none">
               <ExternalLink className="w-3 h-3 text-white drop-shadow-lg" />
             </div>
           </div>
 
-          {/* Enhanced tooltip */}
-          {hoveredBubble === bookmark.id && !draggedBubble && (
-            <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-black/90 backdrop-blur-sm text-white px-3 py-1 rounded-lg text-sm whitespace-nowrap z-50 border border-white/20 pointer-events-none animate-fade-in">
-              {bookmark.title}
-              <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-black/90"></div>
-            </div>
-          )}
+          {/* Enhanced tooltip - now CSS controlled */}
+          <div className="bubble-tooltip absolute -top-12 left-1/2 transform -translate-x-1/2 bg-black/90 backdrop-blur-sm text-white px-3 py-1 rounded-lg text-sm whitespace-nowrap z-50 border border-white/20 pointer-events-none opacity-0 transition-opacity">
+            {bookmark.title}
+            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-black/90"></div>
+          </div>
 
-          {/* Enhanced remove button */}
-          {hoveredBubble === bookmark.id && !draggedBubble && (
-            <Button
-              size="sm"
-              variant="destructive"
-              className="absolute -top-2 -right-2 w-6 h-6 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-lg hover:scale-110"
-              onClick={(e) => {
-                e.stopPropagation();
-                onRemoveBookmark(bookmark.id);
-              }}
-            >
-              <X className="w-3 h-3" />
-            </Button>
-          )}
+          {/* Enhanced remove button - now CSS controlled */}
+          <Button
+            size="sm"
+            variant="destructive"
+            className="remove-button absolute -top-2 -right-2 w-6 h-6 rounded-full p-0 shadow-lg hover:scale-110"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemoveBookmark(bookmark.id);
+            }}
+          >
+            <X className="w-3 h-3" />
+          </Button>
         </div>
       ))}
     </div>
