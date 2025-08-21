@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { BubbleCanvas } from '@/components/BubbleCanvas';
 import { AddBookmarkModal } from '@/components/AddBookmarkModal';
 import { PricingModal } from '@/components/PricingModal';
+import { AnalyticsInsights } from '@/components/AnalyticsInsights';
 import { Button } from '@/components/ui/button';
-import { Plus, Star, Sparkles, ShoppingCart, Circle } from 'lucide-react';
+import { Plus, Star, Sparkles, ShoppingCart, Circle, BarChart3 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export interface Bookmark {
@@ -23,6 +24,8 @@ const Index = () => {
   const [availableBubbles, setAvailableBubbles] = useState(5); // 5 free bubbles by default
   const [showAddModal, setShowAddModal] = useState(false);
   const [showPricingModal, setShowPricingModal] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [currentSubscription, setCurrentSubscription] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -42,6 +45,12 @@ const Index = () => {
     const savedBubbles = localStorage.getItem('availableBubbles');
     if (savedBubbles) {
       setAvailableBubbles(parseInt(savedBubbles));
+    }
+
+    // Load subscription status
+    const savedSubscription = localStorage.getItem('currentSubscription');
+    if (savedSubscription) {
+      setCurrentSubscription(savedSubscription);
     }
   }, []);
 
@@ -138,8 +147,15 @@ const Index = () => {
     saveBookmarks(updatedBookmarks);
   };
 
-  const onPurchaseComplete = (bubbleCount: number) => {
+  const onPurchaseComplete = (bubbleCount: number, tier?: string) => {
     saveAvailableBubbles(availableBubbles + bubbleCount);
+    
+    // Update subscription status based on tier
+    if (tier) {
+      setCurrentSubscription(tier);
+      localStorage.setItem('currentSubscription', tier);
+    }
+    
     toast({
       title: "Bubbles delivered! 🎉",
       description: `${bubbleCount} fresh bubbles added to your collection!`,
@@ -229,9 +245,31 @@ const Index = () => {
               <ShoppingCart className="w-3 h-3 mr-1.5" />
               Buy More Bubbles
             </Button>
+            
+            <Button
+              onClick={() => setShowAnalytics(true)}
+              size="sm"
+              className="bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 text-white border-0 flex-1 sm:flex-none font-body font-medium shadow-lg hover:shadow-xl transition-all"
+            >
+              <BarChart3 className="w-3 h-3 mr-1.5" />
+              Analytics
+            </Button>
           </div>
         </div>
       </header>
+
+      {/* Analytics Section */}
+      {showAnalytics && (
+        <div className="relative z-20 p-4 md:p-6">
+          <div className="max-w-7xl mx-auto">
+            <AnalyticsInsights 
+              bookmarks={bookmarks}
+              currentSubscription={currentSubscription}
+              onUpgradeClick={() => setShowPricingModal(true)}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Main bubble canvas */}
       <BubbleCanvas 

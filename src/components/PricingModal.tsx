@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 interface PricingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onPurchaseComplete: (bubbleCount: number) => void;
+  onPurchaseComplete: (bubbleCount: number, tier?: string) => void;
 }
 
 interface PricingTier {
@@ -98,7 +98,7 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
       
       // In a real app, this would integrate with Stripe
       // For demo purposes, we'll simulate a successful purchase
-      onPurchaseComplete(tier.bubbles);
+      onPurchaseComplete(tier.bubbles, tier.id);
       onClose();
       
       toast({
