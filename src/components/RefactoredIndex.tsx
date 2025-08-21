@@ -64,8 +64,8 @@ export const RefactoredIndex = () => {
   const addBookmark = (bookmark: Omit<Bookmark, 'id' | 'x' | 'y' | 'size' | 'color' | 'accessCount'>) => {
     if (availableBubbles <= 0) {
       toast({
-        title: "No bubbles available",
-        description: "Purchase more bubbles to add bookmarks!",
+        title: "Free bubble limit reached! 🫧",
+        description: "You've used all 5 free bubbles. Upgrade to create unlimited bubbles!",
         variant: "destructive",
       });
       setShowPricingModal(true);
@@ -91,9 +91,20 @@ export const RefactoredIndex = () => {
     saveBookmarks(newBookmarks);
     setAvailableBubbles(availableBubbles - 1);
     
+    const remainingBubbles = availableBubbles - 1;
+    let description = `Your new bubble is floating in the bubble universe ✨`;
+    
+    if (remainingBubbles <= 0) {
+      description += ` You've reached your free limit!`;
+    } else if (remainingBubbles <= 2) {
+      description += ` (${remainingBubbles} free bubbles remaining - almost at your limit!)`;
+    } else {
+      description += ` (${remainingBubbles} free bubbles remaining)`;
+    }
+    
     toast({
       title: "Bubble created! 🫧",
-      description: "Your new bubble is floating in the bubble universe ✨",
+      description: description,
     });
   };
 
