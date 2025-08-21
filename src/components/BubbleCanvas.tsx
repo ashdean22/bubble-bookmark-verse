@@ -156,18 +156,20 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
     });
   }, [bubblePositions, draggedBubble, bookmarks]);
 
-  const handleBubbleClick = (bookmark: Bookmark) => {
-    if (!draggedBubble) {
-      setClickedBubble(bookmark.id);
-      onBubbleClick(bookmark.id); // Track access
-      window.open(bookmark.url, '_blank'); // Immediate website access
-      setTimeout(() => setClickedBubble(null), 200);
-    }
+  const handleBubbleClick = (bookmark: Bookmark, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setClickedBubble(bookmark.id);
+    onBubbleClick(bookmark.id); // Track access
+    window.open(bookmark.url, '_blank'); // Immediate website access
+    setTimeout(() => setClickedBubble(null), 200);
   };
 
   const handleDragStart = (e: React.MouseEvent | React.TouchEvent, bookmarkId: string) => {
-    e.preventDefault();
-    setDraggedBubble(bookmarkId);
+    // Only start drag after a short delay to allow clicks
+    setTimeout(() => {
+      setDraggedBubble(bookmarkId);
+    }, 150);
     
     const bubble = e.currentTarget as HTMLElement;
     const rect = bubble.getBoundingClientRect();
@@ -281,7 +283,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
               transform: hoveredBubble === bookmark.id ? 'scale(1.05)' : 'scale(1)',
               filter: hoveredBubble === bookmark.id ? 'brightness(1.1)' : 'brightness(1)',
             }}
-            onClick={() => handleBubbleClick(bookmark)}
+            onClick={(e) => handleBubbleClick(bookmark, e)}
           >
             {/* Favicon - centered */}
             <img
