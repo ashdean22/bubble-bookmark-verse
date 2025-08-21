@@ -9,26 +9,15 @@ interface BubbleCanvasProps {
   onBubbleClick: (id: string) => void;
 }
 
-// Helper functions for bubble styling using design system
-const getBubbleGradient = (state: 'default' | 'hover' | 'active' = 'default') => {
-  switch (state) {
-    case 'hover':
-      return 'var(--gradient-bubble-hover)';
-    case 'active':
-      return 'var(--gradient-bubble-active)';
-    default:
-      return 'var(--gradient-bubble)';
-  }
+// Helper functions for transparent light blue bubble colors
+const getTransparentBubbleColor = () => {
+  // Light blue transparent gradient
+  return 'linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(29, 78, 216, 0.4))';
 };
 
-const getBubbleBorder = () => {
-  return `2px solid hsl(var(--bubble-border))`;
-};
-
-const getBubbleGlow = (intensity = 1) => {
-  const baseGlow = `0 0 ${20 * intensity}px hsl(var(--bubble-glow) / ${0.4 * intensity})`;
-  const innerGlow = `inset 0 1px ${5 * intensity}px hsl(var(--primary-foreground) / 0.1)`;
-  return `${baseGlow}, ${innerGlow}`;
+const getTransparentBorderColor = () => {
+  // Light blue border
+  return 'rgba(59, 130, 246, 0.6)';
 };
 
 const getPerformancePercentage = (accessCount: number) => {
@@ -393,28 +382,23 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
     };
   }, [bookmarks, draggedBubble, hoveredBubble, clickedBubble]);
 
-  const handleBubbleClick = (bookmark: Bookmark, event: React.MouseEvent) => {
-    // Only handle click if we haven't started dragging
+  const handleBubbleClick = (bookmark: Bookmark) => {
     if (!draggedBubble) {
-      event.preventDefault();
-      event.stopPropagation();
-      
       setClickedBubble(bookmark.id);
       onBubbleClick(bookmark.id); // Track access
-      
-      // Immediate link opening for seamless access
-      window.open(bookmark.url, '_blank');
-      
-      // Reset clicked state after visual feedback
-      setTimeout(() => setClickedBubble(null), 150);
+      setTimeout(() => setClickedBubble(null), 200);
+      setTimeout(() => {
+        window.open(bookmark.url, '_blank');
+      }, 100);
     }
   };
 
-  const dragStartTimeRef = useRef<number>(0);
-  const dragStartPositionRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-
   const handleDragStart = (e: React.MouseEvent | React.TouchEvent, bookmarkId: string) => {
-    dragStartTimeRef.current = Date.now();
+    e.preventDefault();
+    setDraggedBubble(bookmarkId);
+    
+    const bubble = e.currentTarget as HTMLElement;
+    const rect = bubble.getBoundingClientRect();
     
     let clientX, clientY;
     if ('touches' in e) {
@@ -425,25 +409,10 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
       clientY = e.clientY;
     }
     
-    dragStartPositionRef.current = { x: clientX, y: clientY };
-    
-    const bubble = e.currentTarget as HTMLElement;
-    const rect = bubble.getBoundingClientRect();
-    
     dragOffsetRef.current = {
       x: clientX - rect.left,
       y: clientY - rect.top
     };
-
-    // Start drag detection after a small delay to differentiate from clicks
-    setTimeout(() => {
-      const currentTime = Date.now();
-      const timeDiff = currentTime - dragStartTimeRef.current;
-      
-      if (timeDiff >= 100) { // Only start drag if held for at least 100ms
-        setDraggedBubble(bookmarkId);
-      }
-    }, 100);
   };
 
   const handleDragMove = (e: MouseEvent | TouchEvent) => {
@@ -516,28 +485,23 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
           <div
             className="w-full h-full rounded-full flex flex-col items-center justify-center relative transition-all duration-300 ease-out"
             style={{
-              background: getBubbleGradient(
-                clickedBubble === bookmark.id ? 'active' :
-                hoveredBubble === bookmark.id ? 'hover' : 'default'
-              ),
-              border: getBubbleBorder(),
+              background: getTransparentBubbleColor(),
+              border: `3px solid ${getTransparentBorderColor()}`,
               boxShadow: (() => {
                 const accessCount = bookmark.accessCount || 0;
-                const glowIntensity = Math.min(1 + (accessCount * 0.1), 2.5);
+                const glowIntensity = Math.min(1 + (accessCount * 0.1), 2);
+                const baseGlow = `0 0 ${15 * glowIntensity}px rgba(59, 130, 246, ${0.4 * glowIntensity})`;
+                const hoverGlow = `0 0 ${25 * glowIntensity}px rgba(59, 130, 246, ${0.6 * glowIntensity}), 0 0 ${50 * glowIntensity}px rgba(59, 130, 246, ${0.3 * glowIntensity})`;
+                const innerGlow = `inset 0 ${hoveredBubble === bookmark.id ? 2 : 1}px ${hoveredBubble === bookmark.id ? 10 : 5}px rgba(255,255,255,0.1)`;
                 
-                if (clickedBubble === bookmark.id) {
-                  return getBubbleGlow(glowIntensity * 1.5);
-                } else if (hoveredBubble === bookmark.id) {
-                  return getBubbleGlow(glowIntensity * 1.2);
-                } else {
-                  return getBubbleGlow(glowIntensity);
-                }
+                return hoveredBubble === bookmark.id 
+                  ? `${hoverGlow}, ${innerGlow}`
+                  : `${baseGlow}, ${innerGlow}`;
               })(),
-              transform: clickedBubble === bookmark.id ? 'scale(0.95)' :
-                         hoveredBubble === bookmark.id ? 'scale(1.05)' : 'scale(1)',
-              filter: hoveredBubble === bookmark.id ? 'brightness(1.1) saturate(1.1)' : 'brightness(1)',
+              transform: hoveredBubble === bookmark.id ? 'scale(1.05)' : 'scale(1)',
+              filter: hoveredBubble === bookmark.id ? 'brightness(1.1)' : 'brightness(1)',
             }}
-            onClick={(e) => handleBubbleClick(bookmark, e)}
+            onClick={() => handleBubbleClick(bookmark)}
           >
             {/* Favicon - centered */}
             <img
