@@ -46,81 +46,6 @@ const getSiteName = (title: string, url: string) => {
   }
 };
 
-  // Spatial partitioning system for efficient collision detection
-  class SpatialGrid {
-    private cellSize: number;
-    private grid: Map<string, HTMLElement[]>;
-    private canvasWidth: number;
-    private canvasHeight: number;
-
-    constructor(cellSize: number, canvasWidth: number, canvasHeight: number) {
-      this.cellSize = cellSize;
-      this.grid = new Map();
-      this.canvasWidth = canvasWidth;
-      this.canvasHeight = canvasHeight;
-    }
-
-    private getCellKey(x: number, y: number): string {
-      const cellX = Math.floor(x / this.cellSize);
-      const cellY = Math.floor(y / this.cellSize);
-      return `${cellX},${cellY}`;
-    }
-
-    clear() {
-      this.grid.clear();
-    }
-
-    addBubble(element: HTMLElement, x: number, y: number, radius: number) {
-      // Add bubble to all cells it might occupy
-      const minX = Math.max(0, x - radius);
-      const maxX = Math.min(this.canvasWidth, x + radius);
-      const minY = Math.max(0, y - radius);
-      const maxY = Math.min(this.canvasHeight, y + radius);
-
-      const startCellX = Math.floor(minX / this.cellSize);
-      const endCellX = Math.floor(maxX / this.cellSize);
-      const startCellY = Math.floor(minY / this.cellSize);
-      const endCellY = Math.floor(maxY / this.cellSize);
-
-      for (let cellX = startCellX; cellX <= endCellX; cellX++) {
-        for (let cellY = startCellY; cellY <= endCellY; cellY++) {
-          const key = `${cellX},${cellY}`;
-          if (!this.grid.has(key)) {
-            this.grid.set(key, []);
-          }
-          this.grid.get(key)!.push(element);
-        }
-      }
-    }
-
-    getNearbyBubbles(x: number, y: number, radius: number): HTMLElement[] {
-      const nearby = new Set<HTMLElement>();
-      
-      // Check all cells that this bubble might interact with
-      const minX = Math.max(0, x - radius - this.cellSize);
-      const maxX = Math.min(this.canvasWidth, x + radius + this.cellSize);
-      const minY = Math.max(0, y - radius - this.cellSize);
-      const maxY = Math.min(this.canvasHeight, y + radius + this.cellSize);
-
-      const startCellX = Math.floor(minX / this.cellSize);
-      const endCellX = Math.floor(maxX / this.cellSize);
-      const startCellY = Math.floor(minY / this.cellSize);
-      const endCellY = Math.floor(maxY / this.cellSize);
-
-      for (let cellX = startCellX; cellX <= endCellX; cellX++) {
-        for (let cellY = startCellY; cellY <= endCellY; cellY++) {
-          const key = `${cellX},${cellY}`;
-          const cellBubbles = this.grid.get(key);
-          if (cellBubbles) {
-            cellBubbles.forEach(bubble => nearby.add(bubble));
-          }
-        }
-      }
-
-      return Array.from(nearby);
-    }
-  }
-
 export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: BubbleCanvasProps) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [hoveredBubble, setHoveredBubble] = useState<string | null>(null);
@@ -128,246 +53,79 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
   const [clickedBubble, setClickedBubble] = useState<string | null>(null);
   const animationRef = useRef<number>();
   const dragOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const workerRef = useRef<Worker | null>(null);
+  const [bubblePositions, setBubblePositions] = useState<Map<string, { x: number; y: number; size: number }>>(new Map());
 
+  // Initialize web worker
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    // Create worker from the worker file
+    workerRef.current = new Worker(new URL('../workers/bubblePhysics.worker.ts', import.meta.url), { type: 'module' });
+    
+    // Handle messages from worker
+    workerRef.current.onmessage = (e) => {
+      const { type, data } = e.data;
+      if (type === 'physics-update') {
+        const newPositions = new Map();
+        data.forEach((bubble: {id: string, x: number, y: number, size: number}) => {
+          newPositions.set(bubble.id, { x: bubble.x, y: bubble.y, size: bubble.size });
+        });
+        setBubblePositions(newPositions);
+      }
+    };
 
-    const bubbles = canvas.querySelectorAll('.bubble');
+    return () => {
+      if (workerRef.current) {
+        workerRef.current.terminate();
+      }
+    };
+  }, []);
 
-    // Calculate header height to prevent bubbles from floating above buttons
+  // Initialize bubbles in worker when bookmarks change
+  useEffect(() => {
+    if (!workerRef.current || bookmarks.length === 0) return;
+
     const getHeaderHeight = () => {
-      // Mobile: approximately 120px for header with buttons
-      // Desktop: approximately 100px for header with buttons
       return window.innerWidth < 640 ? 120 : 100;
     };
 
-    // Initialize bubble positions and velocities with independent physics
-    const bubbleData = new Map();
-    bubbles.forEach((bubble) => {
-      const element = bubble as HTMLElement;
-      const bookmarkId = element.getAttribute('data-bubble-id');
-      const bookmark = bookmarks.find(b => b.id === bookmarkId);
-      
-      const headerHeight = getHeaderHeight();
-      
-      bubbleData.set(element, {
-        x: bookmark?.x || Math.random() * (window.innerWidth - 100),
-        y: Math.max(
-          bookmark?.y || Math.random() * (window.innerHeight - 100),
-          headerHeight + 50 // Ensure bubbles start below header
-        ),
-        vx: (Math.random() - 0.5) * 0.5, // Reduced initial velocity
-        vy: (Math.random() - 0.5) * 0.5,
-        baseSize: bookmark?.size || 60,
-        currentSize: bookmark?.size || 60,
-        targetSize: bookmark?.size || 60,
-      });
+    const bubbleData = bookmarks.map(bookmark => ({
+      id: bookmark.id,
+      x: bookmark.x || Math.random() * (window.innerWidth - 100),
+      y: bookmark.y || Math.random() * (window.innerHeight - 100),
+      size: bookmark.size || 60,
+      accessCount: bookmark.accessCount || 0
+    }));
+
+    workerRef.current.postMessage({
+      type: 'init',
+      data: { bubbles: bubbleData, headerHeight: getHeaderHeight() }
     });
+  }, [bookmarks]);
+
+  // Animation loop - send updates to worker
+  useEffect(() => {
+    if (!workerRef.current) return;
 
     const animate = () => {
-      const headerHeight = getHeaderHeight();
-      const canvasWidth = canvas.clientWidth;
-      const canvasHeight = canvas.clientHeight;
-      
-      // Create spatial grid with cell size based on average bubble size
-      const averageBubbleSize = bookmarks.reduce((sum, b) => sum + (b.size || 60), 0) / (bookmarks.length || 1);
-      const cellSize = Math.max(averageBubbleSize * 2, 100); // Ensure reasonable cell size
-      const spatialGrid = new SpatialGrid(cellSize, canvasWidth, canvasHeight);
-      
-      bubbles.forEach((bubble) => {
-        const element = bubble as HTMLElement;
-        const data = bubbleData.get(element);
-        if (!data) return;
+      const canvas = canvasRef.current;
+      if (!canvas) return;
 
-        const bookmarkId = element.getAttribute('data-bubble-id');
-        
-        // Skip animation for dragged bubble
-        if (draggedBubble === bookmarkId) {
-          return;
-        }
-        
-        const isHovered = hoveredBubble === bookmarkId;
-        const isClicked = clickedBubble === bookmarkId;
+      const getHeaderHeight = () => {
+        return window.innerWidth < 640 ? 120 : 100;
+      };
 
-        // Individual bubble floating movement - completely independent
-        if (isHovered) {
-          // Enhanced floating for hovered bubble only
-          const time = Date.now() * 0.003;
-          const uniqueOffset = parseFloat(bookmarkId?.slice(-4) || '1') || 1;
-          
-          // Gentle pulsing and floating when hovered
-          const pulseEffect = Math.sin(time * 2) * 0.05 + 1;
-          data.targetSize = data.baseSize * 1.3 * pulseEffect;
-          
-          // Individual floating motion
-          data.vx += Math.sin(time + uniqueOffset) * 0.02;
-          data.vy += Math.cos(time * 1.2 + uniqueOffset) * 0.02;
-        } else {
-          // Natural floating for all bubbles
-          const time = Date.now() * 0.002;
-          const uniqueOffset = parseFloat(bookmarkId?.slice(-4) || '1') || 1;
-          
-          // Gentle natural floating movement
-          const floatX = Math.sin(time * 0.5 + uniqueOffset) * 0.08;
-          const floatY = Math.cos(time * 0.3 + uniqueOffset * 1.5) * 0.06;
-          
-          data.vx += floatX;
-          data.vy += floatY;
-          
-          data.targetSize = data.baseSize;
-        }
-
-        if (isClicked) {
-          data.targetSize = data.baseSize * 0.85;
-        }
-
-        // Smooth size interpolation
-        data.currentSize += (data.targetSize - data.currentSize) * 0.12;
-
-        // Apply velocity
-        data.x += data.vx;
-        data.y += data.vy;
-
-        // Enhanced boundary collision with more noticeable bouncing
-        const radius = data.currentSize / 2;
-        const canvasWidth = canvas.clientWidth;
-        const canvasHeight = canvas.clientHeight;
-        const topBoundary = headerHeight + radius; // Prevent bubbles from going above header
-        const restitution = 0.85; // Increased bounciness factor
-        
-        // Left and right boundaries with enhanced bouncing
-        if (data.x < radius) {
-          data.x = radius;
-          data.vx = Math.abs(data.vx) * restitution + 0.5; // Add minimum bounce velocity
-        } else if (data.x > canvasWidth - radius) {
-          data.x = canvasWidth - radius;
-          data.vx = -Math.abs(data.vx) * restitution - 0.5; // Add minimum bounce velocity
-        }
-        
-        // Top and bottom boundaries with enhanced bouncing
-        if (data.y < topBoundary) {
-          data.y = topBoundary;
-          data.vy = Math.abs(data.vy) * restitution + 0.5; // Add minimum bounce velocity
-        } else if (data.y > canvasHeight - radius) {
-          data.y = canvasHeight - radius;
-          data.vy = -Math.abs(data.vy) * restitution - 0.5; // Add minimum bounce velocity
-        }
-
-        // Reduced velocity damping to preserve bouncing energy
-        data.vx *= 0.995;
-        data.vy *= 0.995;
-
-        // Velocity limits for gentle floating movement
-        const maxVelocity = 1.0;
-        const velocityMagnitude = Math.sqrt(data.vx * data.vx + data.vy * data.vy);
-        if (velocityMagnitude > maxVelocity) {
-          data.vx = (data.vx / velocityMagnitude) * maxVelocity;
-          data.vy = (data.vy / velocityMagnitude) * maxVelocity;
-        }
-      });
-
-      // Populate spatial grid with current bubble positions
-      bubbles.forEach((bubble) => {
-        const element = bubble as HTMLElement;
-        const data = bubbleData.get(element);
-        if (!data) return;
-
-        const bookmarkId = element.getAttribute('data-bubble-id');
-        if (draggedBubble === bookmarkId) return; // Skip dragged bubbles
-
-        const radius = data.currentSize / 2;
-        spatialGrid.addBubble(element, data.x, data.y, radius);
-      });
-
-      // Efficient spatial-partitioned collision detection
-      bubbles.forEach((bubbleA) => {
-        const elementA = bubbleA as HTMLElement;
-        const dataA = bubbleData.get(elementA);
-        if (!dataA) return;
-
-        const bookmarkIdA = elementA.getAttribute('data-bubble-id');
-        if (draggedBubble === bookmarkIdA) return; // Skip dragged bubbles
-
-        const radiusA = dataA.currentSize / 2;
-        const nearbyBubbles = spatialGrid.getNearbyBubbles(dataA.x, dataA.y, radiusA);
-        
-        nearbyBubbles.forEach((elementB) => {
-          if (elementA === elementB) return; // Skip self
-          
-          const dataB = bubbleData.get(elementB);
-          if (!dataB) return;
-
-          const bookmarkIdB = elementB.getAttribute('data-bubble-id');
-          if (draggedBubble === bookmarkIdB) return; // Skip dragged bubbles
-
-          // Calculate distance between bubble centers
-          const dx = dataB.x - dataA.x;
-          const dy = dataB.y - dataA.y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-          const minDistance = (dataA.currentSize + dataB.currentSize) / 2;
-
-          // Check for collision with slight buffer for better detection
-          if (distance < minDistance + 2 && distance > 0) {
-            // Calculate collision normal
-            const normalX = dx / distance;
-            const normalY = dy / distance;
-
-            // Separate bubbles to prevent overlap
-            const overlap = minDistance - distance + 4; // Add buffer
-            const separationX = (normalX * overlap) / 2;
-            const separationY = (normalY * overlap) / 2;
-            
-            dataA.x -= separationX;
-            dataA.y -= separationY;
-            dataB.x += separationX;
-            dataB.y += separationY;
-
-            // Calculate relative velocity
-            const relativeVx = dataB.vx - dataA.vx;
-            const relativeVy = dataB.vy - dataA.vy;
-            const relativeSpeed = relativeVx * normalX + relativeVy * normalY;
-
-            // Enhanced collision response with higher restitution
-            const restitution = 0.9; // Increased bounciness
-            const impulse = 2 * relativeSpeed / (1 + 1); // Assuming equal mass
-            const impulseX = impulse * normalX * restitution;
-            const impulseY = impulse * normalY * restitution;
-
-            // Apply impulse to velocities with minimum bounce
-            const minBounce = 0.3;
-            dataA.vx += impulseX + (Math.random() - 0.5) * minBounce;
-            dataA.vy += impulseY + (Math.random() - 0.5) * minBounce;
-            dataB.vx -= impulseX + (Math.random() - 0.5) * minBounce;
-            dataB.vy -= impulseY + (Math.random() - 0.5) * minBounce;
+      workerRef.current!.postMessage({
+        type: 'update',
+        data: {
+          config: {
+            canvasWidth: canvas.clientWidth,
+            canvasHeight: canvas.clientHeight,
+            headerHeight: getHeaderHeight(),
+            hoveredBubble,
+            draggedBubble,
+            clickedBubble
           }
-        });
-      });
-
-      // Batch all DOM updates together for better performance
-      const styleUpdates: Array<{ element: HTMLElement; transform: string; width: string; height: string }> = [];
-      
-      bubbles.forEach((bubble) => {
-        const element = bubble as HTMLElement;
-        const data = bubbleData.get(element);
-        if (!data) return;
-
-        // Collect all style changes without applying them yet
-        styleUpdates.push({
-          element,
-          transform: `translate3d(${data.x - data.currentSize / 2}px, ${data.y - data.currentSize / 2}px, 0) scale(${data.currentSize / data.baseSize})`,
-          width: `${data.baseSize}px`,
-          height: `${data.baseSize}px`
-        });
-      });
-
-      // Apply all DOM updates in a single batch to minimize style recalculations
-      requestAnimationFrame(() => {
-        styleUpdates.forEach(({ element, transform, width, height }) => {
-          element.style.transform = transform;
-          element.style.width = width;
-          element.style.height = height;
-        });
+        }
       });
       
       animationRef.current = requestAnimationFrame(animate);
@@ -380,7 +138,23 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [bookmarks, draggedBubble, hoveredBubble, clickedBubble]);
+  }, [hoveredBubble, draggedBubble, clickedBubble]);
+
+  // Apply DOM updates when positions change
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      bubblePositions.forEach((position, bubbleId) => {
+        const element = document.querySelector(`[data-bubble-id="${bubbleId}"]`) as HTMLElement;
+        if (element && draggedBubble !== bubbleId) {
+          const bookmark = bookmarks.find(b => b.id === bubbleId);
+          const baseSize = bookmark?.size || 60;
+          element.style.transform = `translate3d(${position.x - position.size / 2}px, ${position.y - position.size / 2}px, 0) scale(${position.size / baseSize})`;
+          element.style.width = `${baseSize}px`;
+          element.style.height = `${baseSize}px`;
+        }
+      });
+    });
+  }, [bubblePositions, draggedBubble, bookmarks]);
 
   const handleBubbleClick = (bookmark: Bookmark) => {
     if (!draggedBubble) {
@@ -431,9 +205,17 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
     if (bubble) {
       const headerHeight = window.innerWidth < 640 ? 120 : 100;
       const newX = clientX - dragOffsetRef.current.x;
-      const newY = Math.max(clientY - dragOffsetRef.current.y, headerHeight + 20); // Prevent dragging above header
+      const newY = Math.max(clientY - dragOffsetRef.current.y, headerHeight + 20);
       
       bubble.style.transform = `translate3d(${newX}px, ${newY}px, 0)`;
+      
+      // Update worker with new position
+      if (workerRef.current) {
+        workerRef.current.postMessage({
+          type: 'updateBubble',
+          data: { id: draggedBubble, x: newX, y: newY }
+        });
+      }
     }
   };
 
