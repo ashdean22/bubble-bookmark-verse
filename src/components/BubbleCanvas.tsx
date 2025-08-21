@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from 'react';
 import { Bookmark } from '@/pages/Index';
 import { ExternalLink, X } from 'lucide-react';
@@ -6,13 +7,16 @@ import { Button } from '@/components/ui/button';
 interface BubbleCanvasProps {
   bookmarks: Bookmark[];
   onRemoveBookmark: (id: string) => void;
+  onBubbleClick: (id: string) => void;
 }
 
-export const BubbleCanvas = ({ bookmarks, onRemoveBookmark }: BubbleCanvasProps) => {
+export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: BubbleCanvasProps) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [hoveredBubble, setHoveredBubble] = useState<string | null>(null);
+  const [draggedBubble, setDraggedBubble] = useState<string | null>(null);
+  const [clickedBubble, setClickedBubble] = useState<string | null>(null);
   const animationRef = useRef<number>();
-  const mouseInteractionRef = useRef<number>();
+  const dragOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -21,25 +25,53 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark }: BubbleCanvasProps)
     const bubbles = canvas.querySelectorAll('.bubble');
     let mouseX = 0;
     let mouseY = 0;
+    let isMouseInCanvas = false;
 
-    // Initialize bubble positions and velocities
+    // Initialize bubble positions and velocities with CryptoBubbles-style physics
     const bubbleData = new Map();
-    bubbles.forEach((bubble, index) => {
+    bubbles.forEach((bubble) => {
       const element = bubble as HTMLElement;
+      const bookmarkId = element.getAttribute('data-bubble-id');
+      const bookmark = bookmarks.find(b => b.id === bookmarkId);
+      
       bubbleData.set(element, {
         x: parseFloat(element.style.left) || Math.random() * (window.innerWidth - 100),
         y: parseFloat(element.style.top) || Math.random() * (window.innerHeight - 100),
-        vx: (Math.random() - 0.5) * 2, // velocity x
-        vy: (Math.random() - 0.5) * 2, // velocity y
-        baseX: 0,
-        baseY: 0,
-        mouseInfluence: 0
+        vx: (Math.random() - 0.5) * 1.5,
+        vy: (Math.random() - 0.5) * 1.5,
+        baseSize: bookmark?.size || 60,
+        currentSize: bookmark?.size || 60,
+        targetSize: bookmark?.size || 60,
+        originalX: 0,
+        originalY: 0,
+        mass: (bookmark?.size || 60) / 60, // Larger bubbles have more mass
+        attracted: false
       });
+      
+      // Store original position for spring-back effect
+      const data = bubbleData.get(element);
+      data.originalX = data.x;
+      data.originalY = data.y;
     });
 
     const handleMouseMove = (e: MouseEvent) => {
-      mouseX = e.clientX;
-      mouseY = e.clientY;
+      const rect = canvas.getBoundingClientRect();
+      mouseX = e.clientX - rect.left;
+      mouseY = e.clientY - rect.top;
+      isMouseInCanvas = true;
+    };
+
+    const handleMouseLeave = () => {
+      isMouseInCanvas = false;
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length > 0) {
+        const rect = canvas.getBoundingClientRect();
+        mouseX = e.touches[0].clientX - rect.left;
+        mouseY = e.touches[0].clientY - rect.top;
+        isMouseInCanvas = true;
+      }
     };
 
     const animate = () => {
@@ -48,139 +80,345 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark }: BubbleCanvasProps)
         const data = bubbleData.get(element);
         if (!data) return;
 
-        const rect = element.getBoundingClientRect();
-        const bubbleX = rect.left + rect.width / 2;
-        const bubbleY = rect.top + rect.height / 2;
+        const bookmarkId = element.getAttribute('data-bubble-id');
         
-        // Mouse interaction
+        // Skip animation for dragged bubble
+        if (draggedBubble === bookmarkId) {
+          return;
+        }
+
+        const bubbleX = data.x + data.currentSize / 2;
+        const bubbleY = data.y + data.currentSize / 2;
+        
+        // CryptoBubbles-style mouse interaction
         const deltaX = mouseX - bubbleX;
         const deltaY = mouseY - bubbleY;
         const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
         
-        let mouseForceX = 0;
-        let mouseForceY = 0;
-        if (distance < 200 && distance > 0) {
-          const force = (200 - distance) / 200;
-          mouseForceX = -deltaX * force * 0.5;
-          mouseForceY = -deltaY * force * 0.5;
+        const isHovered = hoveredBubble === bookmarkId;
+        const isClicked = clickedBubble === bookmarkId;
+        
+        // Strong attraction zone (like CryptoBubbles)
+        const attractionRadius = 200;
+        const repulsionRadius = 80;
+        
+        if (isMouseInCanvas && distance < attractionRadius && distance > 0) {
+          const normalizedX = deltaX / distance;
+          const normalizedY = deltaY / distance;
+          
+          if (distance < repulsionRadius) {
+            // Strong repulsion when too close
+            const repulsionForce = (repulsionRadius - distance) / repulsionRadius * 8;
+            data.vx -= normalizedX * repulsionForce;
+            data.vy -= normalizedY * repulsionForce;
+            data.attracted = false;
+          } else {
+            // Attraction force (stronger than before)
+            const attractionForce = Math.pow((attractionRadius - distance) / attractionRadius, 2) * 3;
+            data.vx += normalizedX * attractionForce;
+            data.vy += normalizedY * attractionForce;
+            data.attracted = true;
+          }
+        } else {
+          data.attracted = false;
+          
+          // Spring back to original position when mouse is far
+          if (!isMouseInCanvas || distance > attractionRadius) {
+            const springX = (data.originalX - data.x) * 0.01;
+            const springY = (data.originalY - data.y) * 0.01;
+            data.vx += springX;
+            data.vy += springY;
+          }
         }
 
-        // Continuous floating animation
-        data.x += data.vx;
-        data.y += data.vy;
+        // Bubble-to-bubble collision detection and avoidance
+        bubbles.forEach((otherBubble) => {
+          if (otherBubble === bubble) return;
+          
+          const otherData = bubbleData.get(otherBubble);
+          if (!otherData) return;
+          
+          const otherX = otherData.x + otherData.currentSize / 2;
+          const otherY = otherData.y + otherData.currentSize / 2;
+          
+          const dx = bubbleX - otherX;
+          const dy = bubbleY - otherY;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          const minDistance = (data.currentSize + otherData.currentSize) / 2 + 10;
+          
+          if (distance < minDistance && distance > 0) {
+            const force = (minDistance - distance) / minDistance * 0.5;
+            const normalizedX = dx / distance;
+            const normalizedY = dy / distance;
+            
+            data.vx += normalizedX * force;
+            data.vy += normalizedY * force;
+          }
+        });
 
-        // Boundary collision
-        const padding = 50;
-        if (data.x < padding || data.x > window.innerWidth - padding) {
-          data.vx *= -1;
-          data.x = Math.max(padding, Math.min(window.innerWidth - padding, data.x));
+        // Dynamic sizing based on interaction
+        if (isClicked) {
+          data.targetSize = data.baseSize * 0.85;
+        } else if (isHovered) {
+          data.targetSize = data.baseSize * 1.5;
+        } else if (data.attracted) {
+          data.targetSize = data.baseSize * 1.2;
+        } else {
+          data.targetSize = data.baseSize;
         }
-        if (data.y < padding || data.y > window.innerHeight - padding) {
-          data.vy *= -1;
-          data.y = Math.max(padding, Math.min(window.innerHeight - padding, data.y));
+
+        // Smooth size interpolation
+        data.currentSize += (data.targetSize - data.currentSize) * 0.12;
+
+        // Apply velocity with mass consideration
+        data.x += data.vx / data.mass;
+        data.y += data.vy / data.mass;
+
+        // Enhanced boundary collision with bouncing
+        const padding = data.currentSize / 2 + 20;
+        const canvasWidth = canvas.clientWidth;
+        const canvasHeight = canvas.clientHeight;
+        
+        if (data.x < padding) {
+          data.x = padding;
+          data.vx *= -0.7;
+        } else if (data.x > canvasWidth - padding) {
+          data.x = canvasWidth - padding;
+          data.vx *= -0.7;
+        }
+        
+        if (data.y < padding) {
+          data.y = padding;
+          data.vy *= -0.7;
+        } else if (data.y > canvasHeight - padding) {
+          data.y = canvasHeight - padding;
+          data.vy *= -0.7;
         }
 
-        // Apply small random variations to keep movement interesting
-        data.vx += (Math.random() - 0.5) * 0.1;
-        data.vy += (Math.random() - 0.5) * 0.1;
+        // Velocity damping (less damping when attracted for more responsive movement)
+        const dampingFactor = data.attracted ? 0.92 : 0.96;
+        data.vx *= dampingFactor;
+        data.vy *= dampingFactor;
 
-        // Limit velocity
-        const maxVelocity = 1.5;
-        data.vx = Math.max(-maxVelocity, Math.min(maxVelocity, data.vx));
-        data.vy = Math.max(-maxVelocity, Math.min(maxVelocity, data.vy));
+        // Velocity limits
+        const maxVelocity = data.attracted ? 8 : 4;
+        const velocityMagnitude = Math.sqrt(data.vx * data.vx + data.vy * data.vy);
+        if (velocityMagnitude > maxVelocity) {
+          data.vx = (data.vx / velocityMagnitude) * maxVelocity;
+          data.vy = (data.vy / velocityMagnitude) * maxVelocity;
+        }
 
-        // Apply damping
-        data.vx *= 0.99;
-        data.vy *= 0.99;
-
-        // Combine floating and mouse interaction
-        const finalX = data.x + mouseForceX;
-        const finalY = data.y + mouseForceY;
-
-        element.style.left = `${finalX}px`;
-        element.style.top = `${finalY}px`;
+        // Apply final position and size
+        element.style.left = `${data.x - data.currentSize / 2}px`;
+        element.style.top = `${data.y - data.currentSize / 2}px`;
+        element.style.width = `${data.currentSize}px`;
+        element.style.height = `${data.currentSize}px`;
       });
       
       animationRef.current = requestAnimationFrame(animate);
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('mouseleave', handleMouseLeave);
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
     animate();
 
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
+      canvas.removeEventListener('mousemove', handleMouseMove);
+      canvas.removeEventListener('mouseleave', handleMouseLeave);
+      canvas.removeEventListener('touchmove', handleTouchMove);
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [bookmarks]);
+  }, [bookmarks, draggedBubble, hoveredBubble, clickedBubble]);
 
   const handleBubbleClick = (bookmark: Bookmark) => {
-    window.open(bookmark.url, '_blank');
+    if (!draggedBubble) {
+      setClickedBubble(bookmark.id);
+      onBubbleClick(bookmark.id); // Track access
+      setTimeout(() => setClickedBubble(null), 200);
+      setTimeout(() => {
+        window.open(bookmark.url, '_blank');
+      }, 100);
+    }
   };
+
+  const handleDragStart = (e: React.MouseEvent | React.TouchEvent, bookmarkId: string) => {
+    e.preventDefault();
+    setDraggedBubble(bookmarkId);
+    
+    const bubble = e.currentTarget as HTMLElement;
+    const rect = bubble.getBoundingClientRect();
+    
+    let clientX, clientY;
+    if ('touches' in e) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    }
+    
+    dragOffsetRef.current = {
+      x: clientX - rect.left,
+      y: clientY - rect.top
+    };
+  };
+
+  const handleDragMove = (e: MouseEvent | TouchEvent) => {
+    if (!draggedBubble) return;
+    
+    let clientX, clientY;
+    if ('touches' in e) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    }
+    
+    const bubble = document.querySelector(`[data-bubble-id="${draggedBubble}"]`) as HTMLElement;
+    if (bubble) {
+      const newX = clientX - dragOffsetRef.current.x;
+      const newY = clientY - dragOffsetRef.current.y;
+      
+      bubble.style.left = `${newX}px`;
+      bubble.style.top = `${newY}px`;
+    }
+  };
+
+  const handleDragEnd = () => {
+    setDraggedBubble(null);
+  };
+
+  useEffect(() => {
+    if (draggedBubble) {
+      const handleMouseMove = (e: MouseEvent) => handleDragMove(e);
+      const handleTouchMove = (e: TouchEvent) => {
+        e.preventDefault();
+        handleDragMove(e);
+      };
+      
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('touchmove', handleTouchMove, { passive: false });
+      document.addEventListener('mouseup', handleDragEnd);
+      document.addEventListener('touchend', handleDragEnd);
+      
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('touchmove', handleTouchMove);
+        document.removeEventListener('mouseup', handleDragEnd);
+        document.removeEventListener('touchend', handleDragEnd);
+      };
+    }
+  }, [draggedBubble]);
 
   return (
     <div ref={canvasRef} className="absolute inset-0 overflow-hidden">
       {bookmarks.map((bookmark) => (
         <div
           key={bookmark.id}
-          className="bubble absolute cursor-pointer transition-all duration-300 hover:scale-110 group"
+          data-bubble-id={bookmark.id}
+          className="bubble absolute cursor-pointer transition-all duration-150 group select-none"
           style={{
             left: bookmark.x,
             top: bookmark.y,
             width: bookmark.size,
             height: bookmark.size,
+            zIndex: hoveredBubble === bookmark.id ? 20 : draggedBubble === bookmark.id ? 30 : 10,
           }}
           onMouseEnter={() => setHoveredBubble(bookmark.id)}
           onMouseLeave={() => setHoveredBubble(null)}
+          onMouseDown={(e) => handleDragStart(e, bookmark.id)}
+          onTouchStart={(e) => handleDragStart(e, bookmark.id)}
         >
-          {/* Main bubble */}
+          {/* Main bubble with CryptoBubbles-style effects */}
           <div
-            className="w-full h-full rounded-full flex items-center justify-center shadow-2xl backdrop-blur-sm border-2 border-white/30 relative overflow-hidden"
+            className="w-full h-full rounded-full flex items-center justify-center shadow-2xl backdrop-blur-sm border-2 border-white/30 relative overflow-hidden transition-all duration-200"
             style={{
               background: `linear-gradient(135deg, ${bookmark.color}88, ${bookmark.color}CC)`,
-              boxShadow: `0 0 30px ${bookmark.color}44`,
+              boxShadow: hoveredBubble === bookmark.id 
+                ? `0 0 60px ${bookmark.color}77, 0 0 120px ${bookmark.color}44`
+                : `0 0 40px ${bookmark.color}55`,
+              filter: hoveredBubble === bookmark.id ? 'brightness(1.3) saturate(1.2)' : 'brightness(1)',
             }}
             onClick={() => handleBubbleClick(bookmark)}
           >
-            {/* Favicon */}
+            {/* Enhanced favicon */}
             <img
               src={bookmark.favicon}
               alt={bookmark.title}
-              className="w-8 h-8 rounded"
+              className="w-8 h-8 rounded pointer-events-none transition-all duration-200"
+              style={{
+                transform: hoveredBubble === bookmark.id ? 'scale(1.3)' : 'scale(1)',
+              }}
               onError={(e) => {
                 (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMSA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDMgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K';
               }}
             />
             
-            {/* Glow effect */}
+            {/* Access count indicator */}
+            {bookmark.accessCount > 0 && (
+              <div className="absolute -top-1 -right-1 bg-yellow-400 text-black text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold pointer-events-none">
+                {bookmark.accessCount > 99 ? '99+' : bookmark.accessCount}
+              </div>
+            )}
+
+            {/* Enhanced dynamic glow effect */}
             <div 
-              className="absolute inset-0 rounded-full opacity-20"
+              className="absolute inset-0 rounded-full opacity-40 pointer-events-none transition-opacity duration-200"
               style={{
                 background: `radial-gradient(circle at 30% 30%, white, transparent 70%)`,
+                opacity: hoveredBubble === bookmark.id ? 0.6 : 0.3,
               }}
             />
+
+            {/* Stronger pulsing ring effect on hover */}
+            {hoveredBubble === bookmark.id && (
+              <>
+                <div 
+                  className="absolute inset-0 rounded-full border-3 animate-ping pointer-events-none"
+                  style={{
+                    borderColor: `${bookmark.color}AA`,
+                    animationDuration: '1s'
+                  }}
+                />
+                <div 
+                  className="absolute inset-0 rounded-full border-2 animate-pulse pointer-events-none"
+                  style={{
+                    borderColor: `${bookmark.color}66`,
+                    animationDuration: '2s'
+                  }}
+                />
+              </>
+            )}
             
             {/* External link icon on hover */}
-            <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <ExternalLink className="w-3 h-3 text-white" />
+            <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+              <ExternalLink className="w-3 h-3 text-white drop-shadow-lg" />
             </div>
           </div>
 
-          {/* Tooltip */}
-          {hoveredBubble === bookmark.id && (
-            <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-black/80 backdrop-blur-sm text-white px-3 py-1 rounded-lg text-sm whitespace-nowrap z-50 border border-white/20">
+          {/* Enhanced tooltip */}
+          {hoveredBubble === bookmark.id && !draggedBubble && (
+            <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-black/90 backdrop-blur-sm text-white px-3 py-1 rounded-lg text-sm whitespace-nowrap z-50 border border-white/20 pointer-events-none animate-fade-in">
               {bookmark.title}
-              <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-black/80"></div>
+              {bookmark.accessCount > 0 && (
+                <span className="block text-xs text-yellow-300">
+                  Accessed {bookmark.accessCount} time{bookmark.accessCount !== 1 ? 's' : ''}
+                </span>
+              )}
+              <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-black/90"></div>
             </div>
           )}
 
-          {/* Remove button */}
-          {hoveredBubble === bookmark.id && (
+          {/* Enhanced remove button */}
+          {hoveredBubble === bookmark.id && !draggedBubble && (
             <Button
               size="sm"
               variant="destructive"
-              className="absolute -top-2 -right-2 w-6 h-6 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+              className="absolute -top-2 -right-2 w-6 h-6 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-lg hover:scale-110"
               onClick={(e) => {
                 e.stopPropagation();
                 onRemoveBookmark(bookmark.id);

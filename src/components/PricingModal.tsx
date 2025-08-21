@@ -1,10 +1,10 @@
-
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Star, Crown, Loader2 } from 'lucide-react';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Circle, Star, Crown, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface PricingModalProps {
@@ -32,30 +32,30 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
   const pricingTiers: PricingTier[] = [
     {
       id: 'starter',
-      name: 'Starter Pack',
-      bubbles: 10,
+      name: 'Bubble Starter',
+      bubbles: 5,
       price: 4.99,
-      icon: <Sparkles className="w-6 h-6" />,
-      features: ['10 bubble bookmarks', 'Basic animations', 'Favicon auto-detection']
+      icon: <Circle className="w-6 h-6" />,
+      features: ['5 floating bubbles', 'Basic bubble animations', 'Auto favicon detection', 'Bubble space universe']
     },
     {
       id: 'popular',
-      name: 'Popular Pack',
-      bubbles: 20,
+      name: 'Bubble Explorer',
+      bubbles: 25,
       price: 14.99,
       originalPrice: 19.99,
       popular: true,
       icon: <Star className="w-6 h-6" />,
-      features: ['20 bubble bookmarks', 'Enhanced animations', 'Favicon auto-detection', 'Priority support']
+      features: ['25 floating bubbles', 'Enhanced bubble effects', 'Auto favicon detection', 'Bubble priority support', 'Expanded bubble universe']
     },
     {
       id: 'premium',
-      name: 'Premium Pack',
-      bubbles: 50,
+      name: 'Bubble Master',
+      bubbles: 100,
       price: 24.99,
       originalPrice: 34.99,
       icon: <Crown className="w-6 h-6" />,
-      features: ['50 bubble bookmarks', 'Premium animations', 'Favicon auto-detection', 'Priority support', 'Future features included']
+      features: ['100 floating bubbles', 'Premium bubble animations', 'Auto favicon detection', 'Bubble VIP support', 'Unlimited bubble universe', 'Future bubble features']
     }
   ];
 
@@ -73,13 +73,13 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
       onClose();
       
       toast({
-        title: "Purchase successful! 🎉",
-        description: `${tier.bubbles} bubbles have been added to your account!`,
+        title: "Bubbles delivered! 🎉",
+        description: `${tier.bubbles} fresh bubbles have been added to your bubble universe!`,
       });
     } catch (error) {
       toast({
-        title: "Purchase failed",
-        description: "Something went wrong. Please try again.",
+        title: "Bubble delivery failed",
+        description: "Something went wrong with your bubble order. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -90,100 +90,105 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-4xl bg-slate-900 border-purple-500/30">
+      <DialogContent className="sm:max-w-4xl bg-slate-900 border-purple-500/30 max-h-[90vh] overflow-hidden font-body">
         <DialogHeader>
-          <DialogTitle className="text-white text-center text-2xl mb-2">
+          <DialogTitle className="text-white text-center text-2xl mb-2 font-brand font-bold flex items-center justify-center gap-2">
+            <Circle className="w-6 h-6 text-purple-400" />
             Choose Your Bubble Pack
+            <Circle className="w-4 h-4 text-pink-400" />
           </DialogTitle>
-          <p className="text-purple-300 text-center">
-            Expand your bookmark universe with more bubbles
+          <p className="text-purple-300 text-center font-body">
+            Expand your bubble universe with more floating bubbles 🫧
           </p>
         </DialogHeader>
         
-        <div className="grid md:grid-cols-3 gap-6 mt-6">
-          {pricingTiers.map((tier) => (
-            <Card 
-              key={tier.id}
-              className={`relative bg-slate-800/50 border transition-all duration-300 hover:scale-105 ${
-                tier.popular 
-                  ? 'border-purple-400 shadow-lg shadow-purple-500/20' 
-                  : 'border-purple-500/30 hover:border-purple-400'
-              }`}
-            >
-              {tier.popular && (
-                <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-                  Most Popular
-                </Badge>
-              )}
-              
-              <CardHeader className="text-center">
-                <div className={`mx-auto w-12 h-12 rounded-full flex items-center justify-center mb-4 ${
+        <ScrollArea className="w-full mt-6">
+          <div className="flex md:grid md:grid-cols-3 gap-6 pb-4">
+            {pricingTiers.map((tier) => (
+              <Card 
+                key={tier.id}
+                className={`relative bg-slate-800/50 border transition-all duration-300 hover:scale-105 min-w-[280px] md:min-w-0 ${
                   tier.popular 
-                    ? 'bg-gradient-to-r from-purple-500 to-pink-500' 
-                    : 'bg-purple-600'
-                } text-white`}>
-                  {tier.icon}
-                </div>
-                
-                <CardTitle className="text-white text-xl">{tier.name}</CardTitle>
-                <CardDescription className="text-purple-300">
-                  {tier.bubbles} bubble bookmarks
-                </CardDescription>
-                
-                <div className="flex items-center justify-center space-x-2 mt-4">
-                  {tier.originalPrice && (
-                    <span className="text-slate-400 line-through text-lg">
-                      ${tier.originalPrice}
-                    </span>
-                  )}
-                  <span className="text-white text-3xl font-bold">
-                    ${tier.price}
-                  </span>
-                </div>
-                
-                {tier.originalPrice && (
-                  <Badge variant="secondary" className="bg-green-600 text-white mt-2">
-                    Save ${(tier.originalPrice - tier.price).toFixed(2)}
+                    ? 'border-purple-400 shadow-lg shadow-purple-500/20' 
+                    : 'border-purple-500/30 hover:border-purple-400'
+                }`}
+              >
+                {tier.popular && (
+                  <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-brand font-medium">
+                    Most Bubbly
                   </Badge>
                 )}
-              </CardHeader>
-              
-              <CardContent>
-                <ul className="space-y-2 mb-6">
-                  {tier.features.map((feature, index) => (
-                    <li key={index} className="text-purple-300 text-sm flex items-center">
-                      <Sparkles className="w-4 h-4 mr-2 text-purple-400" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
                 
-                <Button
-                  onClick={() => handlePurchase(tier)}
-                  disabled={isProcessing}
-                  className={`w-full ${
-                    tier.popular
-                      ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
-                      : 'bg-purple-600 hover:bg-purple-700'
-                  } text-white`}
-                >
-                  {processingTier === tier.id ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    `Get ${tier.bubbles} Bubbles`
+                <CardHeader className="text-center">
+                  <div className={`mx-auto w-12 h-12 rounded-full flex items-center justify-center mb-4 ${
+                    tier.popular 
+                      ? 'bg-gradient-to-r from-purple-500 to-pink-500' 
+                      : 'bg-purple-600'
+                  } text-white shadow-lg`}>
+                    {tier.icon}
+                  </div>
+                  
+                  <CardTitle className="text-white text-xl font-brand font-semibold">{tier.name}</CardTitle>
+                  <CardDescription className="text-purple-300 font-body">
+                    {tier.bubbles} floating bubbles
+                  </CardDescription>
+                  
+                  <div className="flex items-center justify-center space-x-2 mt-4">
+                    {tier.originalPrice && (
+                      <span className="text-slate-400 line-through text-lg font-body">
+                        ${tier.originalPrice}
+                      </span>
+                    )}
+                    <span className="text-white text-3xl font-brand font-bold">
+                      ${tier.price}
+                    </span>
+                  </div>
+                  
+                  {tier.originalPrice && (
+                    <Badge variant="secondary" className="bg-green-600 text-white mt-2 font-body font-medium">
+                      Save ${(tier.originalPrice - tier.price).toFixed(2)}
+                    </Badge>
                   )}
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                </CardHeader>
+                
+                <CardContent>
+                  <ul className="space-y-2 mb-6">
+                    {tier.features.map((feature, index) => (
+                      <li key={index} className="text-purple-300 text-sm flex items-center font-body">
+                        <Circle className="w-4 h-4 mr-2 text-purple-400 fill-current" />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                  
+                  <Button
+                    onClick={() => handlePurchase(tier)}
+                    disabled={isProcessing}
+                    className={`w-full font-body font-medium shadow-lg hover:shadow-xl transition-all ${
+                      tier.popular
+                        ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
+                        : 'bg-purple-600 hover:bg-purple-700'
+                    } text-white`}
+                  >
+                    {processingTier === tier.id ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Creating Bubbles...
+                      </>
+                    ) : (
+                      `Get ${tier.bubbles} Bubbles`
+                    )}
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
         
         <div className="text-center mt-6 p-4 bg-slate-800/30 rounded-lg border border-purple-500/20">
-          <p className="text-purple-300 text-sm">
-            💳 Secure payment processing • 🔒 No subscription required • ✨ Instant delivery
+          <p className="text-purple-300 text-sm font-body">
+            🫧 Secure bubble delivery • 🔒 No subscription required • ✨ Instant bubble activation
           </p>
         </div>
       </DialogContent>
