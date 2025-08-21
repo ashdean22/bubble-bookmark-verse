@@ -71,7 +71,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
       return window.innerWidth < 640 ? 120 : 100;
     };
 
-    // Initialize bubble positions and velocities with completely independent physics
+    // Create completely independent ecosystems for each bubble
     const bubbleData = new Map();
     bubbles.forEach((bubble) => {
       const element = bubble as HTMLElement;
@@ -80,20 +80,44 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
       
       const headerHeight = getHeaderHeight();
       const uniqueSeed = bookmarkId ? parseInt(bookmarkId.slice(-8), 16) || 1 : Math.random() * 1000;
+      const ecosystemId = Math.random() * 1000000; // Unique ecosystem ID
       
       bubbleData.set(element, {
+        // Position & Physics
         x: bookmark?.x || Math.random() * (window.innerWidth - 100),
         y: Math.max(
           bookmark?.y || Math.random() * (window.innerHeight - 100),
           headerHeight + 50
         ),
-        vx: (Math.random() - 0.5) * 0.5,
-        vy: (Math.random() - 0.5) * 0.5,
+        vx: (Math.random() - 0.5) * (0.3 + Math.random() * 0.4), // Individual velocity range
+        vy: (Math.random() - 0.5) * (0.3 + Math.random() * 0.4),
+        
+        // Size & Animation
         baseSize: bookmark?.size || 60,
         currentSize: bookmark?.size || 60,
         targetSize: bookmark?.size || 60,
-        startTime: Date.now() + (uniqueSeed % 10000), // Unique start time
-        phase: uniqueSeed * 0.001, // Unique phase offset
+        
+        // Independent Ecosystem Properties
+        ecosystemId,
+        birthTime: Date.now() + (uniqueSeed % 15000), // Staggered start times
+        lifePhase: Math.random() * Math.PI * 2, // Random life cycle phase
+        personality: {
+          energy: 0.5 + Math.random() * 0.5, // How active (0.5-1.0)
+          rhythm: 0.8 + Math.random() * 0.4, // Animation speed multiplier (0.8-1.2)
+          amplitude: 0.7 + Math.random() * 0.6, // Movement range (0.7-1.3)
+          socialness: Math.random(), // How much it reacts to hover (0-1)
+          stability: 0.3 + Math.random() * 0.4, // How much it dampens (0.3-0.7)
+        },
+        
+        // Individual Timing Systems
+        floatCycle: Math.random() * Math.PI * 2, // Independent float timing
+        pulseCycle: Math.random() * Math.PI * 2, // Independent pulse timing
+        breatheCycle: Math.random() * Math.PI * 2, // Independent breathing
+        
+        // Reaction States
+        excitement: 0, // Current excitement level (0-1)
+        lastInteraction: 0, // Time of last interaction
+        autonomousAction: Math.random() * 10000, // Next autonomous action time
       });
     });
 
@@ -118,30 +142,56 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
         const isHovered = hoveredBubble === bookmarkId;
         const isClicked = clickedBubble === bookmarkId;
 
-        // Individual bubble floating movement - completely independent
+        // Each bubble's independent ecosystem behavior
+        const currentTime = Date.now();
+        const bubbleAge = (currentTime - data.birthTime) * 0.001; // Age in seconds
+        const p = data.personality; // Shorthand for personality
+        
+        // Update life cycles based on individual ecosystem timing
+        data.floatCycle += p.rhythm * 0.02;
+        data.pulseCycle += p.rhythm * 0.025;
+        data.breatheCycle += p.rhythm * 0.015;
+        
+        // Autonomous behavior - each bubble acts independently
+        if (currentTime > data.autonomousAction) {
+          // Trigger random autonomous behavior
+          data.excitement = Math.min(1, data.excitement + Math.random() * 0.3);
+          data.autonomousAction = currentTime + (5000 + Math.random() * 10000); // Next action in 5-15 seconds
+        }
+        
+        // Decay excitement over time
+        data.excitement *= 0.99;
+        
+        // Individual ecosystem reactions to states
         if (isHovered) {
-          // Enhanced floating for hovered bubble only using individual timing
-          const currentTime = (Date.now() - data.startTime) * 0.003;
+          // Each bubble reacts differently to hover based on personality
+          data.excitement = Math.min(1, data.excitement + p.socialness * 0.1);
+          data.lastInteraction = currentTime;
           
-          // Gentle pulsing and floating when hovered
-          const pulseEffect = Math.sin(currentTime * 2 + data.phase) * 0.05 + 1;
-          data.targetSize = data.baseSize * 1.3 * pulseEffect;
+          // Personality-driven hover response
+          const hoverIntensity = 1 + (p.socialness * 0.5);
+          const pulseEffect = Math.sin(data.pulseCycle) * (0.05 * p.energy) + 1;
+          data.targetSize = data.baseSize * hoverIntensity * pulseEffect;
           
-          // Individual floating motion with unique phase
-          data.vx += Math.sin(currentTime + data.phase) * 0.02;
-          data.vy += Math.cos(currentTime * 1.2 + data.phase * 2) * 0.02;
+          // Individual floating motion with personality
+          const floatX = Math.sin(data.floatCycle) * (0.02 * p.amplitude);
+          const floatY = Math.cos(data.floatCycle * 1.2) * (0.02 * p.amplitude);
+          data.vx += floatX * p.energy;
+          data.vy += floatY * p.energy;
         } else {
-          // Natural floating for all bubbles using individual timing
-          const currentTime = (Date.now() - data.startTime) * 0.002;
+          // Natural ecosystem behavior when not hovered
+          const excitementEffect = 1 + (data.excitement * 0.2);
           
-          // Gentle natural floating movement with unique phase
-          const floatX = Math.sin(currentTime * 0.5 + data.phase) * 0.08;
-          const floatY = Math.cos(currentTime * 0.3 + data.phase * 1.5) * 0.06;
+          // Personality-driven natural floating
+          const floatX = Math.sin(data.floatCycle * p.rhythm) * (0.08 * p.amplitude) * excitementEffect;
+          const floatY = Math.cos(data.breatheCycle * p.rhythm) * (0.06 * p.amplitude) * excitementEffect;
           
           data.vx += floatX;
           data.vy += floatY;
           
-          data.targetSize = data.baseSize;
+          // Natural size breathing with personality
+          const breatheEffect = Math.sin(data.breatheCycle) * (0.02 * p.energy) + 1;
+          data.targetSize = data.baseSize * breatheEffect * excitementEffect;
         }
 
         if (isClicked) {
@@ -155,42 +205,46 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
         data.x += data.vx;
         data.y += data.vy;
 
-        // Enhanced boundary collision with more noticeable bouncing
+        // Enhanced boundary collision with personality-based bouncing
         const radius = data.currentSize / 2;
         const canvasWidth = canvas.clientWidth;
         const canvasHeight = canvas.clientHeight;
-        const topBoundary = headerHeight + radius; // Prevent bubbles from going above header
-        const restitution = 0.85; // Increased bounciness factor
+        const topBoundary = headerHeight + radius;
+        const restitution = 0.7 + (p.energy * 0.3); // Personality-based bounciness (0.7-1.0)
         
-        // Left and right boundaries with enhanced bouncing
+        // Left and right boundaries with personality-based bouncing
         if (data.x < radius) {
           data.x = radius;
-          data.vx = Math.abs(data.vx) * restitution + 0.5; // Add minimum bounce velocity
+          data.vx = Math.abs(data.vx) * restitution + (0.3 * p.energy);
+          data.excitement = Math.min(1, data.excitement + 0.1); // Bouncing creates excitement
         } else if (data.x > canvasWidth - radius) {
           data.x = canvasWidth - radius;
-          data.vx = -Math.abs(data.vx) * restitution - 0.5; // Add minimum bounce velocity
+          data.vx = -Math.abs(data.vx) * restitution - (0.3 * p.energy);
+          data.excitement = Math.min(1, data.excitement + 0.1);
         }
         
-        // Top and bottom boundaries with enhanced bouncing
+        // Top and bottom boundaries with personality-based bouncing
         if (data.y < topBoundary) {
           data.y = topBoundary;
-          data.vy = Math.abs(data.vy) * restitution + 0.5; // Add minimum bounce velocity
+          data.vy = Math.abs(data.vy) * restitution + (0.3 * p.energy);
+          data.excitement = Math.min(1, data.excitement + 0.1);
         } else if (data.y > canvasHeight - radius) {
           data.y = canvasHeight - radius;
-          data.vy = -Math.abs(data.vy) * restitution - 0.5; // Add minimum bounce velocity
+          data.vy = -Math.abs(data.vy) * restitution - (0.3 * p.energy);
+          data.excitement = Math.min(1, data.excitement + 0.1);
         }
 
-        // Reduced velocity damping to preserve bouncing energy
-        data.vx *= 0.995;
-        data.vy *= 0.995;
+         // Personality-based velocity damping - each bubble has different stability
+         data.vx *= (0.995 - (p.stability * 0.005)); // More stable bubbles dampen faster
+         data.vy *= (0.995 - (p.stability * 0.005));
 
-        // Velocity limits for gentle floating movement
-        const maxVelocity = 1.0;
-        const velocityMagnitude = Math.sqrt(data.vx * data.vx + data.vy * data.vy);
-        if (velocityMagnitude > maxVelocity) {
-          data.vx = (data.vx / velocityMagnitude) * maxVelocity;
-          data.vy = (data.vy / velocityMagnitude) * maxVelocity;
-        }
+         // Individual velocity limits based on energy personality
+         const maxVelocity = 0.8 + (p.energy * 0.4); // Range: 0.8-1.2
+         const velocityMagnitude = Math.sqrt(data.vx * data.vx + data.vy * data.vy);
+         if (velocityMagnitude > maxVelocity) {
+           data.vx = (data.vx / velocityMagnitude) * maxVelocity;
+           data.vy = (data.vy / velocityMagnitude) * maxVelocity;
+         }
       });
 
       // Batch all DOM updates together for better performance
