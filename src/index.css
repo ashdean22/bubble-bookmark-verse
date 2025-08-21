@@ -36,6 +36,21 @@
 
     --radius: 0.5rem;
 
+    /* Enhanced design system tokens for better UX */
+    --gradient-primary: linear-gradient(135deg, hsl(262 83% 58%), hsl(325 84% 61%));
+    --gradient-secondary: linear-gradient(135deg, hsl(168 76% 56%), hsl(194 93% 65%));
+    --gradient-accent: linear-gradient(135deg, hsl(248 53% 61%), hsl(262 83% 58%));
+    
+    --shadow-glow: 0 0 30px hsla(262, 83%, 58%, 0.3);
+    --shadow-soft: 0 4px 20px hsla(0, 0%, 0%, 0.1);
+    --shadow-elevation: 0 10px 40px hsla(0, 0%, 0%, 0.15);
+    
+    --animation-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    --animation-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --animation-slow: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    --focus-ring: 0 0 0 2px hsl(262 83% 58% / 0.3);
+
     --sidebar-background: 0 0% 98%;
 
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -81,6 +96,15 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
+
+    /* Enhanced dark mode tokens */
+    --gradient-primary: linear-gradient(135deg, hsl(262 83% 58%), hsl(325 84% 61%));
+    --gradient-secondary: linear-gradient(135deg, hsl(168 76% 56%), hsl(194 93% 65%));
+    --gradient-accent: linear-gradient(135deg, hsl(248 53% 61%), hsl(262 83% 58%));
+    
+    --shadow-glow: 0 0 30px hsla(262, 83%, 58%, 0.4);
+    --shadow-soft: 0 4px 20px hsla(0, 0%, 0%, 0.3);
+    --shadow-elevation: 0 10px 40px hsla(0, 0%, 0%, 0.4);
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -99,5 +123,56 @@
 
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  
+  /* Focus styles for accessibility */
+  *:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+  
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  /* Reduce motion for users who prefer it */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* Custom utility classes for the design system */
+  .btn-gradient-primary {
+    @apply bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600;
+  }
+  
+  .btn-gradient-secondary {
+    @apply bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600;
+  }
+  
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+  
+  .animation-fast {
+    transition: all var(--animation-fast);
+  }
+  
+  .animation-normal {
+    transition: all var(--animation-normal);
+  }
+  
+  .animation-slow {
+    transition: all var(--animation-slow);
   }
 }

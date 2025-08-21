@@ -1,0 +1,184 @@
+import React, { useState } from 'react';
+import { BubbleCanvas } from '@/components/BubbleCanvas';
+import { AddBookmarkModal } from '@/components/AddBookmarkModal';
+import { PricingModal } from '@/components/PricingModal';
+import { AnalyticsInsights } from '@/components/AnalyticsInsights';
+import { BubbleHeader } from '@/components/BubbleHeader';
+import { WelcomeMessage } from '@/components/WelcomeMessage';
+import { BackgroundAnimation } from '@/components/BackgroundAnimation';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { useToast } from '@/hooks/use-toast';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { Bookmark } from '@/pages/Index';
+
+export const RefactoredIndex = () => {
+  // State management using custom hooks
+  const [bookmarks, setBookmarks] = useLocalStorage<Bookmark[]>('bubbleBookmarks', []);
+  const [availableBubbles, setAvailableBubbles] = useLocalStorage('availableBubbles', 5);
+  const [currentSubscription, setCurrentSubscription] = useLocalStorage<string | null>('currentSubscription', null);
+  
+  // Modal states
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showPricingModal, setShowPricingModal] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  
+  const { toast } = useToast();
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    onCreateBubble: () => setShowAddModal(true),
+    onBuyBubbles: () => setShowPricingModal(true),
+    onShowAnalytics: () => setShowAnalytics(prev => !prev),
+    onShowHelp: () => toast({
+      title: "Keyboard Shortcuts 🚀",
+      description: "Ctrl/Cmd + N: Create bubble | Ctrl/Cmd + B: Buy bubbles | Ctrl/Cmd + A: Analytics | ?: Help",
+    }),
+  });
+
+  // Business logic functions
+  const calculateBubbleSize = (accessCount: number, allBookmarks: Bookmark[]) => {
+    if (allBookmarks.length === 0) return 60;
+    
+    const maxAccess = Math.max(...allBookmarks.map(b => b.accessCount));
+    const minAccess = Math.min(...allBookmarks.map(b => b.accessCount));
+    
+    if (maxAccess === minAccess) return 60;
+    
+    const minSize = 45;
+    const maxSize = 90;
+    const normalizedAccess = maxAccess > 0 ? (accessCount - minAccess) / (maxAccess - minAccess) : 0;
+    
+    return Math.round(minSize + (normalizedAccess * (maxSize - minSize)));
+  };
+
+  const saveBookmarks = (newBookmarks: Bookmark[]) => {
+    const bookmarksWithUpdatedSizes = newBookmarks.map(bookmark => ({
+      ...bookmark,
+      size: calculateBubbleSize(bookmark.accessCount, newBookmarks)
+    }));
+    
+    setBookmarks(bookmarksWithUpdatedSizes);
+  };
+
+  const addBookmark = (bookmark: Omit<Bookmark, 'id' | 'x' | 'y' | 'size' | 'color' | 'accessCount'>) => {
+    if (availableBubbles <= 0) {
+      toast({
+        title: "No bubbles available",
+        description: "Purchase more bubbles to add bookmarks!",
+        variant: "destructive",
+      });
+      setShowPricingModal(true);
+      return;
+    }
+
+    const colors = [
+      'rgb(147, 51, 234)', 'rgb(59, 130, 246)', 'rgb(16, 185, 129)',
+      'rgb(245, 158, 11)', 'rgb(239, 68, 68)', 'rgb(236, 72, 153)',
+    ];
+
+    const newBookmark: Bookmark = {
+      ...bookmark,
+      id: Date.now().toString(),
+      x: Math.random() * (window.innerWidth - 100),
+      y: Math.random() * (window.innerHeight - 100),
+      size: 60,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      accessCount: 0,
+    };
+
+    const newBookmarks = [...bookmarks, newBookmark];
+    saveBookmarks(newBookmarks);
+    setAvailableBubbles(availableBubbles - 1);
+    
+    toast({
+      title: "Bubble created! 🫧",
+      description: "Your new bubble is floating in the bubble universe ✨",
+    });
+  };
+
+  const removeBookmark = (id: string) => {
+    const newBookmarks = bookmarks.filter(b => b.id !== id);
+    saveBookmarks(newBookmarks);
+    setAvailableBubbles(availableBubbles + 1);
+    
+    toast({
+      title: "Bubble popped! 💥",
+      description: "Bubble returned to your bubble collection",
+    });
+  };
+
+  const incrementAccessCount = (id: string) => {
+    const updatedBookmarks = bookmarks.map(bookmark => 
+      bookmark.id === id 
+        ? { ...bookmark, accessCount: bookmark.accessCount + 1 }
+        : bookmark
+    );
+    saveBookmarks(updatedBookmarks);
+  };
+
+  const onPurchaseComplete = (bubbleCount: number, tier?: string) => {
+    setAvailableBubbles(availableBubbles + bubbleCount);
+    
+    if (tier) {
+      setCurrentSubscription(tier);
+    }
+    
+    toast({
+      title: "Bubbles delivered! 🎉",
+      description: `${bubbleCount} fresh bubbles added to your collection!`,
+    });
+  };
+
+  return (
+    <ErrorBoundary>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden font-body">
+        <BackgroundAnimation />
+
+        <BubbleHeader
+          availableBubbles={availableBubbles}
+          onCreateBubble={() => setShowAddModal(true)}
+          onBuyBubbles={() => setShowPricingModal(true)}
+          onShowAnalytics={() => setShowAnalytics(prev => !prev)}
+          showAnalytics={showAnalytics}
+        />
+
+        {showAnalytics && (
+          <div className="relative z-20 p-4 md:p-6">
+            <div className="max-w-7xl mx-auto">
+              <AnalyticsInsights 
+                bookmarks={bookmarks}
+                currentSubscription={currentSubscription}
+                onUpgradeClick={() => setShowPricingModal(true)}
+              />
+            </div>
+          </div>
+        )}
+
+        <BubbleCanvas 
+          bookmarks={bookmarks} 
+          onRemoveBookmark={removeBookmark}
+          onBubbleClick={incrementAccessCount}
+          currentSubscription={currentSubscription}
+        />
+
+        {bookmarks.length === 0 && (
+          <WelcomeMessage onCreateBubble={() => setShowAddModal(true)} />
+        )}
+
+        {/* Modals */}
+        <AddBookmarkModal
+          isOpen={showAddModal}
+          onClose={() => setShowAddModal(false)}
+          onAdd={addBookmark}
+        />
+
+        <PricingModal
+          isOpen={showPricingModal}
+          onClose={() => setShowPricingModal(false)}
+          onPurchaseComplete={onPurchaseComplete}
+        />
+      </div>
+    </ErrorBoundary>
+  );
+};
