@@ -128,6 +128,8 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
   const [clickedBubble, setClickedBubble] = useState<string | null>(null);
   const animationRef = useRef<number>();
   const dragOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const dragStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+  const isDraggingRef = useRef(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -383,23 +385,15 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
   }, [bookmarks, draggedBubble, hoveredBubble, clickedBubble]);
 
   const handleBubbleClick = (bookmark: Bookmark) => {
-    if (!draggedBubble) {
+    if (!isDraggingRef.current) {
       setClickedBubble(bookmark.id);
       onBubbleClick(bookmark.id); // Track access
       setTimeout(() => setClickedBubble(null), 200);
-      setTimeout(() => {
-        window.open(bookmark.url, '_blank');
-      }, 100);
+      window.open(bookmark.url, '_blank');
     }
   };
 
   const handleDragStart = (e: React.MouseEvent | React.TouchEvent, bookmarkId: string) => {
-    e.preventDefault();
-    setDraggedBubble(bookmarkId);
-    
-    const bubble = e.currentTarget as HTMLElement;
-    const rect = bubble.getBoundingClientRect();
-    
     let clientX, clientY;
     if ('touches' in e) {
       clientX = e.touches[0].clientX;
@@ -408,16 +402,35 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
       clientX = e.clientX;
       clientY = e.clientY;
     }
+    
+    // Store initial touch/mouse position and time
+    dragStartRef.current = {
+      x: clientX,
+      y: clientY,
+      time: Date.now()
+    };
+    
+    const bubble = e.currentTarget as HTMLElement;
+    const rect = bubble.getBoundingClientRect();
     
     dragOffsetRef.current = {
       x: clientX - rect.left,
       y: clientY - rect.top
     };
+    
+    isDraggingRef.current = false;
+    
+    // Set up potential drag target but don't start dragging yet
+    setTimeout(() => {
+      if (dragStartRef.current && !isDraggingRef.current) {
+        dragStartRef.current = null; // Clear if no drag started
+      }
+    }, 200);
   };
 
   const handleDragMove = (e: MouseEvent | TouchEvent) => {
-    if (!draggedBubble) return;
-    
+    if (!dragStartRef.current) return;
+
     let clientX, clientY;
     if ('touches' in e) {
       clientX = e.touches[0].clientX;
@@ -426,19 +439,45 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
       clientX = e.clientX;
       clientY = e.clientY;
     }
+
+    // Check if we've moved enough to start dragging
+    const deltaX = clientX - dragStartRef.current.x;
+    const deltaY = clientY - dragStartRef.current.y;
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
     
-    const bubble = document.querySelector(`[data-bubble-id="${draggedBubble}"]`) as HTMLElement;
-    if (bubble) {
-      const headerHeight = window.innerWidth < 640 ? 120 : 100;
-      const newX = clientX - dragOffsetRef.current.x;
-      const newY = Math.max(clientY - dragOffsetRef.current.y, headerHeight + 20); // Prevent dragging above header
-      
-      bubble.style.transform = `translate3d(${newX}px, ${newY}px, 0)`;
+    // Only start dragging if moved more than 10 pixels
+    if (!isDraggingRef.current && distance > 10) {
+      isDraggingRef.current = true;
+      // Find which bubble we're dragging
+      const draggedElement = document.elementFromPoint(dragStartRef.current.x, dragStartRef.current.y)?.closest('[data-bubble-id]') as HTMLElement;
+      if (draggedElement) {
+        const bubbleId = draggedElement.getAttribute('data-bubble-id');
+        if (bubbleId) {
+          setDraggedBubble(bubbleId);
+        }
+      }
+    }
+    
+    if (isDraggingRef.current && draggedBubble) {
+      e.preventDefault(); // Only prevent default when actually dragging
+      const bubble = document.querySelector(`[data-bubble-id="${draggedBubble}"]`) as HTMLElement;
+      if (bubble) {
+        const headerHeight = window.innerWidth < 640 ? 120 : 100;
+        const newX = clientX - dragOffsetRef.current.x;
+        const newY = Math.max(clientY - dragOffsetRef.current.y, headerHeight + 20);
+        
+        bubble.style.transform = `translate3d(${newX}px, ${newY}px, 0)`;
+      }
     }
   };
 
   const handleDragEnd = () => {
+    dragStartRef.current = null;
     setDraggedBubble(null);
+    // Reset dragging state after a short delay to allow click events
+    setTimeout(() => {
+      isDraggingRef.current = false;
+    }, 50);
   };
 
   useEffect(() => {
