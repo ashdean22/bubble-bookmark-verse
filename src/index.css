@@ -36,6 +36,18 @@
 
     --radius: 0.5rem;
 
+    /* Bubble design tokens */
+    --bubble-primary: 220 100% 60%;
+    --bubble-secondary: 260 100% 65%;
+    --bubble-accent: 200 100% 70%;
+    --bubble-border: 220 60% 85%;
+    --bubble-glow: 220 100% 60%;
+
+    /* Gradients */
+    --gradient-bubble: linear-gradient(135deg, hsl(var(--bubble-primary) / 0.15), hsl(var(--bubble-secondary) / 0.25));
+    --gradient-bubble-hover: linear-gradient(135deg, hsl(var(--bubble-primary) / 0.25), hsl(var(--bubble-secondary) / 0.35));
+    --gradient-bubble-active: linear-gradient(135deg, hsl(var(--bubble-primary) / 0.3), hsl(var(--bubble-secondary) / 0.4));
+
     --sidebar-background: 0 0% 98%;
 
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -81,6 +93,18 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
+
+    /* Dark bubble design tokens */
+    --bubble-primary: 220 80% 70%;
+    --bubble-secondary: 260 80% 75%;
+    --bubble-accent: 200 80% 80%;
+    --bubble-border: 220 40% 60%;
+    --bubble-glow: 220 80% 70%;
+
+    /* Dark gradients */
+    --gradient-bubble: linear-gradient(135deg, hsl(var(--bubble-primary) / 0.2), hsl(var(--bubble-secondary) / 0.3));
+    --gradient-bubble-hover: linear-gradient(135deg, hsl(var(--bubble-primary) / 0.3), hsl(var(--bubble-secondary) / 0.4));
+    --gradient-bubble-active: linear-gradient(135deg, hsl(var(--bubble-primary) / 0.35), hsl(var(--bubble-secondary) / 0.45));
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
