@@ -162,36 +162,38 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
         // Decay excitement over time
         data.excitement *= 0.99;
         
-        // Individual ecosystem reactions to states
+        // Individual ecosystem reactions to states - ONLY for the specific bubble
         if (isHovered) {
-          // Each bubble reacts differently to hover based on personality
-          data.excitement = Math.min(1, data.excitement + p.socialness * 0.1);
+          // Strong, isolated reaction ONLY for the hovered bubble
+          data.excitement = Math.min(1, data.excitement + 0.3); // Immediate strong reaction
           data.lastInteraction = currentTime;
           
-          // Personality-driven hover response
-          const hoverIntensity = 1 + (p.socialness * 0.5);
-          const pulseEffect = Math.sin(data.pulseCycle) * (0.05 * p.energy) + 1;
-          data.targetSize = data.baseSize * hoverIntensity * pulseEffect;
+          // Clear hover response - no other bubbles should react
+          const hoverIntensity = 1.4; // Fixed intensity for clear feedback
+          data.targetSize = data.baseSize * hoverIntensity;
           
-          // Individual floating motion with personality
-          const floatX = Math.sin(data.floatCycle) * (0.02 * p.amplitude);
-          const floatY = Math.cos(data.floatCycle * 1.2) * (0.02 * p.amplitude);
-          data.vx += floatX * p.energy;
-          data.vy += floatY * p.energy;
+          // Stop autonomous movement during hover for clear control
+          data.vx *= 0.8; // Slow down significantly
+          data.vy *= 0.8;
+          
+          // Gentle hover pulse only for touched bubble
+          const pulseEffect = Math.sin(data.pulseCycle * 3) * 0.05 + 1;
+          data.targetSize *= pulseEffect;
         } else {
-          // Natural ecosystem behavior when not hovered
-          const excitementEffect = 1 + (data.excitement * 0.2);
+          // Completely isolated natural behavior - no interference from other bubbles
+          const excitementDecay = Math.max(0, data.excitement - 0.01); // Faster excitement decay
+          data.excitement = excitementDecay;
           
-          // Personality-driven natural floating
-          const floatX = Math.sin(data.floatCycle * p.rhythm) * (0.08 * p.amplitude) * excitementEffect;
-          const floatY = Math.cos(data.breatheCycle * p.rhythm) * (0.06 * p.amplitude) * excitementEffect;
+          // Minimal natural movement only when not being interacted with
+          const subtleFloat = Math.sin(data.floatCycle * p.rhythm) * (0.03 * p.amplitude);
+          const subtleBreathe = Math.cos(data.breatheCycle * p.rhythm) * (0.02 * p.amplitude);
           
-          data.vx += floatX;
-          data.vy += floatY;
+          data.vx += subtleFloat * 0.5; // Reduced influence
+          data.vy += subtleBreathe * 0.5;
           
-          // Natural size breathing with personality
-          const breatheEffect = Math.sin(data.breatheCycle) * (0.02 * p.energy) + 1;
-          data.targetSize = data.baseSize * breatheEffect * excitementEffect;
+          // Natural size with minimal breathing
+          const breatheEffect = Math.sin(data.breatheCycle) * 0.01 + 1; // Much subtler
+          data.targetSize = data.baseSize * breatheEffect;
         }
 
         if (isClicked) {
