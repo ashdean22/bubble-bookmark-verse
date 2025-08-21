@@ -385,15 +385,20 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
   }, [bookmarks, draggedBubble, hoveredBubble, clickedBubble]);
 
   const handleBubbleClick = (bookmark: Bookmark) => {
+    console.log('Bubble clicked:', bookmark.title, 'isDragging:', isDraggingRef.current);
     if (!isDraggingRef.current) {
+      console.log('Opening URL:', bookmark.url);
       setClickedBubble(bookmark.id);
       onBubbleClick(bookmark.id); // Track access
       setTimeout(() => setClickedBubble(null), 200);
       window.open(bookmark.url, '_blank');
+    } else {
+      console.log('Click blocked by drag state');
     }
   };
 
   const handleDragStart = (e: React.MouseEvent | React.TouchEvent, bookmarkId: string) => {
+    console.log('Drag start for:', bookmarkId);
     let clientX, clientY;
     if ('touches' in e) {
       clientX = e.touches[0].clientX;
@@ -423,6 +428,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick }: Bub
     // Set up potential drag target but don't start dragging yet
     setTimeout(() => {
       if (dragStartRef.current && !isDraggingRef.current) {
+        console.log('Clearing drag start - no movement detected');
         dragStartRef.current = null; // Clear if no drag started
       }
     }, 200);
