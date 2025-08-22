@@ -55,7 +55,7 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
       name: 'Bubble Pro',
       bubbles: 999,
       monthlyPrice: 4.99,
-      yearlyPrice: 49.99, // 17% off yearly
+      yearlyPrice: 39.99, // 33% off yearly
       popular: true,
       icon: <Star className="w-6 h-6" />,
       features: ['Unlimited bubbles', '6 Premium theme packs', 'Custom color schemes', 'Advanced visual effects', 'Theme presets library', 'Export/import bookmarks', 'Priority sync', 'Priority support']
@@ -65,7 +65,7 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
       name: 'Bubble Premium',
       bubbles: 999,
       monthlyPrice: 7.99,
-      yearlyPrice: 79.99, // 17% off yearly
+      yearlyPrice: 65.99, // 31% off yearly
       icon: <Crown className="w-6 h-6" />,
       features: ['Everything in Pro', 'Unlimited custom themes', 'Advanced theme designer', 'Animated theme effects', 'Seasonal theme updates', 'Brand-specific themes', 'Team collaboration', 'Advanced analytics', 'API access', 'White-label options', 'VIP support']
     }
@@ -141,7 +141,7 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
               <TabsTrigger value="yearly" className="text-purple-300 data-[state=active]:bg-purple-600 data-[state=active]:text-white relative">
                 Yearly
                 <Badge className="absolute -top-2 -right-2 bg-green-600 text-white text-xs px-1 py-0.5">
-                  Save up to 17%
+                  Save up to 33%
                 </Badge>
               </TabsTrigger>
             </TabsList>
