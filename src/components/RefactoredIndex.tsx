@@ -5,7 +5,7 @@ import { PricingModal } from '@/components/PricingModal';
 import { AnalyticsInsights } from '@/components/AnalyticsInsights';
 import { BubbleHeader } from '@/components/BubbleHeader';
 import { WelcomeMessage } from '@/components/WelcomeMessage';
-import { BackgroundAnimation } from '@/components/BackgroundAnimation';
+import { AbstractBackground } from '@/components/AbstractBackground';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useToast } from '@/hooks/use-toast';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
@@ -144,7 +144,7 @@ export const RefactoredIndex = () => {
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden font-body">
-        <BackgroundAnimation />
+        <AbstractBackground />
 
         <BubbleHeader
           availableBubbles={availableBubbles}
