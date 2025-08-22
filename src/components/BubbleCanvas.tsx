@@ -90,8 +90,8 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
           bookmark?.y || Math.random() * (window.innerHeight - 100),
           headerHeight + 50
         ),
-        vx: (Math.random() - 0.5) * (0.3 + Math.random() * 0.4), // Individual velocity range
-        vy: (Math.random() - 0.5) * (0.3 + Math.random() * 0.4),
+        vx: (Math.random() - 0.5) * (0.2 + Math.random() * 0.3), // Gentler initial velocity
+        vy: (Math.random() - 0.5) * (0.2 + Math.random() * 0.3),
         
         // Size & Animation
         baseSize: bookmark?.size || 60,
@@ -148,20 +148,29 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
         const bubbleAge = (currentTime - data.birthTime) * 0.001; // Age in seconds
         const p = data.personality; // Shorthand for personality
         
-        // Update life cycles based on individual ecosystem timing
-        data.floatCycle += p.rhythm * 0.02;
-        data.pulseCycle += p.rhythm * 0.025;
-        data.breatheCycle += p.rhythm * 0.015;
+        // Update life cycles with more organic timing variations
+        data.floatCycle += p.rhythm * (0.008 + Math.sin(bubbleAge * 0.1) * 0.004); // Variable speed
+        data.pulseCycle += p.rhythm * (0.012 + Math.cos(bubbleAge * 0.07) * 0.006);  
+        data.breatheCycle += p.rhythm * (0.006 + Math.sin(bubbleAge * 0.05) * 0.003);
         
-        // Autonomous behavior - each bubble acts independently
-        if (currentTime > data.autonomousAction) {
-          // Trigger random autonomous behavior
-          data.excitement = Math.min(1, data.excitement + Math.random() * 0.3);
-          data.autonomousAction = currentTime + (5000 + Math.random() * 10000); // Next action in 5-15 seconds
-        }
+        // Continuous organic behavior instead of timed events
+        const organicForce = {
+          x: Math.sin(data.floatCycle + bubbleAge * 0.1) * 0.008 * p.amplitude,
+          y: Math.cos(data.breatheCycle + bubbleAge * 0.07) * 0.006 * p.amplitude
+        };
         
-        // Decay excitement over time
-        data.excitement *= 0.99;
+        // Add subtle drift based on bubble's personality
+        const personalityDrift = {
+          x: Math.sin(bubbleAge * p.rhythm * 0.01 + data.ecosystemId) * 0.004 * p.energy,
+          y: Math.cos(bubbleAge * p.rhythm * 0.008 + data.ecosystemId) * 0.003 * p.energy
+        };
+        
+        // Apply continuous gentle forces
+        data.vx += organicForce.x + personalityDrift.x;
+        data.vy += organicForce.y + personalityDrift.y;
+        
+        // Gradual excitement decay with organic fluctuation
+        data.excitement *= (0.998 + Math.sin(bubbleAge * 0.1) * 0.001);
         
         // Individual ecosystem reactions to states - ONLY for the specific bubble
         if (isHovered) {
@@ -185,12 +194,17 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
           const excitementDecay = Math.max(0, data.excitement - 0.01); // Faster excitement decay
           data.excitement = excitementDecay;
           
-          // Minimal natural movement only when not being interacted with
-          const subtleFloat = Math.sin(data.floatCycle * p.rhythm) * (0.03 * p.amplitude);
-          const subtleBreathe = Math.cos(data.breatheCycle * p.rhythm) * (0.02 * p.amplitude);
+          // Natural floating movement with layered organic patterns
+          const primaryWave = Math.sin(data.floatCycle * p.rhythm) * (0.015 * p.amplitude);
+          const secondaryWave = Math.cos(data.floatCycle * p.rhythm * 1.618) * (0.008 * p.amplitude); // Golden ratio for natural feel
+          const tertiaryWave = Math.sin(data.breatheCycle * p.rhythm * 0.7) * (0.005 * p.amplitude);
           
-          data.vx += subtleFloat * 0.5; // Reduced influence
-          data.vy += subtleBreathe * 0.5;
+          const organicX = primaryWave + secondaryWave * 0.6 + tertiaryWave * 0.3;
+          const organicY = Math.cos(data.breatheCycle * p.rhythm) * (0.012 * p.amplitude) + 
+                          Math.sin(data.floatCycle * p.rhythm * 0.8) * (0.006 * p.amplitude);
+          
+          data.vx += organicX * (0.3 + p.energy * 0.4); // Personality influences strength
+          data.vy += organicY * (0.3 + p.energy * 0.4);
           
           // Natural size with minimal breathing
           const breatheEffect = Math.sin(data.breatheCycle) * 0.01 + 1; // Much subtler
@@ -206,45 +220,60 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
         data.x += data.vx;
         data.y += data.vy;
 
-        // Enhanced boundary collision with personality-based bouncing
+        // Soft, natural boundary interactions
         const radius = data.currentSize / 2;
         const canvasWidth = canvas.clientWidth;
         const canvasHeight = canvas.clientHeight;
         const topBoundary = headerHeight + radius;
-        const restitution = 0.7 + (p.energy * 0.3); // Personality-based bounciness (0.7-1.0)
+        const softness = 0.85 + (p.stability * 0.1); // Softer bouncing (0.85-0.95)
+        const cushion = radius * 0.3; // Soft cushioning zone
         
-        // Left and right boundaries with personality-based bouncing
-        if (data.x < radius) {
-          data.x = radius;
-          data.vx = Math.abs(data.vx) * restitution + (0.3 * p.energy);
-          data.excitement = Math.min(1, data.excitement + 0.1); // Bouncing creates excitement
-        } else if (data.x > canvasWidth - radius) {
-          data.x = canvasWidth - radius;
-          data.vx = -Math.abs(data.vx) * restitution - (0.3 * p.energy);
-          data.excitement = Math.min(1, data.excitement + 0.1);
+        // Gradual boundary approach with soft reflection
+        if (data.x < radius + cushion) {
+          const penetration = (radius + cushion - data.x) / cushion;
+          data.x = radius + cushion;
+          data.vx = Math.abs(data.vx) * softness + (penetration * 0.1 * p.energy);
+          data.excitement = Math.min(1, data.excitement + 0.05); // Gentle excitement increase
+        } else if (data.x > canvasWidth - radius - cushion) {
+          const penetration = (data.x - (canvasWidth - radius - cushion)) / cushion;
+          data.x = canvasWidth - radius - cushion;
+          data.vx = -Math.abs(data.vx) * softness - (penetration * 0.1 * p.energy);
+          data.excitement = Math.min(1, data.excitement + 0.05);
         }
         
-        // Top and bottom boundaries with personality-based bouncing
-        if (data.y < topBoundary) {
-          data.y = topBoundary;
-          data.vy = Math.abs(data.vy) * restitution + (0.3 * p.energy);
-          data.excitement = Math.min(1, data.excitement + 0.1);
-        } else if (data.y > canvasHeight - radius) {
-          data.y = canvasHeight - radius;
-          data.vy = -Math.abs(data.vy) * restitution - (0.3 * p.energy);
-          data.excitement = Math.min(1, data.excitement + 0.1);
+        // Soft vertical boundaries
+        if (data.y < topBoundary + cushion) {
+          const penetration = (topBoundary + cushion - data.y) / cushion;
+          data.y = topBoundary + cushion;
+          data.vy = Math.abs(data.vy) * softness + (penetration * 0.1 * p.energy);
+          data.excitement = Math.min(1, data.excitement + 0.05);
+        } else if (data.y > canvasHeight - radius - cushion) {
+          const penetration = (data.y - (canvasHeight - radius - cushion)) / cushion;
+          data.y = canvasHeight - radius - cushion;
+          data.vy = -Math.abs(data.vy) * softness - (penetration * 0.1 * p.energy);
+          data.excitement = Math.min(1, data.excitement + 0.05);
         }
 
-         // Personality-based velocity damping - each bubble has different stability
-         data.vx *= (0.995 - (p.stability * 0.005)); // More stable bubbles dampen faster
-         data.vy *= (0.995 - (p.stability * 0.005));
+         // Organic velocity damping with natural fluctuation
+         const dampingBase = 0.9985 - (p.stability * 0.0008); // Very gentle base damping
+         const dampingVariation = Math.sin(bubbleAge * 0.03) * 0.0002; // Subtle variation
+         const finalDamping = dampingBase + dampingVariation;
+         
+         data.vx *= finalDamping;
+         data.vy *= finalDamping;
 
-         // Individual velocity limits based on energy personality
-         const maxVelocity = 0.8 + (p.energy * 0.4); // Range: 0.8-1.2
+         // Natural velocity limits with smooth capping
+         const baseMaxVelocity = 0.6 + (p.energy * 0.4); // Increased range: 0.6-1.0
+         const excitementBoost = data.excitement * 0.3; // Excitement can boost speed
+         const maxVelocity = baseMaxVelocity + excitementBoost;
+         
          const velocityMagnitude = Math.sqrt(data.vx * data.vx + data.vy * data.vy);
          if (velocityMagnitude > maxVelocity) {
-           data.vx = (data.vx / velocityMagnitude) * maxVelocity;
-           data.vy = (data.vy / velocityMagnitude) * maxVelocity;
+           // Smooth velocity capping instead of hard limit
+           const reductionFactor = maxVelocity / velocityMagnitude;
+           const smoothFactor = 0.95 + (reductionFactor * 0.05); // Gentle transition
+           data.vx *= smoothFactor;
+           data.vy *= smoothFactor;
          }
       });
 
