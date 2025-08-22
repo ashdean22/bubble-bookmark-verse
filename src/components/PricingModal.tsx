@@ -58,7 +58,7 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
       yearlyPrice: 49.99, // 17% off yearly
       popular: true,
       icon: <Star className="w-6 h-6" />,
-      features: ['Unlimited bubbles', 'Premium effects', 'Advanced customization', 'Export/import bookmarks', 'Priority sync', 'Priority support']
+      features: ['Unlimited bubbles', '6 Premium theme packs', 'Custom color schemes', 'Advanced visual effects', 'Theme presets library', 'Export/import bookmarks', 'Priority sync', 'Priority support']
     },
     {
       id: 'premium',
@@ -67,7 +67,7 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
       monthlyPrice: 7.99,
       yearlyPrice: 79.99, // 17% off yearly
       icon: <Crown className="w-6 h-6" />,
-      features: ['Everything in Pro', 'Team collaboration', 'Advanced analytics', 'API access', 'Custom themes', 'White-label options', 'VIP support']
+      features: ['Everything in Pro', 'Unlimited custom themes', 'Advanced theme designer', 'Animated theme effects', 'Seasonal theme updates', 'Brand-specific themes', 'Team collaboration', 'Advanced analytics', 'API access', 'White-label options', 'VIP support']
     }
   ];
 
