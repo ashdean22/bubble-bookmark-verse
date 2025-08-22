@@ -197,9 +197,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
           data.targetSize = data.baseSize * breatheEffect;
         }
 
-        if (isClicked) {
-          data.targetSize = data.baseSize * 0.85;
-        }
+        // Remove click size effect to prevent glitching
 
         // Smooth size interpolation
         data.currentSize += (data.targetSize - data.currentSize) * 0.12;
