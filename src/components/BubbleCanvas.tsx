@@ -292,9 +292,10 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
     console.log('Bubble clicked:', bookmark.title, 'isDragging:', isDraggingRef.current);
     if (!isDraggingRef.current) {
       console.log('Opening URL:', bookmark.url);
+      // Brief click effect only for the specific bubble
       setClickedBubble(bookmark.id);
       onBubbleClick(bookmark.id); // Track access
-      setTimeout(() => setClickedBubble(null), 200);
+      setTimeout(() => setClickedBubble(null), 150);
       window.open(bookmark.url, '_blank');
     } else {
       console.log('Click blocked by drag state');
