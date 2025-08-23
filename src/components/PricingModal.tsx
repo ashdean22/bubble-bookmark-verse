@@ -68,15 +68,6 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
       yearlyPrice: 65.99, // 31% off yearly
       icon: <Crown className="w-6 h-6" />,
       features: ['Everything in Pro', 'Unlimited custom themes', 'Advanced theme designer', 'Animated theme effects', 'Seasonal theme updates', 'Brand-specific themes', 'Team collaboration', 'Advanced analytics', 'API access', 'White-label options', 'VIP support']
-    },
-    {
-      id: 'lifetime',
-      name: 'Bubble Lifetime',
-      bubbles: 999,
-      monthlyPrice: 149.99,
-      yearlyPrice: 149.99, // One-time payment
-      icon: <Crown className="w-6 h-6" />,
-      features: ['Everything in Premium', 'Lifetime access - pay once, use forever', 'All future features included', 'Priority lifetime support', 'Exclusive lifetime member benefits', 'No recurring payments ever', 'Grandfathered into all updates']
     }
   ];
 
@@ -158,14 +149,12 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
         </div>
         
         <ScrollArea className="w-full mt-6">
-          <div className="flex md:grid md:grid-cols-5 gap-6 pb-4">
+          <div className="flex md:grid md:grid-cols-4 gap-6 pb-4">
             {pricingTiers.map((tier) => (
               <Card 
                 key={tier.id}
                 className={`relative bg-slate-800/50 border transition-all duration-300 hover:scale-105 min-w-[280px] md:min-w-0 ${
-                  tier.id === 'lifetime'
-                    ? 'border-yellow-400 shadow-lg shadow-yellow-500/20 bg-gradient-to-b from-slate-800/70 to-slate-800/50'
-                    : tier.popular 
+                  tier.popular 
                     ? 'border-purple-400 shadow-lg shadow-purple-500/20' 
                     : 'border-purple-500/30 hover:border-purple-400'
                 }`}
@@ -173,11 +162,6 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
                 {tier.popular && (
                   <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-brand font-medium">
                     Most Bubbly
-                  </Badge>
-                )}
-                {tier.id === 'lifetime' && (
-                  <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-brand font-medium">
-                    🏆 Lifetime Deal
                   </Badge>
                 )}
                 
@@ -197,44 +181,28 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
                   
                    <div className="flex flex-col items-center space-y-2 mt-4">
                      <div className="flex items-center space-x-2">
-                        <span className="text-white text-3xl font-brand font-bold">
-                          {tier.monthlyPrice === 0 ? 'Free' : `$${getCurrentPrice(tier).toFixed(2)}`}
-                        </span>
-                        {tier.monthlyPrice > 0 && tier.id !== 'lifetime' && (
-                          <span className="text-purple-300 text-lg font-body">
-                            {billingCycle === 'yearly' ? '/year' : '/mo'}
-                          </span>
-                        )}
-                        {tier.id === 'lifetime' && (
-                          <span className="text-purple-300 text-lg font-body">
-                            once
-                          </span>
-                        )}
-                      </div>
-                      
-                      {tier.id === 'lifetime' && (
-                        <div className="text-center">
-                          <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white mt-1 font-body font-medium">
-                            🏆 Best Value - Pay Once, Own Forever
-                          </Badge>
-                          <div className="text-purple-300 text-sm font-body mt-1">
-                            Equivalent to just ${(149.99 / 24).toFixed(2)}/month over 2 years
-                          </div>
-                        </div>
-                      )}
-                      
-                      {billingCycle === 'yearly' && tier.monthlyPrice > 0 && tier.id !== 'lifetime' && (
-                        <div className="text-center">
-                          <div className="text-purple-300 text-sm font-body">
-                            ${getMonthlyEquivalent(tier)}/mo when billed annually
-                          </div>
-                          {getSavings(tier) > 0 && (
-                            <Badge className="bg-green-600 text-white mt-1 font-body font-medium">
-                              Save ${getSavings(tier).toFixed(2)} per year
-                            </Badge>
-                          )}
-                        </div>
-                      )}
+                       <span className="text-white text-3xl font-brand font-bold">
+                         {tier.monthlyPrice === 0 ? 'Free' : `$${getCurrentPrice(tier).toFixed(2)}`}
+                       </span>
+                       {tier.monthlyPrice > 0 && (
+                         <span className="text-purple-300 text-lg font-body">
+                           {billingCycle === 'yearly' ? '/year' : '/mo'}
+                         </span>
+                       )}
+                     </div>
+                     
+                     {billingCycle === 'yearly' && tier.monthlyPrice > 0 && (
+                       <div className="text-center">
+                         <div className="text-purple-300 text-sm font-body">
+                           ${getMonthlyEquivalent(tier)}/mo when billed annually
+                         </div>
+                         {getSavings(tier) > 0 && (
+                           <Badge className="bg-green-600 text-white mt-1 font-body font-medium">
+                             Save ${getSavings(tier).toFixed(2)} per year
+                           </Badge>
+                         )}
+                       </div>
+                     )}
                    </div>
                 </CardHeader>
                 
@@ -251,15 +219,13 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
                    <Button
                      onClick={() => handlePurchase(tier)}
                      disabled={isProcessing}
-                      className={`w-full font-body font-medium shadow-lg hover:shadow-xl transition-all ${
-                        tier.monthlyPrice === 0 
-                          ? 'bg-slate-700 hover:bg-slate-600 border border-purple-500/30'
-                          : tier.id === 'lifetime'
-                          ? 'bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600'
-                          : tier.popular
-                          ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
-                          : 'bg-purple-600 hover:bg-purple-700'
-                      } text-white`}
+                     className={`w-full font-body font-medium shadow-lg hover:shadow-xl transition-all ${
+                       tier.monthlyPrice === 0 
+                         ? 'bg-slate-700 hover:bg-slate-600 border border-purple-500/30'
+                         : tier.popular
+                         ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
+                         : 'bg-purple-600 hover:bg-purple-700'
+                     } text-white`}
                    >
                      {processingTier === tier.id ? (
                        <>
