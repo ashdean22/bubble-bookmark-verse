@@ -3,7 +3,8 @@ import { Circle, Heart, Twitter, Github, Mail } from 'lucide-react';
 
 export const Footer = () => {
   return (
-    <footer className="relative z-20 bg-slate-900/80 backdrop-blur-sm border-t border-purple-500/20 font-body">
+    <footer className="fixed bottom-0 left-0 right-0 z-10 bg-slate-900/60 backdrop-blur-sm border-t border-purple-500/20 font-body pointer-events-none">
+      <div className="pointer-events-auto">
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           
@@ -32,6 +33,7 @@ export const Footer = () => {
             <span>for bookmark lovers</span>
           </div>
         </div>
+      </div>
       </div>
     </footer>
   );
