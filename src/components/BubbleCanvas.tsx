@@ -51,7 +51,6 @@ const getSiteName = (title: string, url: string) => {
 
 export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, currentSubscription }: BubbleCanvasProps) => {
   const canvasRef = useRef<HTMLDivElement>(null);
-  const [hoveredBubble, setHoveredBubble] = useState<string | null>(null);
   const [draggedBubble, setDraggedBubble] = useState<string | null>(null);
   const [clickedBubble, setClickedBubble] = useState<string | null>(null);
   const animationRef = useRef<number>();
@@ -140,7 +139,6 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
           return;
         }
         
-        const isHovered = hoveredBubble === bookmarkId;
         const isClicked = clickedBubble === bookmarkId;
 
         // Each bubble's independent ecosystem behavior
@@ -172,44 +170,25 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
         // Gradual excitement decay with organic fluctuation
         data.excitement *= (0.998 + Math.sin(bubbleAge * 0.1) * 0.001);
         
-        // Individual ecosystem reactions to states - ONLY for the specific bubble
-        if (isHovered && hoveredBubble === bookmarkId) {
-          // Strong, isolated reaction ONLY for the hovered bubble
-          data.excitement = Math.min(1, data.excitement + 0.3); // Immediate strong reaction
-          data.lastInteraction = currentTime;
-          
-          // Clear hover response - no other bubbles should react
-          const hoverIntensity = 1.4; // Fixed intensity for clear feedback
-          data.targetSize = data.baseSize * hoverIntensity;
-          
-          // Stop autonomous movement during hover for clear control
-          data.vx *= 0.8; // Slow down significantly
-          data.vy *= 0.8;
-          
-          // Gentle hover pulse only for touched bubble
-          const pulseEffect = Math.sin(data.pulseCycle * 3) * 0.05 + 1;
-          data.targetSize *= pulseEffect;
-        } else if (!isHovered || hoveredBubble !== bookmarkId) {
-          // Completely isolated natural behavior - no interference from other bubbles
-          const excitementDecay = Math.max(0, data.excitement - 0.01); // Faster excitement decay
-          data.excitement = excitementDecay;
-          
-          // Natural floating movement with layered organic patterns
-          const primaryWave = Math.sin(data.floatCycle * p.rhythm) * (0.015 * p.amplitude);
-          const secondaryWave = Math.cos(data.floatCycle * p.rhythm * 1.618) * (0.008 * p.amplitude); // Golden ratio for natural feel
-          const tertiaryWave = Math.sin(data.breatheCycle * p.rhythm * 0.7) * (0.005 * p.amplitude);
-          
-          const organicX = primaryWave + secondaryWave * 0.6 + tertiaryWave * 0.3;
-          const organicY = Math.cos(data.breatheCycle * p.rhythm) * (0.012 * p.amplitude) + 
-                          Math.sin(data.floatCycle * p.rhythm * 0.8) * (0.006 * p.amplitude);
-          
-          data.vx += organicX * (0.3 + p.energy * 0.4); // Personality influences strength
-          data.vy += organicY * (0.3 + p.energy * 0.4);
-          
-          // Natural size with minimal breathing
-          const breatheEffect = Math.sin(data.breatheCycle) * 0.01 + 1; // Much subtler
-          data.targetSize = data.baseSize * breatheEffect;
-        }
+        // Pure autonomous behavior - no mouse interference
+        const excitementDecay = Math.max(0, data.excitement - 0.01);
+        data.excitement = excitementDecay;
+        
+        // Natural floating movement with layered organic patterns
+        const primaryWave = Math.sin(data.floatCycle * p.rhythm) * (0.015 * p.amplitude);
+        const secondaryWave = Math.cos(data.floatCycle * p.rhythm * 1.618) * (0.008 * p.amplitude); // Golden ratio for natural feel
+        const tertiaryWave = Math.sin(data.breatheCycle * p.rhythm * 0.7) * (0.005 * p.amplitude);
+        
+        const organicX = primaryWave + secondaryWave * 0.6 + tertiaryWave * 0.3;
+        const organicY = Math.cos(data.breatheCycle * p.rhythm) * (0.012 * p.amplitude) + 
+                        Math.sin(data.floatCycle * p.rhythm * 0.8) * (0.006 * p.amplitude);
+        
+        data.vx += organicX * (0.3 + p.energy * 0.4); // Personality influences strength
+        data.vy += organicY * (0.3 + p.energy * 0.4);
+        
+        // Natural size with minimal breathing
+        const breatheEffect = Math.sin(data.breatheCycle) * 0.01 + 1; // Much subtler
+        data.targetSize = data.baseSize * breatheEffect;
 
         // Remove click size effect to prevent glitching
 
@@ -313,7 +292,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [bookmarks, draggedBubble, hoveredBubble, clickedBubble]);
+  }, [bookmarks, draggedBubble, clickedBubble]);
 
   const handleBubbleClick = (bookmark: Bookmark) => {
     console.log('Bubble clicked:', bookmark.title, 'isDragging:', isDraggingRef.current);
@@ -451,17 +430,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
             transform: `translate3d(${bookmark.x}px, ${bookmark.y}px, 0)`,
             width: bookmark.size,
             height: bookmark.size,
-            zIndex: hoveredBubble === bookmark.id ? 20 : draggedBubble === bookmark.id ? 30 : 10,
-          }}
-          onMouseEnter={(e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            setHoveredBubble(bookmark.id);
-          }}
-          onMouseLeave={(e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            setHoveredBubble(null);
+            zIndex: draggedBubble === bookmark.id ? 30 : 10,
           }}
           onMouseDown={(e) => handleDragStart(e, bookmark.id)}
           onTouchStart={(e) => handleDragStart(e, bookmark.id)}
@@ -472,21 +441,9 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
             style={{
               background: getTransparentBubbleColor(),
               border: `3px solid ${getTransparentBorderColor()}`,
-              boxShadow: hoveredBubble === bookmark.id 
-                ? (() => {
-                    const isPremium = currentSubscription === 'Premium';
-                    if (!isPremium) {
-                      return `0 0 20px rgba(59, 130, 246, 0.6), 0 0 40px rgba(59, 130, 246, 0.3), inset 0 2px 10px rgba(255,255,255,0.2)`;
-                    }
-                    const accessCount = bookmark.accessCount || 0;
-                    const glowIntensity = Math.min(1 + (accessCount * 0.1), 2);
-                    const hoverGlow = `0 0 ${25 * glowIntensity}px rgba(59, 130, 246, ${0.6 * glowIntensity}), 0 0 ${50 * glowIntensity}px rgba(59, 130, 246, ${0.3 * glowIntensity})`;
-                    const innerGlow = `inset 0 2px 10px rgba(255,255,255,0.2)`;
-                    return `${hoverGlow}, ${innerGlow}`;
-                  })()
-                : `0 0 10px rgba(59, 130, 246, 0.3), inset 0 1px 5px rgba(255,255,255,0.1)`,
-              transform: hoveredBubble === bookmark.id ? 'scale(1.05)' : 'scale(1)',
-              filter: hoveredBubble === bookmark.id ? 'brightness(1.1)' : 'brightness(1)',
+              boxShadow: `0 0 10px rgba(59, 130, 246, 0.3), inset 0 1px 5px rgba(255,255,255,0.1)`,
+              transform: 'scale(1)',
+              filter: 'brightness(1)',
             }}
             onClick={() => handleBubbleClick(bookmark)}
           >
@@ -505,29 +462,6 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
               <ExternalLink className="w-3 h-3 text-white drop-shadow-lg" />
             </div>
           </div>
-
-          {/* Enhanced tooltip */}
-          {hoveredBubble === bookmark.id && !draggedBubble && (
-            <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-black/90 backdrop-blur-sm text-white px-3 py-1 rounded-lg text-sm whitespace-nowrap z-50 border border-white/20 pointer-events-none animate-fade-in">
-              {bookmark.title}
-              <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-black/90"></div>
-            </div>
-          )}
-
-          {/* Enhanced remove button */}
-          {hoveredBubble === bookmark.id && !draggedBubble && (
-            <Button
-              size="sm"
-              variant="destructive"
-              className="absolute -top-2 -right-2 w-6 h-6 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-lg hover:scale-110"
-              onClick={(e) => {
-                e.stopPropagation();
-                onRemoveBookmark(bookmark.id);
-              }}
-            >
-              <X className="w-3 h-3" />
-            </Button>
-          )}
         </div>
       ))}
     </div>
