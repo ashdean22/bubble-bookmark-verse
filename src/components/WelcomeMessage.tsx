@@ -22,8 +22,7 @@ export const WelcomeMessage = ({ onCreateBubble }: WelcomeMessageProps) => {
         </h2>
         
         <p className="text-purple-300 mb-6 font-body">
-          Transform your favorite websites into beautiful floating bubbles. 
-          Pop any bubble to visit your bookmarked site instantly! 🫧✨
+          Start creating your bubble collection to organize your favorite websites.
         </p>
         
         <Button

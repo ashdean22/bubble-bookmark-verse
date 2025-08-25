@@ -37,20 +37,6 @@ const NotFound = () => {
               Return to Bubble Universe
             </Button>
           </Link>
-          
-          <div className="flex items-center justify-center space-x-4 text-sm text-purple-400">
-            <Link to="/privacy" className="hover:text-purple-300 transition-colors">
-              Privacy
-            </Link>
-            <Circle className="w-1 h-1 fill-current" />
-            <Link to="/terms" className="hover:text-purple-300 transition-colors">
-              Terms
-            </Link>
-            <Circle className="w-1 h-1 fill-current" />
-            <a href="mailto:support@bubblelink.app" className="hover:text-purple-300 transition-colors">
-              Support
-            </a>
-          </div>
         </div>
       </div>
     </div>
