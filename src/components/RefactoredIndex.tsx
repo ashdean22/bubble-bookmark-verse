@@ -16,8 +16,24 @@ import { Bookmark } from '@/pages/Index';
 export const RefactoredIndex = () => {
   // State management using custom hooks
   const [bookmarks, setBookmarks] = useLocalStorage<Bookmark[]>('bubbleBookmarks', []);
-  const [availableBubbles, setAvailableBubbles] = useLocalStorage('availableBubbles', 5);
   const [currentSubscription, setCurrentSubscription] = useLocalStorage<string | null>('currentSubscription', null);
+  
+  // Initialize available bubbles based on existing bookmarks and subscription
+  const initializeBubbles = () => {
+    const existingBookmarks = JSON.parse(localStorage.getItem('bubbleBookmarks') || '[]');
+    const subscription = localStorage.getItem('currentSubscription');
+    
+    if (subscription && subscription !== 'null') {
+      // Premium users get unlimited bubbles
+      return 999;
+    } else {
+      // Free users: 5 total bubbles minus existing bookmarks
+      const usedBubbles = existingBookmarks.length;
+      return Math.max(0, 5 - usedBubbles);
+    }
+  };
+  
+  const [availableBubbles, setAvailableBubbles] = useLocalStorage('availableBubbles', initializeBubbles());
   
   // Modal states
   const [showAddModal, setShowAddModal] = useState(false);
