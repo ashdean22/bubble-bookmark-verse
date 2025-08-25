@@ -189,7 +189,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
           // Gentle hover pulse only for touched bubble
           const pulseEffect = Math.sin(data.pulseCycle * 3) * 0.05 + 1;
           data.targetSize *= pulseEffect;
-        } else {
+        } else if (!isHovered || hoveredBubble !== bookmarkId) {
           // Completely isolated natural behavior - no interference from other bubbles
           const excitementDecay = Math.max(0, data.excitement - 0.01); // Faster excitement decay
           data.excitement = excitementDecay;
@@ -455,10 +455,12 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
           }}
           onMouseEnter={(e) => {
             e.stopPropagation();
+            e.preventDefault();
             setHoveredBubble(bookmark.id);
           }}
           onMouseLeave={(e) => {
             e.stopPropagation();
+            e.preventDefault();
             setHoveredBubble(null);
           }}
           onMouseDown={(e) => handleDragStart(e, bookmark.id)}
@@ -470,30 +472,21 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
             style={{
               background: getTransparentBubbleColor(),
               border: `3px solid ${getTransparentBorderColor()}`,
-              boxShadow: (() => {
-                // Premium feature - performance data and enhanced glows
-                const isPremium = currentSubscription === 'Premium';
-                
-                if (!isPremium) {
-                  // Basic glow for non-premium users
-                  const basicGlow = `0 0 10px rgba(59, 130, 246, 0.3)`;
-                  const innerGlow = `inset 0 1px 5px rgba(255,255,255,0.1)`;
-                  return `${basicGlow}, ${innerGlow}`;
-                }
-                
-                // Premium performance-based glows
-                const accessCount = bookmark.accessCount || 0;
-                const glowIntensity = Math.min(1 + (accessCount * 0.1), 2);
-                const baseGlow = `0 0 ${15 * glowIntensity}px rgba(59, 130, 246, ${0.4 * glowIntensity})`;
-                const hoverGlow = `0 0 ${25 * glowIntensity}px rgba(59, 130, 246, ${0.6 * glowIntensity}), 0 0 ${50 * glowIntensity}px rgba(59, 130, 246, ${0.3 * glowIntensity})`;
-                const innerGlow = `inset 0 ${hoveredBubble === bookmark.id ? 2 : 1}px ${hoveredBubble === bookmark.id ? 10 : 5}px rgba(255,255,255,0.1)`;
-                
-                return (hoveredBubble === bookmark.id)
-                  ? `${hoverGlow}, ${innerGlow}`
-                  : `${baseGlow}, ${innerGlow}`;
-              })(),
-              transform: (hoveredBubble === bookmark.id) ? 'scale(1.05)' : 'scale(1)',
-              filter: (hoveredBubble === bookmark.id) ? 'brightness(1.1)' : 'brightness(1)',
+              boxShadow: hoveredBubble === bookmark.id 
+                ? (() => {
+                    const isPremium = currentSubscription === 'Premium';
+                    if (!isPremium) {
+                      return `0 0 20px rgba(59, 130, 246, 0.6), 0 0 40px rgba(59, 130, 246, 0.3), inset 0 2px 10px rgba(255,255,255,0.2)`;
+                    }
+                    const accessCount = bookmark.accessCount || 0;
+                    const glowIntensity = Math.min(1 + (accessCount * 0.1), 2);
+                    const hoverGlow = `0 0 ${25 * glowIntensity}px rgba(59, 130, 246, ${0.6 * glowIntensity}), 0 0 ${50 * glowIntensity}px rgba(59, 130, 246, ${0.3 * glowIntensity})`;
+                    const innerGlow = `inset 0 2px 10px rgba(255,255,255,0.2)`;
+                    return `${hoverGlow}, ${innerGlow}`;
+                  })()
+                : `0 0 10px rgba(59, 130, 246, 0.3), inset 0 1px 5px rgba(255,255,255,0.1)`,
+              transform: hoveredBubble === bookmark.id ? 'scale(1.05)' : 'scale(1)',
+              filter: hoveredBubble === bookmark.id ? 'brightness(1.1)' : 'brightness(1)',
             }}
             onClick={() => handleBubbleClick(bookmark)}
           >
