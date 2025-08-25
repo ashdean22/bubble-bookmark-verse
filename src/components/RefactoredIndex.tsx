@@ -7,6 +7,7 @@ import { BubbleHeader } from '@/components/BubbleHeader';
 import { WelcomeMessage } from '@/components/WelcomeMessage';
 import { AbstractBackground } from '@/components/AbstractBackground';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { Footer } from '@/components/Footer';
 import { useToast } from '@/hooks/use-toast';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
@@ -189,6 +190,8 @@ export const RefactoredIndex = () => {
           onClose={() => setShowPricingModal(false)}
           onPurchaseComplete={onPurchaseComplete}
         />
+
+        <Footer />
       </div>
     </ErrorBoundary>
   );
