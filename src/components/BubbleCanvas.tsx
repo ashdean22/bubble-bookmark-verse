@@ -173,7 +173,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
         data.excitement *= (0.998 + Math.sin(bubbleAge * 0.1) * 0.001);
         
         // Individual ecosystem reactions to states - ONLY for the specific bubble
-        if (isHovered) {
+        if (isHovered && hoveredBubble === bookmarkId) {
           // Strong, isolated reaction ONLY for the hovered bubble
           data.excitement = Math.min(1, data.excitement + 0.3); // Immediate strong reaction
           data.lastInteraction = currentTime;
@@ -453,8 +453,14 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
             height: bookmark.size,
             zIndex: hoveredBubble === bookmark.id ? 20 : draggedBubble === bookmark.id ? 30 : 10,
           }}
-          onMouseEnter={() => setHoveredBubble(bookmark.id)}
-          onMouseLeave={() => setHoveredBubble(null)}
+          onMouseEnter={(e) => {
+            e.stopPropagation();
+            setHoveredBubble(bookmark.id);
+          }}
+          onMouseLeave={(e) => {
+            e.stopPropagation();
+            setHoveredBubble(null);
+          }}
           onMouseDown={(e) => handleDragStart(e, bookmark.id)}
           onTouchStart={(e) => handleDragStart(e, bookmark.id)}
         >
@@ -482,12 +488,12 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
                 const hoverGlow = `0 0 ${25 * glowIntensity}px rgba(59, 130, 246, ${0.6 * glowIntensity}), 0 0 ${50 * glowIntensity}px rgba(59, 130, 246, ${0.3 * glowIntensity})`;
                 const innerGlow = `inset 0 ${hoveredBubble === bookmark.id ? 2 : 1}px ${hoveredBubble === bookmark.id ? 10 : 5}px rgba(255,255,255,0.1)`;
                 
-                return hoveredBubble === bookmark.id 
+                return (hoveredBubble === bookmark.id)
                   ? `${hoverGlow}, ${innerGlow}`
                   : `${baseGlow}, ${innerGlow}`;
               })(),
-              transform: hoveredBubble === bookmark.id ? 'scale(1.05)' : 'scale(1)',
-              filter: hoveredBubble === bookmark.id ? 'brightness(1.1)' : 'brightness(1)',
+              transform: (hoveredBubble === bookmark.id) ? 'scale(1.05)' : 'scale(1)',
+              filter: (hoveredBubble === bookmark.id) ? 'brightness(1.1)' : 'brightness(1)',
             }}
             onClick={() => handleBubbleClick(bookmark)}
           >
