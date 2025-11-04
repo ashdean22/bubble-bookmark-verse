@@ -93,7 +93,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
       const canvasWidth = canvas.clientWidth;
       const canvasHeight = canvas.clientHeight;
       
-      // Independent bubble animation - no collision detection
+      // Independent bubble animation with collision detection
       bubbles.forEach((bubble) => {
         const element = bubble as HTMLElement;
         const data = bubbleData.get(element);
@@ -217,6 +217,76 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
           data.vy *= smoothFactor;
         }
       });
+
+      // Bubble-to-bubble collision detection and response
+      const bubbleArray = Array.from(bubbles);
+      for (let i = 0; i < bubbleArray.length; i++) {
+        const bubble1 = bubbleArray[i] as HTMLElement;
+        const data1 = bubbleData.get(bubble1);
+        if (!data1) continue;
+        
+        const bookmarkId1 = bubble1.getAttribute('data-bubble-id');
+        if (draggedBubble === bookmarkId1) continue;
+        
+        for (let j = i + 1; j < bubbleArray.length; j++) {
+          const bubble2 = bubbleArray[j] as HTMLElement;
+          const data2 = bubbleData.get(bubble2);
+          if (!data2) continue;
+          
+          const bookmarkId2 = bubble2.getAttribute('data-bubble-id');
+          if (draggedBubble === bookmarkId2) continue;
+          
+          // Calculate distance between bubble centers
+          const dx = data2.x - data1.x;
+          const dy = data2.y - data1.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          // Check if bubbles are colliding
+          const radius1 = data1.currentSize / 2;
+          const radius2 = data2.currentSize / 2;
+          const minDistance = radius1 + radius2;
+          
+          if (distance < minDistance && distance > 0) {
+            // Bubbles are colliding - calculate collision response
+            const overlap = minDistance - distance;
+            
+            // Normalize collision vector
+            const nx = dx / distance;
+            const ny = dy / distance;
+            
+            // Separate bubbles based on overlap
+            const separationFactor = overlap / 2;
+            data1.x -= nx * separationFactor;
+            data1.y -= ny * separationFactor;
+            data2.x += nx * separationFactor;
+            data2.y += ny * separationFactor;
+            
+            // Calculate relative velocity
+            const dvx = data2.vx - data1.vx;
+            const dvy = data2.vy - data1.vy;
+            
+            // Calculate relative velocity in collision normal direction
+            const relativeVelocity = dvx * nx + dvy * ny;
+            
+            // Don't resolve if velocities are separating
+            if (relativeVelocity < 0) {
+              // Elastic collision with some damping for realistic bouncing
+              const restitution = 0.8; // Bounciness factor
+              const impulse = (1 + restitution) * relativeVelocity / 2;
+              
+              // Apply impulse to velocities
+              data1.vx += impulse * nx;
+              data1.vy += impulse * ny;
+              data2.vx -= impulse * nx;
+              data2.vy -= impulse * ny;
+              
+              // Add excitement to both bubbles
+              data1.excitement = Math.min(1, data1.excitement + 0.1);
+              data2.excitement = Math.min(1, data2.excitement + 0.1);
+            }
+          }
+        }
+      }
 
       // Batch all DOM updates together for better performance
       const styleUpdates: Array<{ element: HTMLElement; transform: string; width: string; height: string }> = [];
