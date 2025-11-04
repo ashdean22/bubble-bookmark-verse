@@ -23,6 +23,9 @@
 - [ ] Footer with legal links
 - [ ] Contact information
 - [ ] DMCA policy (if applicable)
+- [ ] Trademark registration for "Bubble Link" name
+- [ ] Copyright registration for code and content
+- [ ] Domain name protection (register similar domains)
 
 ### ✅ User Experience
 - [x] Responsive design tested
