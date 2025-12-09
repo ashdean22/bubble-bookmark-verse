@@ -27,9 +27,9 @@ export const RefactoredIndex = () => {
       // Premium users get unlimited bubbles
       return 999;
     } else {
-      // Free users: 5 total bubbles minus existing bookmarks
+      // Free users: 3 total bubbles minus existing bookmarks
       const usedBubbles = existingBookmarks.length;
-      return Math.max(0, 5 - usedBubbles);
+      return Math.max(0, 3 - usedBubbles);
     }
   };
   
@@ -82,7 +82,7 @@ export const RefactoredIndex = () => {
     if (availableBubbles <= 0) {
       toast({
         title: "Free bubble limit reached! 🫧",
-        description: "You've used all 5 free bubbles. Upgrade to create unlimited bubbles!",
+        description: "You've used all 3 free bubbles. Upgrade to create unlimited bubbles!",
         variant: "destructive",
       });
       setShowPricingModal(true);
