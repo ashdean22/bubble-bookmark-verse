@@ -9,13 +9,23 @@ interface BubbleCanvasProps {
   currentSubscription?: string | null;
 }
 
-// Helper functions for transparent light blue bubble colors
-const getTransparentBubbleColor = () => {
-  return 'linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(29, 78, 216, 0.4))';
-};
-
-const getTransparentBorderColor = () => {
-  return 'rgba(59, 130, 246, 0.6)';
+// Helper functions for heat-based bubble colors (cold=blue, hot=red)
+const getHeatColor = (accessCount: number, maxAccess: number) => {
+  // Normalize access count to 0-1 range
+  const heat = maxAccess > 0 ? Math.min(accessCount / maxAccess, 1) : 0;
+  
+  // Interpolate from blue (cold) to red (hot)
+  // Cold: HSL(210, 100%, 50%) - Blue
+  // Hot: HSL(0, 100%, 50%) - Red
+  const hue = 210 - (heat * 210); // 210 (blue) → 0 (red)
+  const saturation = 70 + (heat * 30); // 70% → 100%
+  const lightness = 50 + (heat * 10); // 50% → 60%
+  
+  return {
+    gradient: `linear-gradient(135deg, hsla(${hue}, ${saturation}%, ${lightness}%, 0.35), hsla(${hue}, ${saturation - 10}%, ${lightness - 10}%, 0.45))`,
+    border: `hsla(${hue}, ${saturation}%, ${lightness}%, 0.7)`,
+    glow: `hsla(${hue}, ${saturation}%, ${lightness}%, 0.4)`
+  };
 };
 
 export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, currentSubscription }: BubbleCanvasProps) => {
@@ -437,33 +447,38 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
     }
   }, [draggedBubble]);
 
+  // Calculate max access count for heat coloring
+  const maxAccessCount = Math.max(...bookmarks.map(b => b.accessCount), 1);
+
   return (
     <div ref={canvasRef} className="absolute inset-0 overflow-hidden">
-      {bookmarks.map((bookmark) => (
-        <div
-          key={bookmark.id}
-          data-bubble-id={bookmark.id}
-          className="bubble absolute cursor-pointer transition-all duration-150 group select-none"
-          style={{
-            transform: `translate3d(${bookmark.x}px, ${bookmark.y}px, 0)`,
-            width: bookmark.size,
-            height: bookmark.size,
-            zIndex: draggedBubble === bookmark.id ? 30 : 10,
-          }}
-          onMouseDown={(e) => handleDragStart(e, bookmark.id)}
-          onTouchStart={(e) => handleDragStart(e, bookmark.id)}
-        >
+      {bookmarks.map((bookmark) => {
+        const heatColors = getHeatColor(bookmark.accessCount, maxAccessCount);
+        return (
           <div
-            className="w-full h-full rounded-full flex flex-col items-center justify-center relative transition-all duration-300 ease-out"
+            key={bookmark.id}
+            data-bubble-id={bookmark.id}
+            className="bubble absolute cursor-pointer transition-all duration-150 group select-none"
             style={{
-              background: getTransparentBubbleColor(),
-              border: `3px solid ${getTransparentBorderColor()}`,
-              boxShadow: `0 0 10px rgba(59, 130, 246, 0.3), inset 0 1px 5px rgba(255,255,255,0.1)`,
-              transform: 'scale(1)',
-              filter: 'brightness(1)',
+              transform: `translate3d(${bookmark.x}px, ${bookmark.y}px, 0)`,
+              width: bookmark.size,
+              height: bookmark.size,
+              zIndex: draggedBubble === bookmark.id ? 30 : 10,
             }}
-            onClick={() => handleBubbleClick(bookmark)}
+            onMouseDown={(e) => handleDragStart(e, bookmark.id)}
+            onTouchStart={(e) => handleDragStart(e, bookmark.id)}
           >
+            <div
+              className="w-full h-full rounded-full flex flex-col items-center justify-center relative transition-all duration-300 ease-out"
+              style={{
+                background: heatColors.gradient,
+                border: `3px solid ${heatColors.border}`,
+                boxShadow: `0 0 15px ${heatColors.glow}, inset 0 1px 5px rgba(255,255,255,0.1)`,
+                transform: 'scale(1)',
+                filter: 'brightness(1)',
+              }}
+              onClick={() => handleBubbleClick(bookmark)}
+            >
             <img
               src={bookmark.favicon}
               alt={bookmark.title}
@@ -477,7 +492,8 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
             </div>
           </div>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 };
