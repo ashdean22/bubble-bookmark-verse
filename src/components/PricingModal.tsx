@@ -35,11 +35,11 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
     {
       id: 'free',
       name: 'Bubble Free',
-      bubbles: 5,
+      bubbles: 3,
       monthlyPrice: 0,
       yearlyPrice: 0,
       icon: <Circle className="w-6 h-6" />,
-      features: ['5 floating bubbles', 'Basic animations', 'Auto favicon detection', 'Mobile app access', 'Community support']
+      features: ['3 floating bubbles', 'Basic animations', 'Auto favicon detection', 'Mobile app access', 'Community support']
     },
     {
       id: 'basic',
