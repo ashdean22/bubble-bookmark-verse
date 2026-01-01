@@ -322,11 +322,16 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
         const data = bubbleData.get(element);
         if (!data) return;
 
-        styleUpdates.push({
+      // Use rounded pixel values and actual size instead of scale to prevent fuzziness
+      const roundedX = Math.round(data.x - data.currentSize / 2);
+      const roundedY = Math.round(data.y - data.currentSize / 2);
+      const roundedSize = Math.round(data.currentSize);
+      
+      styleUpdates.push({
           element,
-          transform: `translate3d(${data.x - data.currentSize / 2}px, ${data.y - data.currentSize / 2}px, 0) scale(${data.currentSize / data.baseSize})`,
-          width: `${data.baseSize}px`,
-          height: `${data.baseSize}px`
+          transform: `translate3d(${roundedX}px, ${roundedY}px, 0)`,
+          width: `${roundedSize}px`,
+          height: `${roundedSize}px`
         });
       });
 
@@ -476,10 +481,12 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
             data-bubble-id={bookmark.id}
             className="bubble absolute cursor-pointer transition-all duration-150 group select-none"
             style={{
-              transform: `translate3d(${bookmark.x}px, ${bookmark.y}px, 0)`,
+              transform: `translate3d(${Math.round(bookmark.x)}px, ${Math.round(bookmark.y)}px, 0)`,
               width: heatStyles.size,
               height: heatStyles.size,
               zIndex: draggedBubble === bookmark.id ? 30 : 10,
+              willChange: 'transform',
+              backfaceVisibility: 'hidden',
             }}
             onMouseDown={(e) => handleDragStart(e, bookmark.id)}
             onTouchStart={(e) => handleDragStart(e, bookmark.id)}
