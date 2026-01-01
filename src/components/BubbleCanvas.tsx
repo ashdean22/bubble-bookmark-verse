@@ -62,18 +62,27 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
           vx: 0,
           vy: 0,
           baseSize: heatStyles.size,
-          // Unique seed for noise-like movement
-          seed,
-          // Time offset so bubbles don't sync
-          timeOffset: Math.random() * 10000,
-          // Unique movement characteristics
-          wanderStrength: 0.015 + Math.random() * 0.01,
-          wanderSpeed: 0.0003 + Math.random() * 0.0002,
-          // Target position for smooth wandering
-          targetX: bookmark.x,
-          targetY: Math.max(bookmark.y, headerHeight + 50),
-          // Time until next target change
-          nextTargetTime: 0,
+        // Unique seed for noise-like movement
+        seed,
+        // Time offset so bubbles don't sync
+        timeOffset: Math.random() * 10000,
+        // Unique movement characteristics - very gentle
+        wanderStrength: 0.003 + Math.random() * 0.002,
+        wanderSpeed: 0.0001 + Math.random() * 0.00005,
+        // Target position for smooth wandering
+        targetX: bookmark.x,
+        targetY: Math.max(bookmark.y, headerHeight + 50),
+        // Time until next target change
+        nextTargetTime: 0,
+        // Smoothed display position (for lerp rendering)
+        displayX: bookmark.x,
+        displayY: Math.max(bookmark.y, headerHeight + 50),
+        // Previous velocities for smoothing
+        prevVx: 0,
+        prevVy: 0,
+        // Acceleration smoothing
+        ax: 0,
+        ay: 0,
         });
       }
     });
@@ -116,14 +125,13 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
           const time = timestamp + data.timeOffset;
           const radius = data.baseSize / 2;
           
-          // Check if it's time to pick a new wander target
+          // Check if it's time to pick a new wander target (longer intervals for slower movement)
           if (time > data.nextTargetTime) {
-            // Pick a new random target within bounds
-            const padding = radius + 40;
+            const padding = radius + 60;
             data.targetX = padding + Math.random() * (canvasWidth - padding * 2);
             data.targetY = headerHeight + padding + Math.random() * (canvasHeight - headerHeight - padding * 2);
-            // Next target change in 3-8 seconds
-            data.nextTargetTime = time + 3000 + Math.random() * 5000;
+            // Next target change in 8-15 seconds for very slow wandering
+            data.nextTargetTime = time + 8000 + Math.random() * 7000;
           }
           
           // Calculate direction to target
@@ -131,57 +139,85 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
           const dy = data.targetY - data.y;
           const distToTarget = Math.sqrt(dx * dx + dy * dy);
           
-          // Normalize and apply gentle force toward target
+          // Very gentle force toward target with acceleration smoothing
+          let targetAx = 0;
+          let targetAy = 0;
+          
           if (distToTarget > 1) {
-            const forceStrength = data.wanderStrength;
-            data.vx += (dx / distToTarget) * forceStrength;
-            data.vy += (dy / distToTarget) * forceStrength;
+            const forceStrength = data.wanderStrength * 0.5;
+            targetAx = (dx / distToTarget) * forceStrength;
+            targetAy = (dy / distToTarget) * forceStrength;
           }
           
-          // Add subtle organic wobble using smooth noise-like motion
+          // Smooth acceleration (lerp toward target acceleration)
+          data.ax = data.ax * 0.95 + targetAx * 0.05;
+          data.ay = data.ay * 0.95 + targetAy * 0.05;
+          
+          // Apply smoothed acceleration to velocity
+          data.vx += data.ax;
+          data.vy += data.ay;
+          
+          // Add very subtle organic wobble using multiple sine waves
           const wobbleTime = time * data.wanderSpeed;
-          const wobbleX = Math.sin(wobbleTime * 1.1 + data.seed) * 0.008 + 
-                         Math.sin(wobbleTime * 0.7 + data.seed * 2) * 0.005;
-          const wobbleY = Math.cos(wobbleTime * 0.9 + data.seed) * 0.008 + 
-                         Math.cos(wobbleTime * 1.3 + data.seed * 3) * 0.005;
+          const wobbleX = Math.sin(wobbleTime * 0.7 + data.seed) * 0.002 + 
+                         Math.sin(wobbleTime * 0.3 + data.seed * 2.1) * 0.001 +
+                         Math.sin(wobbleTime * 0.13 + data.seed * 3.7) * 0.0005;
+          const wobbleY = Math.cos(wobbleTime * 0.5 + data.seed) * 0.002 + 
+                         Math.cos(wobbleTime * 0.23 + data.seed * 2.9) * 0.001 +
+                         Math.cos(wobbleTime * 0.11 + data.seed * 4.1) * 0.0005;
           
           data.vx += wobbleX;
           data.vy += wobbleY;
+          
+          // Smooth velocity (average with previous)
+          const smoothVx = data.vx * 0.7 + data.prevVx * 0.3;
+          const smoothVy = data.vy * 0.7 + data.prevVy * 0.3;
+          data.prevVx = data.vx;
+          data.prevVy = data.vy;
+          data.vx = smoothVx;
+          data.vy = smoothVy;
 
           // Apply velocity
           data.x += data.vx;
           data.y += data.vy;
 
-          // Soft boundary - gently steer away from edges
-          const margin = 30;
+          // Very soft boundary steering
+          const margin = 50;
+          const boundaryForce = 0.005;
           
           if (data.x < radius + margin) {
-            data.vx += 0.02;
+            data.vx += boundaryForce;
           } else if (data.x > canvasWidth - radius - margin) {
-            data.vx -= 0.02;
+            data.vx -= boundaryForce;
           }
           
           if (data.y < headerHeight + radius + margin) {
-            data.vy += 0.02;
+            data.vy += boundaryForce;
           } else if (data.y > canvasHeight - radius - margin) {
-            data.vy -= 0.02;
+            data.vy -= boundaryForce;
           }
 
           // Keep within bounds
           data.x = Math.max(radius, Math.min(canvasWidth - radius, data.x));
           data.y = Math.max(headerHeight + radius, Math.min(canvasHeight - radius, data.y));
 
-          // Smooth damping for natural deceleration
-          data.vx *= 0.985;
-          data.vy *= 0.985;
+          // Smooth damping
+          data.vx *= 0.992;
+          data.vy *= 0.992;
 
-          // Gentle velocity cap
-          const maxV = 0.8;
+          // Very gentle velocity cap
+          const maxV = 0.4;
           const speed = Math.sqrt(data.vx * data.vx + data.vy * data.vy);
           if (speed > maxV) {
-            data.vx = (data.vx / speed) * maxV;
-            data.vy = (data.vy / speed) * maxV;
+            const scale = maxV / speed;
+            data.vx *= scale;
+            data.vy *= scale;
           }
+          
+          // Lerp display position toward actual position (smooths rendering)
+          const lerpFactor = 0.15;
+          data.displayX = data.displayX + (data.x - data.displayX) * lerpFactor;
+          data.displayY = data.displayY + (data.y - data.displayY) * lerpFactor;
         });
 
         // Collision detection between bubbles
@@ -201,31 +237,32 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
             const minDistance = (data1.baseSize + data2.baseSize) / 2;
 
             if (distance < minDistance && distance > 0) {
-              // Gently separate bubbles (no sudden jumps)
+              // Very gentle separation to avoid jerky movement
               const overlap = minDistance - distance;
               const nx = dx / distance;
               const ny = dy / distance;
               
-              // Very gradual separation to avoid jerky movement
-              const separationForce = overlap * 0.02;
+              // Extremely gradual separation force
+              const separationForce = overlap * 0.005;
 
-              data1.vx -= nx * separationForce;
-              data1.vy -= ny * separationForce;
-              data2.vx += nx * separationForce;
-              data2.vy += ny * separationForce;
+              data1.ax -= nx * separationForce;
+              data1.ay -= ny * separationForce;
+              data2.ax += nx * separationForce;
+              data2.ay += ny * separationForce;
             }
           }
         }
 
-        // Update DOM for all bubbles
+        // Update DOM for all bubbles using smoothed display positions (no rounding for sub-pixel smoothness)
         bubbleIds.forEach((id) => {
           const data = bubbleDataRef.current.get(id);
           if (!data) return;
           
           const el = canvas.querySelector(`[data-bubble-id="${id}"]`) as HTMLElement;
           if (el) {
-            const x = Math.round(data.x - data.baseSize / 2);
-            const y = Math.round(data.y - data.baseSize / 2);
+            // Use displayX/displayY for lerped smooth rendering, no rounding for sub-pixel precision
+            const x = data.displayX - data.baseSize / 2;
+            const y = data.displayY - data.baseSize / 2;
             el.style.transform = `translate3d(${x}px, ${y}px, 0)`;
           }
         });
