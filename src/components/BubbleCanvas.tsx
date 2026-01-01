@@ -9,13 +9,24 @@ interface BubbleCanvasProps {
   currentSubscription?: string | null;
 }
 
-const getHeatStylesAndSize = (accessCount: number, maxAccess: number) => {
+const getHeatStylesAndSize = (accessCount: number, maxAccess: number, isMobile: boolean, isTablet: boolean) => {
   const heat = maxAccess > 0 ? Math.min(accessCount / maxAccess, 1) : 0;
   const hue = 210 - (heat * 210);
   const saturation = 50 + (heat * 20);
   const lightness = 55 - (heat * 5);
-  const minSize = 35;
-  const maxSize = 65;
+  
+  // Responsive bubble sizes
+  let minSize = 35;
+  let maxSize = 65;
+  
+  if (isMobile) {
+    minSize = 28;
+    maxSize = 50;
+  } else if (isTablet) {
+    minSize = 32;
+    maxSize = 58;
+  }
+  
   const size = Math.round(minSize + (heat * (maxSize - minSize)));
   
   // Soft, translucent bubble style like cryptobubbles
@@ -49,11 +60,13 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
   // Initialize bubble data
   useEffect(() => {
     const maxAccessCount = Math.max(...bookmarks.map(b => b.accessCount), 1);
-    const headerHeight = window.innerWidth < 640 ? 120 : 100;
+    const isMobile = window.innerWidth < 640;
+    const isTablet = window.innerWidth >= 640 && window.innerWidth < 1024;
+    const headerHeight = isMobile ? 120 : 100;
 
     bookmarks.forEach((bookmark, index) => {
       if (!bubbleDataRef.current.has(bookmark.id)) {
-        const heatStyles = getHeatStylesAndSize(bookmark.accessCount, maxAccessCount);
+        const heatStyles = getHeatStylesAndSize(bookmark.accessCount, maxAccessCount, isMobile, isTablet);
         // Create unique random seed for each bubble
         const seed = Math.random() * 1000;
         bubbleDataRef.current.set(bookmark.id, {
@@ -366,11 +379,13 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
   }, [draggedBubble, handleDragMove, handleDragEnd]);
 
   const maxAccessCount = Math.max(...bookmarks.map(b => b.accessCount), 1);
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+  const isTablet = typeof window !== 'undefined' && window.innerWidth >= 640 && window.innerWidth < 1024;
 
   return (
     <div ref={canvasRef} className="absolute inset-0 overflow-hidden">
       {bookmarks.map((bookmark) => {
-        const heatStyles = getHeatStylesAndSize(bookmark.accessCount, maxAccessCount);
+        const heatStyles = getHeatStylesAndSize(bookmark.accessCount, maxAccessCount, isMobile, isTablet);
         const isDragging = draggedBubble === bookmark.id;
         
         return (
