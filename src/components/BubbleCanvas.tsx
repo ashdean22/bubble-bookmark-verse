@@ -314,34 +314,20 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
         }
       }
 
-      // Batch all DOM updates together for better performance
-      const styleUpdates: Array<{ element: HTMLElement; transform: string; width: string; height: string }> = [];
-      
+      // Apply DOM updates directly (already in animation frame)
       bubbles.forEach((bubble) => {
         const element = bubble as HTMLElement;
         const data = bubbleData.get(element);
         if (!data) return;
 
-      // Use rounded pixel values and actual size instead of scale to prevent fuzziness
-      const roundedX = Math.round(data.x - data.currentSize / 2);
-      const roundedY = Math.round(data.y - data.currentSize / 2);
-      const roundedSize = Math.round(data.currentSize);
-      
-      styleUpdates.push({
-          element,
-          transform: `translate3d(${roundedX}px, ${roundedY}px, 0)`,
-          width: `${roundedSize}px`,
-          height: `${roundedSize}px`
-        });
-      });
-
-      // Apply all DOM updates in a single batch
-      requestAnimationFrame(() => {
-        styleUpdates.forEach(({ element, transform, width, height }) => {
-          element.style.transform = transform;
-          element.style.width = width;
-          element.style.height = height;
-        });
+        // Use rounded pixel values to prevent subpixel blur
+        const roundedX = Math.round(data.x - data.currentSize / 2);
+        const roundedY = Math.round(data.y - data.currentSize / 2);
+        const roundedSize = Math.round(data.currentSize);
+        
+        element.style.transform = `translate3d(${roundedX}px, ${roundedY}px, 0)`;
+        element.style.width = `${roundedSize}px`;
+        element.style.height = `${roundedSize}px`;
       });
       
       animationRef.current = requestAnimationFrame(animate);
@@ -492,13 +478,12 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
             onTouchStart={(e) => handleDragStart(e, bookmark.id)}
           >
             <div
-              className="w-full h-full rounded-full flex flex-col items-center justify-center relative transition-all duration-300 ease-out"
+              className="w-full h-full rounded-full flex flex-col items-center justify-center relative"
               style={{
                 background: heatStyles.gradient,
                 border: `3px solid ${heatStyles.border}`,
                 boxShadow: `0 0 15px ${heatStyles.glow}, inset 0 1px 5px rgba(255,255,255,0.1)`,
-                transform: 'scale(1)',
-                filter: 'brightness(1)',
+                imageRendering: 'auto',
               }}
               onClick={() => handleBubbleClick(bookmark)}
             >
@@ -506,6 +491,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
               src={bookmark.favicon}
               alt={bookmark.title}
               className="w-6 h-6 rounded pointer-events-none opacity-90"
+              style={{ imageRendering: 'auto' }}
               onError={(e) => {
                 (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMSA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDMgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K';
               }}
