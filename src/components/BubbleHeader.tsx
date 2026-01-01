@@ -1,11 +1,14 @@
 import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 import { Plus, Circle, BarChart3, ShoppingCart, HelpCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import bubbleLinkLogo from '@/assets/bubblelink-logo.png';
 
 interface BubbleHeaderProps {
   availableBubbles: number;
+  usedBubbles: number;
+  maxBubbles: number;
   onCreateBubble: () => void;
   onBuyBubbles: () => void;
   onShowAnalytics: () => void;
@@ -14,6 +17,8 @@ interface BubbleHeaderProps {
 
 export const BubbleHeader = ({ 
   availableBubbles, 
+  usedBubbles,
+  maxBubbles,
   onCreateBubble, 
   onBuyBubbles, 
   onShowAnalytics,
@@ -71,15 +76,27 @@ export const BubbleHeader = ({
             />
           </div>
           
+          {/* Capacity Indicator */}
           <div 
-            className="glass-card px-3 py-1.5 md:px-4 md:py-2 rounded-full"
+            className="glass-card px-3 py-2 md:px-4 md:py-3 rounded-xl min-w-[160px] md:min-w-[200px]"
             role="status"
-            aria-label={`Available bubbles: ${availableBubbles}`}
+            aria-label={`Bubbles used: ${usedBubbles} of ${maxBubbles === 999 ? 'unlimited' : maxBubbles}`}
           >
-            <span className="text-foreground font-semibold flex items-center text-sm md:text-base font-body">
-              <Circle className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2 text-white fill-current" aria-hidden="true" />
-              {availableBubbles <= 3 ? `${3 - availableBubbles}/3 free bubbles used` : `${availableBubbles} bubbles`}
-            </span>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-foreground/80 text-xs font-body">Bubble Capacity</span>
+              <span className="text-foreground font-semibold text-sm font-body">
+                {usedBubbles}/{maxBubbles === 999 ? '∞' : maxBubbles}
+              </span>
+            </div>
+            <Progress 
+              value={maxBubbles === 999 ? 0 : (usedBubbles / maxBubbles) * 100} 
+              className="h-2 bg-white/20"
+            />
+            {maxBubbles !== 999 && usedBubbles >= maxBubbles * 0.8 && (
+              <p className="text-amber-400 text-xs mt-1 font-body">
+                {usedBubbles >= maxBubbles ? 'Limit reached!' : 'Almost full!'}
+              </p>
+            )}
           </div>
         </div>
         

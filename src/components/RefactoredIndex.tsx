@@ -165,6 +165,8 @@ export const RefactoredIndex = () => {
 
         <BubbleHeader
           availableBubbles={availableBubbles}
+          usedBubbles={bookmarks.length}
+          maxBubbles={currentSubscription === 'premium' ? 999 : currentSubscription === 'popular' ? 75 : currentSubscription === 'basic' ? 25 : 3}
           onCreateBubble={() => setShowAddModal(true)}
           onBuyBubbles={() => setShowPricingModal(true)}
           onShowAnalytics={() => setShowAnalytics(prev => !prev)}
