@@ -465,14 +465,15 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
           <div
             key={bookmark.id}
             data-bubble-id={bookmark.id}
-            className="bubble absolute cursor-pointer transition-all duration-150 group select-none"
+            className="bubble absolute cursor-pointer group select-none"
             style={{
               transform: `translate3d(${Math.round(bookmark.x)}px, ${Math.round(bookmark.y)}px, 0)`,
-              width: heatStyles.size,
-              height: heatStyles.size,
+              width: `${heatStyles.size}px`,
+              height: `${heatStyles.size}px`,
               zIndex: draggedBubble === bookmark.id ? 30 : 10,
               willChange: 'transform',
               backfaceVisibility: 'hidden',
+              filter: 'blur(0)',
             }}
             onMouseDown={(e) => handleDragStart(e, bookmark.id)}
             onTouchStart={(e) => handleDragStart(e, bookmark.id)}
