@@ -92,7 +92,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
 
     const headerHeight = window.innerWidth < 640 ? 120 : 100;
     let lastTime = 0;
-    const targetFPS = 30;
+    const targetFPS = 60;
     const frameInterval = 1000 / targetFPS;
 
     const animate = (timestamp: number) => {
@@ -127,45 +127,45 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
             Math.sin(data.phase2 * 0.9) * data.amp2 * 0.6 +
             Math.sin(data.phase3 * 1.1) * data.amp3 * 0.4;
 
-          // Gentle acceleration toward float direction
-          const targetVx = floatX * 0.4;
-          const targetVy = floatY * 0.4;
+          // Very gentle acceleration toward float direction
+          const targetVx = floatX * 0.25;
+          const targetVy = floatY * 0.25;
           
-          // Smooth interpolation for calm movement
-          data.vx += (targetVx - data.vx) * 0.02;
-          data.vy += (targetVy - data.vy) * 0.02;
+          // Very smooth interpolation for buttery movement
+          data.vx += (targetVx - data.vx) * 0.008;
+          data.vy += (targetVy - data.vy) * 0.008;
 
           // Apply velocity
           data.x += data.vx;
           data.y += data.vy;
 
-          // Soft boundary collision (gentle push back)
+          // Very soft boundary collision (gentle push back)
           const radius = data.baseSize / 2;
-          const margin = 10;
+          const margin = 20;
           
           if (data.x < radius + margin) {
-            data.vx += (radius + margin - data.x) * 0.05;
+            data.vx += (radius + margin - data.x) * 0.01;
           }
           if (data.x > canvasWidth - radius - margin) {
-            data.vx -= (data.x - (canvasWidth - radius - margin)) * 0.05;
+            data.vx -= (data.x - (canvasWidth - radius - margin)) * 0.01;
           }
           if (data.y < headerHeight + radius + margin) {
-            data.vy += (headerHeight + radius + margin - data.y) * 0.05;
+            data.vy += (headerHeight + radius + margin - data.y) * 0.01;
           }
           if (data.y > canvasHeight - radius - margin) {
-            data.vy -= (data.y - (canvasHeight - radius - margin)) * 0.05;
+            data.vy -= (data.y - (canvasHeight - radius - margin)) * 0.01;
           }
 
           // Keep within bounds
           data.x = Math.max(radius, Math.min(canvasWidth - radius, data.x));
           data.y = Math.max(headerHeight + radius, Math.min(canvasHeight - radius, data.y));
 
-          // Light damping for smooth motion
-          data.vx *= 0.995;
-          data.vy *= 0.995;
+          // Very light damping for continuous smooth motion
+          data.vx *= 0.998;
+          data.vy *= 0.998;
 
           // Low velocity cap for calm movement
-          const maxV = 0.6;
+          const maxV = 0.4;
           const speed = Math.sqrt(data.vx * data.vx + data.vy * data.vy);
           if (speed > maxV) {
             data.vx = (data.vx / speed) * maxV;
@@ -190,30 +190,18 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
             const minDistance = (data1.baseSize + data2.baseSize) / 2;
 
             if (distance < minDistance && distance > 0) {
-              // Separate bubbles
+              // Gently separate bubbles (no sudden jumps)
               const overlap = minDistance - distance;
               const nx = dx / distance;
               const ny = dy / distance;
-              const separation = overlap / 2;
+              
+              // Very gradual separation to avoid jerky movement
+              const separationForce = overlap * 0.02;
 
-              data1.x -= nx * separation;
-              data1.y -= ny * separation;
-              data2.x += nx * separation;
-              data2.y += ny * separation;
-
-              // Bounce velocities
-              const dvx = data2.vx - data1.vx;
-              const dvy = data2.vy - data1.vy;
-              const relVel = dvx * nx + dvy * ny;
-
-              if (relVel < 0) {
-                const restitution = 0.6;
-                const impulse = (1 + restitution) * relVel / 2;
-                data1.vx += impulse * nx;
-                data1.vy += impulse * ny;
-                data2.vx -= impulse * nx;
-                data2.vy -= impulse * ny;
-              }
+              data1.vx -= nx * separationForce;
+              data1.vy -= ny * separationForce;
+              data2.vx += nx * separationForce;
+              data2.vy += ny * separationForce;
             }
           }
         }
