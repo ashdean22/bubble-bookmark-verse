@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus, Circle, BarChart3, ShoppingCart, HelpCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import bubbleLinkLogo from '@/assets/bubblelink-logo.png';
 
 interface BubbleHeaderProps {
   availableBubbles: number;
@@ -63,20 +64,11 @@ export const BubbleHeader = ({
         {/* Top row with enhanced logo and bubble count */}
         <div className="flex items-center justify-between mb-4 md:mb-0">
           <div className="flex items-center space-x-3">
-            {/* Enhanced bubble logo with multiple circles */}
-            <div className="relative" role="img" aria-label="BubbleLink logo">
-              <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg border border-white/30">
-                <Circle className="w-4 h-4 md:w-5 md:h-5 text-white" />
-              </div>
-              <div className="absolute -top-1 -right-1 w-3 h-3 md:w-4 md:h-4 rounded-full bg-white/30 backdrop-blur-sm border border-white/40" aria-hidden="true"></div>
-              <div className="absolute -bottom-1 -left-1 w-2 h-2 md:w-3 md:h-3 rounded-full bg-white/25 backdrop-blur-sm border border-white/30" aria-hidden="true"></div>
-            </div>
-            <div>
-              <h1 className="text-xl md:text-2xl font-brand font-bold text-foreground tracking-tight">
-                BubbleLink
-              </h1>
-              <p className="text-white/80 text-xs md:text-sm font-body">Your Bookmarks. In a Bubble.</p>
-            </div>
+            <img 
+              src={bubbleLinkLogo} 
+              alt="BubbleLink - Your Bookmarks. In a Bubble." 
+              className="h-12 md:h-14 w-auto object-contain drop-shadow-lg"
+            />
           </div>
           
           <div 
