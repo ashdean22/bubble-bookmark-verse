@@ -9,22 +9,31 @@ interface BubbleCanvasProps {
   currentSubscription?: string | null;
 }
 
-// Helper functions for heat-based bubble colors (cold=blue, hot=red)
-const getHeatColor = (accessCount: number, maxAccess: number) => {
+// Helper functions for heat-based bubble colors and sizing
+// Hot bubbles (high access) = red, normal size
+// Cold bubbles (low access) = blue, smaller size
+const getHeatStylesAndSize = (accessCount: number, maxAccess: number) => {
   // Normalize access count to 0-1 range
   const heat = maxAccess > 0 ? Math.min(accessCount / maxAccess, 1) : 0;
   
   // Interpolate from blue (cold) to red (hot)
-  // Cold: HSL(210, 100%, 50%) - Blue
-  // Hot: HSL(0, 100%, 50%) - Red
+  // Cold: HSL(210, 100%, 60%) - Light Blue
+  // Hot: HSL(0, 85%, 55%) - Red
   const hue = 210 - (heat * 210); // 210 (blue) → 0 (red)
-  const saturation = 70 + (heat * 30); // 70% → 100%
-  const lightness = 50 + (heat * 10); // 50% → 60%
+  const saturation = 60 + (heat * 25); // 60% → 85%
+  const lightness = 60 - (heat * 5); // 60% → 55%
+  
+  // Cold bubbles are smaller, hot bubbles are normal/base size
+  // Min size: 35px (coldest), Max size: 65px (hottest)
+  const minSize = 35;
+  const maxSize = 65;
+  const size = Math.round(minSize + (heat * (maxSize - minSize)));
   
   return {
-    gradient: `linear-gradient(135deg, hsla(${hue}, ${saturation}%, ${lightness}%, 0.35), hsla(${hue}, ${saturation - 10}%, ${lightness - 10}%, 0.45))`,
-    border: `hsla(${hue}, ${saturation}%, ${lightness}%, 0.7)`,
-    glow: `hsla(${hue}, ${saturation}%, ${lightness}%, 0.4)`
+    gradient: `linear-gradient(135deg, hsla(${hue}, ${saturation}%, ${lightness}%, 0.4), hsla(${hue}, ${saturation - 10}%, ${lightness - 10}%, 0.5))`,
+    border: `hsla(${hue}, ${saturation}%, ${lightness}%, 0.75)`,
+    glow: `hsla(${hue}, ${saturation}%, ${lightness}%, 0.5)`,
+    size
   };
 };
 
@@ -48,6 +57,9 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
       return window.innerWidth < 640 ? 120 : 100;
     };
 
+    // Calculate max access for sizing
+    const maxAccessCount = Math.max(...bookmarks.map(b => b.accessCount), 1);
+
     // Create completely independent ecosystems for each bubble
     const bubbleData = new Map();
     bubbles.forEach((bubble) => {
@@ -59,6 +71,10 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
       const uniqueSeed = bookmarkId ? parseInt(bookmarkId.slice(-8), 16) || 1 : Math.random() * 1000;
       const ecosystemId = Math.random() * 1000000;
       
+      // Calculate size based on heat (access count)
+      const heatStyles = bookmark ? getHeatStylesAndSize(bookmark.accessCount, maxAccessCount) : { size: 50 };
+      const bubbleSize = heatStyles.size;
+      
       bubbleData.set(element, {
         // Position & Physics
         x: bookmark?.x || Math.random() * (window.innerWidth - 100),
@@ -69,10 +85,10 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
         vx: (Math.random() - 0.5) * (0.2 + Math.random() * 0.3),
         vy: (Math.random() - 0.5) * (0.2 + Math.random() * 0.3),
         
-        // Size & Animation
-        baseSize: bookmark?.size || 60,
-        currentSize: bookmark?.size || 60,
-        targetSize: bookmark?.size || 60,
+        // Size & Animation - now based on heat/access count
+        baseSize: bubbleSize,
+        currentSize: bubbleSize,
+        targetSize: bubbleSize,
         
         // Independent Ecosystem Properties
         ecosystemId,
@@ -447,13 +463,13 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
     }
   }, [draggedBubble]);
 
-  // Calculate max access count for heat coloring
+  // Calculate max access count for heat coloring and sizing
   const maxAccessCount = Math.max(...bookmarks.map(b => b.accessCount), 1);
 
   return (
     <div ref={canvasRef} className="absolute inset-0 overflow-hidden">
       {bookmarks.map((bookmark) => {
-        const heatColors = getHeatColor(bookmark.accessCount, maxAccessCount);
+        const heatStyles = getHeatStylesAndSize(bookmark.accessCount, maxAccessCount);
         return (
           <div
             key={bookmark.id}
@@ -461,8 +477,8 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
             className="bubble absolute cursor-pointer transition-all duration-150 group select-none"
             style={{
               transform: `translate3d(${bookmark.x}px, ${bookmark.y}px, 0)`,
-              width: bookmark.size,
-              height: bookmark.size,
+              width: heatStyles.size,
+              height: heatStyles.size,
               zIndex: draggedBubble === bookmark.id ? 30 : 10,
             }}
             onMouseDown={(e) => handleDragStart(e, bookmark.id)}
@@ -471,9 +487,9 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
             <div
               className="w-full h-full rounded-full flex flex-col items-center justify-center relative transition-all duration-300 ease-out"
               style={{
-                background: heatColors.gradient,
-                border: `3px solid ${heatColors.border}`,
-                boxShadow: `0 0 15px ${heatColors.glow}, inset 0 1px 5px rgba(255,255,255,0.1)`,
+                background: heatStyles.gradient,
+                border: `3px solid ${heatStyles.border}`,
+                boxShadow: `0 0 15px ${heatStyles.glow}, inset 0 1px 5px rgba(255,255,255,0.1)`,
                 transform: 'scale(1)',
                 filter: 'brightness(1)',
               }}

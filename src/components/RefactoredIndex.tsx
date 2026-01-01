@@ -93,28 +93,9 @@ export const RefactoredIndex = () => {
   };
 
   // Business logic functions
-  const calculateBubbleSize = (accessCount: number, allBookmarks: Bookmark[]) => {
-    if (allBookmarks.length === 0) return 60;
-    
-    const maxAccess = Math.max(...allBookmarks.map(b => b.accessCount));
-    const minAccess = Math.min(...allBookmarks.map(b => b.accessCount));
-    
-    if (maxAccess === minAccess) return 60;
-    
-    const minSize = 45;
-    const maxSize = 90;
-    const normalizedAccess = maxAccess > 0 ? (accessCount - minAccess) / (maxAccess - minAccess) : 0;
-    
-    return Math.round(minSize + (normalizedAccess * (maxSize - minSize)));
-  };
-
   const saveBookmarks = (newBookmarks: Bookmark[]) => {
-    const bookmarksWithUpdatedSizes = newBookmarks.map(bookmark => ({
-      ...bookmark,
-      size: calculateBubbleSize(bookmark.accessCount, newBookmarks)
-    }));
-    
-    setBookmarks(bookmarksWithUpdatedSizes);
+    // Size is now calculated dynamically in BubbleCanvas based on access count
+    setBookmarks(newBookmarks);
   };
 
   const addBookmark = (bookmark: Omit<Bookmark, 'id' | 'x' | 'y' | 'size' | 'color' | 'accessCount'>) => {
