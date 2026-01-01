@@ -58,7 +58,7 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
       yearlyPrice: 39.99,
       popular: true,
       icon: <Star className="w-6 h-6" />,
-      features: ['75 floating bubbles', '6 Premium theme packs', 'Custom color schemes', 'Advanced visual effects', 'Theme presets library', 'Export/import bookmarks', 'Priority sync', 'Priority support']
+      features: ['75 floating bubbles', 'Heat visualization (hot/cold)', '6 Premium theme packs', 'Custom color schemes', 'Advanced visual effects', 'Theme presets library', 'Export/import bookmarks', 'Priority sync', 'Priority support']
     },
     {
       id: 'premium',
@@ -67,7 +67,7 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
       monthlyPrice: 7.99,
       yearlyPrice: 65.99,
       icon: <Crown className="w-6 h-6" />,
-      features: ['Unlimited bubbles', 'Unlimited custom themes', 'Advanced theme designer', 'Animated theme effects', 'Seasonal theme updates', 'Brand-specific themes', 'Team collaboration', 'Advanced analytics', 'API access', 'White-label options', 'VIP support']
+      features: ['Unlimited bubbles', 'Heat visualization (hot/cold)', 'Unlimited custom themes', 'Advanced theme designer', 'Animated theme effects', 'Seasonal theme updates', 'Brand-specific themes', 'Team collaboration', 'Advanced analytics', 'API access', 'White-label options', 'VIP support']
     }
   ];
 
