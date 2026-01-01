@@ -54,24 +54,26 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
     bookmarks.forEach((bookmark, index) => {
       if (!bubbleDataRef.current.has(bookmark.id)) {
         const heatStyles = getHeatStylesAndSize(bookmark.accessCount, maxAccessCount);
+        // Create unique random seed for each bubble
+        const seed = Math.random() * 1000;
         bubbleDataRef.current.set(bookmark.id, {
           x: bookmark.x,
           y: Math.max(bookmark.y, headerHeight + 50),
           vx: 0,
           vy: 0,
           baseSize: heatStyles.size,
-          // Multiple phases for organic movement
-          phase1: Math.random() * Math.PI * 2,
-          phase2: Math.random() * Math.PI * 2,
-          phase3: Math.random() * Math.PI * 2,
-          // Gentle frequencies for calm movement
-          freq1: 0.006 + Math.random() * 0.004,
-          freq2: 0.009 + Math.random() * 0.005,
-          freq3: 0.004 + Math.random() * 0.003,
-          // Soft amplitudes for subtle motion
-          amp1: 0.15 + Math.random() * 0.1,
-          amp2: 0.1 + Math.random() * 0.08,
-          amp3: 0.2 + Math.random() * 0.12,
+          // Unique seed for noise-like movement
+          seed,
+          // Time offset so bubbles don't sync
+          timeOffset: Math.random() * 10000,
+          // Unique movement characteristics
+          wanderStrength: 0.015 + Math.random() * 0.01,
+          wanderSpeed: 0.0003 + Math.random() * 0.0002,
+          // Target position for smooth wandering
+          targetX: bookmark.x,
+          targetY: Math.max(bookmark.y, headerHeight + 50),
+          // Time until next target change
+          nextTargetTime: 0,
         });
       }
     });
@@ -111,61 +113,70 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
           const data = bubbleDataRef.current.get(id);
           if (!data || draggedBubble === id) return;
 
-          // Update multiple phases at different speeds for organic movement
-          data.phase1 += data.freq1;
-          data.phase2 += data.freq2;
-          data.phase3 += data.freq3;
-
-          // Combine multiple sine waves for natural floating (like seaweed in water)
-          const floatX = 
-            Math.sin(data.phase1) * data.amp1 +
-            Math.sin(data.phase2 * 1.3) * data.amp2 * 0.5 +
-            Math.cos(data.phase3 * 0.7) * data.amp3 * 0.3;
+          const time = timestamp + data.timeOffset;
+          const radius = data.baseSize / 2;
           
-          const floatY = 
-            Math.cos(data.phase1 * 0.8) * data.amp1 * 0.8 +
-            Math.sin(data.phase2 * 0.9) * data.amp2 * 0.6 +
-            Math.sin(data.phase3 * 1.1) * data.amp3 * 0.4;
-
-          // Very gentle acceleration toward float direction
-          const targetVx = floatX * 0.25;
-          const targetVy = floatY * 0.25;
+          // Check if it's time to pick a new wander target
+          if (time > data.nextTargetTime) {
+            // Pick a new random target within bounds
+            const padding = radius + 40;
+            data.targetX = padding + Math.random() * (canvasWidth - padding * 2);
+            data.targetY = headerHeight + padding + Math.random() * (canvasHeight - headerHeight - padding * 2);
+            // Next target change in 3-8 seconds
+            data.nextTargetTime = time + 3000 + Math.random() * 5000;
+          }
           
-          // Very smooth interpolation for buttery movement
-          data.vx += (targetVx - data.vx) * 0.008;
-          data.vy += (targetVy - data.vy) * 0.008;
+          // Calculate direction to target
+          const dx = data.targetX - data.x;
+          const dy = data.targetY - data.y;
+          const distToTarget = Math.sqrt(dx * dx + dy * dy);
+          
+          // Normalize and apply gentle force toward target
+          if (distToTarget > 1) {
+            const forceStrength = data.wanderStrength;
+            data.vx += (dx / distToTarget) * forceStrength;
+            data.vy += (dy / distToTarget) * forceStrength;
+          }
+          
+          // Add subtle organic wobble using smooth noise-like motion
+          const wobbleTime = time * data.wanderSpeed;
+          const wobbleX = Math.sin(wobbleTime * 1.1 + data.seed) * 0.008 + 
+                         Math.sin(wobbleTime * 0.7 + data.seed * 2) * 0.005;
+          const wobbleY = Math.cos(wobbleTime * 0.9 + data.seed) * 0.008 + 
+                         Math.cos(wobbleTime * 1.3 + data.seed * 3) * 0.005;
+          
+          data.vx += wobbleX;
+          data.vy += wobbleY;
 
           // Apply velocity
           data.x += data.vx;
           data.y += data.vy;
 
-          // Very soft boundary collision (gentle push back)
-          const radius = data.baseSize / 2;
-          const margin = 20;
+          // Soft boundary - gently steer away from edges
+          const margin = 30;
           
           if (data.x < radius + margin) {
-            data.vx += (radius + margin - data.x) * 0.01;
+            data.vx += 0.02;
+          } else if (data.x > canvasWidth - radius - margin) {
+            data.vx -= 0.02;
           }
-          if (data.x > canvasWidth - radius - margin) {
-            data.vx -= (data.x - (canvasWidth - radius - margin)) * 0.01;
-          }
+          
           if (data.y < headerHeight + radius + margin) {
-            data.vy += (headerHeight + radius + margin - data.y) * 0.01;
-          }
-          if (data.y > canvasHeight - radius - margin) {
-            data.vy -= (data.y - (canvasHeight - radius - margin)) * 0.01;
+            data.vy += 0.02;
+          } else if (data.y > canvasHeight - radius - margin) {
+            data.vy -= 0.02;
           }
 
           // Keep within bounds
           data.x = Math.max(radius, Math.min(canvasWidth - radius, data.x));
           data.y = Math.max(headerHeight + radius, Math.min(canvasHeight - radius, data.y));
 
-          // Very light damping for continuous smooth motion
-          data.vx *= 0.998;
-          data.vy *= 0.998;
+          // Smooth damping for natural deceleration
+          data.vx *= 0.985;
+          data.vy *= 0.985;
 
-          // Low velocity cap for calm movement
-          const maxV = 0.4;
+          // Gentle velocity cap
+          const maxV = 0.8;
           const speed = Math.sqrt(data.vx * data.vx + data.vy * data.vy);
           if (speed > maxV) {
             data.vx = (data.vx / speed) * maxV;
