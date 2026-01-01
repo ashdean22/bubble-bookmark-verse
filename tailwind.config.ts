@@ -89,11 +89,20 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'logo-glow': {
+					'0%, 100%': {
+						boxShadow: '0 0 20px 4px hsla(280, 80%, 60%, 0.4), 0 0 40px 8px hsla(320, 80%, 60%, 0.2)'
+					},
+					'50%': {
+						boxShadow: '0 0 30px 8px hsla(280, 80%, 60%, 0.6), 0 0 60px 16px hsla(320, 80%, 60%, 0.3)'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'logo-glow': 'logo-glow 3s ease-in-out infinite'
 			}
 		}
 	},
