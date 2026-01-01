@@ -114,165 +114,156 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
       });
     });
 
-    const animate = () => {
+    // Throttle physics to 30fps for mobile performance
+    let lastPhysicsUpdate = 0;
+    const physicsInterval = 1000 / 30; // 30fps
+    let lastCollisionCheck = 0;
+    const collisionInterval = 1000 / 15; // Check collisions at 15fps
+    
+    const animate = (timestamp: number) => {
       const headerHeight = getHeaderHeight();
       const canvasWidth = canvas.clientWidth;
       const canvasHeight = canvas.clientHeight;
       
-      // Independent bubble animation with collision detection
-      bubbles.forEach((bubble) => {
-        const element = bubble as HTMLElement;
-        const data = bubbleData.get(element);
-        if (!data) return;
+      // Throttle physics updates for mobile performance
+      const shouldUpdatePhysics = timestamp - lastPhysicsUpdate >= physicsInterval;
+      const shouldCheckCollisions = timestamp - lastCollisionCheck >= collisionInterval;
+      
+      if (shouldUpdatePhysics) {
+        lastPhysicsUpdate = timestamp;
+        
+        bubbles.forEach((bubble) => {
+          const element = bubble as HTMLElement;
+          const data = bubbleData.get(element);
+          if (!data) return;
 
-        const bookmarkId = element.getAttribute('data-bubble-id');
-        
-        // Skip animation for dragged bubble
-        if (draggedBubble === bookmarkId) {
-          return;
-        }
+          const bookmarkId = element.getAttribute('data-bubble-id');
+          if (draggedBubble === bookmarkId) return;
 
-        // Simplified smooth animation - reduce complexity for mobile
-        const p = data.personality;
-        
-        // Simple, smooth cycle updates (fewer calculations)
-        data.floatCycle += 0.01 * p.rhythm;
-        data.breatheCycle += 0.008 * p.rhythm;
-        
-        // Simple organic movement - single sine wave per axis
-        const organicX = Math.sin(data.floatCycle) * 0.02 * p.amplitude;
-        const organicY = Math.cos(data.breatheCycle) * 0.015 * p.amplitude;
-        
-        data.vx += organicX;
-        data.vy += organicY;
-        
-        // Apply velocity
-        data.x += data.vx;
-        data.y += data.vy;
-
-        // Simple boundary handling
-        const radius = data.baseSize / 2;
-        const topBoundary = headerHeight + radius;
-        
-        if (data.x < radius) {
-          data.x = radius;
-          data.vx = Math.abs(data.vx) * 0.8;
-        } else if (data.x > canvasWidth - radius) {
-          data.x = canvasWidth - radius;
-          data.vx = -Math.abs(data.vx) * 0.8;
-        }
-        
-        if (data.y < topBoundary) {
-          data.y = topBoundary;
-          data.vy = Math.abs(data.vy) * 0.8;
-        } else if (data.y > canvasHeight - radius) {
-          data.y = canvasHeight - radius;
-          data.vy = -Math.abs(data.vy) * 0.8;
-        }
-
-        // Simple damping
-        data.vx *= 0.995;
-        data.vy *= 0.995;
-
-        // Simple velocity cap
-        const maxVelocity = 0.8;
-        const speed = Math.sqrt(data.vx * data.vx + data.vy * data.vy);
-        if (speed > maxVelocity) {
-          data.vx = (data.vx / speed) * maxVelocity;
-          data.vy = (data.vy / speed) * maxVelocity;
-        }
-      });
-
-      // Bubble-to-bubble collision detection and response
-      const bubbleArray = Array.from(bubbles);
-      for (let i = 0; i < bubbleArray.length; i++) {
-        const bubble1 = bubbleArray[i] as HTMLElement;
-        const data1 = bubbleData.get(bubble1);
-        if (!data1) continue;
-        
-        const bookmarkId1 = bubble1.getAttribute('data-bubble-id');
-        if (draggedBubble === bookmarkId1) continue;
-        
-        for (let j = i + 1; j < bubbleArray.length; j++) {
-          const bubble2 = bubbleArray[j] as HTMLElement;
-          const data2 = bubbleData.get(bubble2);
-          if (!data2) continue;
+          const p = data.personality;
           
-          const bookmarkId2 = bubble2.getAttribute('data-bubble-id');
-          if (draggedBubble === bookmarkId2) continue;
+          // Simple cycle updates
+          data.floatCycle += 0.01 * p.rhythm;
+          data.breatheCycle += 0.008 * p.rhythm;
           
-          // Calculate distance between bubble centers
-          const dx = data2.x - data1.x;
-          const dy = data2.y - data1.y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
+          // Simple organic movement
+          const organicX = Math.sin(data.floatCycle) * 0.02 * p.amplitude;
+          const organicY = Math.cos(data.breatheCycle) * 0.015 * p.amplitude;
           
-          // Check if bubbles are colliding
-          const radius1 = data1.currentSize / 2;
-          const radius2 = data2.currentSize / 2;
-          const minDistance = radius1 + radius2;
+          data.vx += organicX;
+          data.vy += organicY;
           
-          if (distance < minDistance && distance > 0) {
-            // Bubbles are colliding - calculate collision response
-            const overlap = minDistance - distance;
+          data.x += data.vx;
+          data.y += data.vy;
+
+          // Boundary handling
+          const radius = data.baseSize / 2;
+          const topBoundary = headerHeight + radius;
+          
+          if (data.x < radius) {
+            data.x = radius;
+            data.vx = Math.abs(data.vx) * 0.8;
+          } else if (data.x > canvasWidth - radius) {
+            data.x = canvasWidth - radius;
+            data.vx = -Math.abs(data.vx) * 0.8;
+          }
+          
+          if (data.y < topBoundary) {
+            data.y = topBoundary;
+            data.vy = Math.abs(data.vy) * 0.8;
+          } else if (data.y > canvasHeight - radius) {
+            data.y = canvasHeight - radius;
+            data.vy = -Math.abs(data.vy) * 0.8;
+          }
+
+          // Damping
+          data.vx *= 0.995;
+          data.vy *= 0.995;
+
+          // Velocity cap
+          const maxVelocity = 0.8;
+          const speed = Math.sqrt(data.vx * data.vx + data.vy * data.vy);
+          if (speed > maxVelocity) {
+            data.vx = (data.vx / speed) * maxVelocity;
+            data.vy = (data.vy / speed) * maxVelocity;
+          }
+        });
+
+        // Collision detection - only run at lower frequency
+        if (shouldCheckCollisions) {
+          lastCollisionCheck = timestamp;
+          
+          const bubbleArray = Array.from(bubbles);
+          for (let i = 0; i < bubbleArray.length; i++) {
+            const bubble1 = bubbleArray[i] as HTMLElement;
+            const data1 = bubbleData.get(bubble1);
+            if (!data1) continue;
             
-            // Normalize collision vector
-            const nx = dx / distance;
-            const ny = dy / distance;
+            const bookmarkId1 = bubble1.getAttribute('data-bubble-id');
+            if (draggedBubble === bookmarkId1) continue;
             
-            // Separate bubbles based on overlap
-            const separationFactor = overlap / 2;
-            data1.x -= nx * separationFactor;
-            data1.y -= ny * separationFactor;
-            data2.x += nx * separationFactor;
-            data2.y += ny * separationFactor;
-            
-            // Calculate relative velocity
-            const dvx = data2.vx - data1.vx;
-            const dvy = data2.vy - data1.vy;
-            
-            // Calculate relative velocity in collision normal direction
-            const relativeVelocity = dvx * nx + dvy * ny;
-            
-            // Don't resolve if velocities are separating
-            if (relativeVelocity < 0) {
-              // Elastic collision with some damping for realistic bouncing
-              const restitution = 0.8; // Bounciness factor
-              const impulse = (1 + restitution) * relativeVelocity / 2;
+            for (let j = i + 1; j < bubbleArray.length; j++) {
+              const bubble2 = bubbleArray[j] as HTMLElement;
+              const data2 = bubbleData.get(bubble2);
+              if (!data2) continue;
               
-              // Apply impulse to velocities
-              data1.vx += impulse * nx;
-              data1.vy += impulse * ny;
-              data2.vx -= impulse * nx;
-              data2.vy -= impulse * ny;
+              const bookmarkId2 = bubble2.getAttribute('data-bubble-id');
+              if (draggedBubble === bookmarkId2) continue;
               
-              // Add excitement to both bubbles
-              data1.excitement = Math.min(1, data1.excitement + 0.1);
-              data2.excitement = Math.min(1, data2.excitement + 0.1);
+              const dx = data2.x - data1.x;
+              const dy = data2.y - data1.y;
+              const distance = Math.sqrt(dx * dx + dy * dy);
+              
+              const radius1 = data1.currentSize / 2;
+              const radius2 = data2.currentSize / 2;
+              const minDistance = radius1 + radius2;
+              
+              if (distance < minDistance && distance > 0) {
+                const overlap = minDistance - distance;
+                const nx = dx / distance;
+                const ny = dy / distance;
+                
+                const separationFactor = overlap / 2;
+                data1.x -= nx * separationFactor;
+                data1.y -= ny * separationFactor;
+                data2.x += nx * separationFactor;
+                data2.y += ny * separationFactor;
+                
+                const dvx = data2.vx - data1.vx;
+                const dvy = data2.vy - data1.vy;
+                const relativeVelocity = dvx * nx + dvy * ny;
+                
+                if (relativeVelocity < 0) {
+                  const restitution = 0.8;
+                  const impulse = (1 + restitution) * relativeVelocity / 2;
+                  
+                  data1.vx += impulse * nx;
+                  data1.vy += impulse * ny;
+                  data2.vx -= impulse * nx;
+                  data2.vy -= impulse * ny;
+                }
+              }
             }
           }
         }
+
+        // Apply DOM updates only when physics updates
+        bubbles.forEach((bubble) => {
+          const element = bubble as HTMLElement;
+          const data = bubbleData.get(element);
+          if (!data) return;
+
+          const roundedX = Math.round(data.x - data.currentSize / 2);
+          const roundedY = Math.round(data.y - data.currentSize / 2);
+          
+          element.style.transform = `translate3d(${roundedX}px, ${roundedY}px, 0)`;
+        });
       }
-
-      // Apply DOM updates directly (already in animation frame)
-      bubbles.forEach((bubble) => {
-        const element = bubble as HTMLElement;
-        const data = bubbleData.get(element);
-        if (!data) return;
-
-        // Use rounded pixel values to prevent subpixel blur
-        const roundedX = Math.round(data.x - data.currentSize / 2);
-        const roundedY = Math.round(data.y - data.currentSize / 2);
-        const roundedSize = Math.round(data.currentSize);
-        
-        element.style.transform = `translate3d(${roundedX}px, ${roundedY}px, 0)`;
-        element.style.width = `${roundedSize}px`;
-        element.style.height = `${roundedSize}px`;
-      });
       
       animationRef.current = requestAnimationFrame(animate);
     };
 
-    animate();
+    animate(performance.now());
 
     return () => {
       if (animationRef.current) {
@@ -412,7 +403,8 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
               zIndex: draggedBubble === bookmark.id ? 30 : 10,
               willChange: 'transform',
               backfaceVisibility: 'hidden',
-              filter: 'blur(0)',
+              contain: 'layout style paint',
+              isolation: 'isolate',
             }}
             onMouseDown={(e) => handleDragStart(e, bookmark.id)}
             onTouchStart={(e) => handleDragStart(e, bookmark.id)}
