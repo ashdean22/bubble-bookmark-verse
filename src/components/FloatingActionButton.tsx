@@ -18,14 +18,6 @@ export const FloatingActionButton = ({
 }: FloatingActionButtonProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const handlePrimaryClick = () => {
-    if (isExpanded) {
-      setIsExpanded(false);
-    } else {
-      onCreateBubble();
-    }
-  };
-
   const handleToggle = () => {
     setIsExpanded(!isExpanded);
   };
@@ -97,33 +89,18 @@ export const FloatingActionButton = ({
 
       {/* Primary FAB button */}
       <Button
-        onClick={isExpanded ? handleToggle : handlePrimaryClick}
-        onContextMenu={(e) => {
-          e.preventDefault();
-          handleToggle();
-        }}
+        onClick={handleToggle}
         size="icon"
         className={cn(
           'h-14 w-14 rounded-full shadow-xl transition-all duration-300 hover:scale-110',
           'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white',
           isExpanded && 'rotate-45'
         )}
-        aria-label={isExpanded ? 'Close menu' : 'Create bubble (hold for more options)'}
+        aria-label={isExpanded ? 'Close menu' : 'Open menu'}
         aria-expanded={isExpanded}
       >
         {isExpanded ? <X className="h-6 w-6" /> : <Plus className="h-6 w-6" />}
       </Button>
-
-      {/* Expand hint */}
-      {!isExpanded && (
-        <button
-          onClick={handleToggle}
-          className="absolute -top-1 -left-1 h-6 w-6 rounded-full bg-secondary/80 text-secondary-foreground flex items-center justify-center text-xs shadow-md hover:bg-secondary transition-all"
-          aria-label="Expand menu"
-        >
-          •••
-        </button>
-      )}
     </div>
   );
 };
