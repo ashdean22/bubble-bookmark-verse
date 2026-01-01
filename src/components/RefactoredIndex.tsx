@@ -4,7 +4,8 @@ import { AddBookmarkModal } from '@/components/AddBookmarkModal';
 import { PricingModal } from '@/components/PricingModal';
 import { UpgradePromptModal } from '@/components/UpgradePromptModal';
 import { AnalyticsInsights } from '@/components/AnalyticsInsights';
-import { BubbleHeader } from '@/components/BubbleHeader';
+import { BubbleHeaderMinimal } from '@/components/BubbleHeaderMinimal';
+import { FloatingActionButton } from '@/components/FloatingActionButton';
 import { WelcomeMessage } from '@/components/WelcomeMessage';
 import { AbstractBackground } from '@/components/AbstractBackground';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -183,10 +184,12 @@ export const RefactoredIndex = () => {
       <div className="min-h-screen bg-background relative overflow-hidden font-body">
         <AbstractBackground />
 
-        <BubbleHeader
-          availableBubbles={availableBubbles}
+        <BubbleHeaderMinimal
           usedBubbles={usedBubbles}
           maxBubbles={maxBubbles}
+        />
+
+        <FloatingActionButton
           onCreateBubble={() => setShowAddModal(true)}
           onBuyBubbles={() => setShowPricingModal(true)}
           onShowAnalytics={() => setShowAnalytics(prev => !prev)}
