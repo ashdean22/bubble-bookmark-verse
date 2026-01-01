@@ -20,12 +20,12 @@ const tierBenefits: Record<string, { nextTier: string; benefits: string[]; price
   },
   basic: {
     nextTier: 'Bubble Pro',
-    benefits: ['75 floating bubbles', '6 Premium theme packs', 'Custom color schemes', 'Advanced visual effects', 'Priority support'],
+    benefits: ['75 floating bubbles', 'Heat visualization (hot/cold)', '6 Premium theme packs', 'Custom color schemes', 'Priority support'],
     price: '$4.99/mo'
   },
   popular: {
     nextTier: 'Bubble Premium',
-    benefits: ['Unlimited bubbles', 'Unlimited custom themes', 'Advanced theme designer', 'Team collaboration', 'API access'],
+    benefits: ['Unlimited bubbles', 'Heat visualization (hot/cold)', 'Unlimited custom themes', 'Advanced theme designer', 'API access'],
     price: '$7.99/mo'
   }
 };
