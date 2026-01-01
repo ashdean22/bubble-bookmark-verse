@@ -84,8 +84,12 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
         const canvasWidth = canvas.clientWidth;
         const canvasHeight = canvas.clientHeight;
 
-        bubbleDataRef.current.forEach((data, id) => {
-          if (draggedBubble === id) return;
+        // Update movement for each bubble
+        const bubbleIds = Array.from(bubbleDataRef.current.keys());
+        
+        bubbleIds.forEach((id) => {
+          const data = bubbleDataRef.current.get(id);
+          if (!data || draggedBubble === id) return;
 
           // Simple sine wave movement
           data.phase += 0.02 * data.speed;
@@ -117,8 +121,58 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
             data.vx = (data.vx / speed) * maxV;
             data.vy = (data.vy / speed) * maxV;
           }
+        });
 
-          // Update DOM
+        // Collision detection between bubbles
+        for (let i = 0; i < bubbleIds.length; i++) {
+          const id1 = bubbleIds[i];
+          const data1 = bubbleDataRef.current.get(id1);
+          if (!data1 || draggedBubble === id1) continue;
+
+          for (let j = i + 1; j < bubbleIds.length; j++) {
+            const id2 = bubbleIds[j];
+            const data2 = bubbleDataRef.current.get(id2);
+            if (!data2 || draggedBubble === id2) continue;
+
+            const dx = data2.x - data1.x;
+            const dy = data2.y - data1.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const minDistance = (data1.baseSize + data2.baseSize) / 2;
+
+            if (distance < minDistance && distance > 0) {
+              // Separate bubbles
+              const overlap = minDistance - distance;
+              const nx = dx / distance;
+              const ny = dy / distance;
+              const separation = overlap / 2;
+
+              data1.x -= nx * separation;
+              data1.y -= ny * separation;
+              data2.x += nx * separation;
+              data2.y += ny * separation;
+
+              // Bounce velocities
+              const dvx = data2.vx - data1.vx;
+              const dvy = data2.vy - data1.vy;
+              const relVel = dvx * nx + dvy * ny;
+
+              if (relVel < 0) {
+                const restitution = 0.6;
+                const impulse = (1 + restitution) * relVel / 2;
+                data1.vx += impulse * nx;
+                data1.vy += impulse * ny;
+                data2.vx -= impulse * nx;
+                data2.vy -= impulse * ny;
+              }
+            }
+          }
+        }
+
+        // Update DOM for all bubbles
+        bubbleIds.forEach((id) => {
+          const data = bubbleDataRef.current.get(id);
+          if (!data) return;
+          
           const el = canvas.querySelector(`[data-bubble-id="${id}"]`) as HTMLElement;
           if (el) {
             const x = Math.round(data.x - data.baseSize / 2);
