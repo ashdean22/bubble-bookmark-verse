@@ -12,16 +12,26 @@ interface BubbleCanvasProps {
 const getHeatStylesAndSize = (accessCount: number, maxAccess: number) => {
   const heat = maxAccess > 0 ? Math.min(accessCount / maxAccess, 1) : 0;
   const hue = 210 - (heat * 210);
-  const saturation = 60 + (heat * 25);
-  const lightness = 60 - (heat * 5);
+  const saturation = 50 + (heat * 20);
+  const lightness = 55 - (heat * 5);
   const minSize = 35;
   const maxSize = 65;
   const size = Math.round(minSize + (heat * (maxSize - minSize)));
   
+  // Soft, translucent bubble style like cryptobubbles
+  const baseColor = `hsla(${hue}, ${saturation}%, ${lightness}%, 0.25)`;
+  const borderColor = `hsla(${hue}, ${saturation}%, ${lightness + 10}%, 0.5)`;
+  const glowColor = `hsla(${hue}, ${saturation}%, ${lightness}%, 0.35)`;
+  const innerGlow = `hsla(${hue}, ${saturation}%, ${lightness + 20}%, 0.15)`;
+  
   return {
-    gradient: `linear-gradient(135deg, hsla(${hue}, ${saturation}%, ${lightness}%, 0.4), hsla(${hue}, ${saturation - 10}%, ${lightness - 10}%, 0.5))`,
-    border: `hsla(${hue}, ${saturation}%, ${lightness}%, 0.75)`,
-    glow: `hsla(${hue}, ${saturation}%, ${lightness}%, 0.5)`,
+    background: baseColor,
+    border: borderColor,
+    glow: glowColor,
+    innerGlow,
+    hue,
+    saturation,
+    lightness,
     size
   };
 };
@@ -344,24 +354,37 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
             onMouseDown={(e) => handleDragStart(e, bookmark.id)}
             onTouchStart={(e) => handleDragStart(e, bookmark.id)}
           >
+            {/* Soft bubble with multiple layers for depth */}
             <div
-              className="w-full h-full rounded-full flex flex-col items-center justify-center relative"
+              className="w-full h-full rounded-full flex flex-col items-center justify-center relative overflow-hidden"
               style={{
-                background: heatStyles.gradient,
-                border: `3px solid ${heatStyles.border}`,
-                boxShadow: `0 0 15px ${heatStyles.glow}, inset 0 1px 5px rgba(255,255,255,0.1)`,
+                background: `radial-gradient(circle at 30% 30%, ${heatStyles.innerGlow}, transparent 50%), ${heatStyles.background}`,
+                border: `2px solid ${heatStyles.border}`,
+                boxShadow: `
+                  0 0 20px ${heatStyles.glow},
+                  0 0 40px ${heatStyles.glow},
+                  inset 0 0 20px ${heatStyles.innerGlow}
+                `,
+                backdropFilter: 'blur(2px)',
               }}
               onClick={() => handleBubbleClick(bookmark)}
             >
+              {/* Inner highlight for 3D effect */}
+              <div 
+                className="absolute inset-0 rounded-full pointer-events-none"
+                style={{
+                  background: `radial-gradient(ellipse 60% 40% at 35% 25%, hsla(${heatStyles.hue}, ${heatStyles.saturation}%, 90%, 0.2), transparent 50%)`,
+                }}
+              />
               <img
                 src={bookmark.favicon}
                 alt={bookmark.title}
-                className="w-6 h-6 rounded pointer-events-none opacity-90"
+                className="w-6 h-6 rounded pointer-events-none opacity-90 relative z-10"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMSA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDMgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K';
                 }}
               />
-              <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+              <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
                 <ExternalLink className="w-3 h-3 text-white drop-shadow-lg" />
               </div>
             </div>
