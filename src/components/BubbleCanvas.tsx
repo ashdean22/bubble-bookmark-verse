@@ -12,8 +12,8 @@ interface BubbleCanvasProps {
 const getHeatStylesAndSize = (accessCount: number, maxAccess: number, isMobile: boolean, isTablet: boolean) => {
   const heat = maxAccess > 0 ? Math.min(accessCount / maxAccess, 1) : 0;
   const hue = 210 - (heat * 210);
-  const saturation = 50 + (heat * 20);
-  const lightness = 55 - (heat * 5);
+  const saturation = 65 + (heat * 15);
+  const lightness = 50 - (heat * 10);
   
   // Responsive bubble sizes
   let minSize = 35;
@@ -29,17 +29,13 @@ const getHeatStylesAndSize = (accessCount: number, maxAccess: number, isMobile: 
   
   const size = Math.round(minSize + (heat * (maxSize - minSize)));
   
-  // Soft, translucent bubble style like cryptobubbles
-  const baseColor = `hsla(${hue}, ${saturation}%, ${lightness}%, 0.25)`;
-  const borderColor = `hsla(${hue}, ${saturation}%, ${lightness + 10}%, 0.5)`;
-  const glowColor = `hsla(${hue}, ${saturation}%, ${lightness}%, 0.35)`;
-  const innerGlow = `hsla(${hue}, ${saturation}%, ${lightness + 20}%, 0.15)`;
+  // Solid, opaque bubble colors
+  const baseColor = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+  const borderColor = `hsl(${hue}, ${saturation}%, ${lightness - 10}%)`;
   
   return {
     background: baseColor,
     border: borderColor,
-    glow: glowColor,
-    innerGlow,
     hue,
     saturation,
     lightness,
@@ -405,28 +401,16 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
             onMouseDown={(e) => handleDragStart(e, bookmark.id)}
             onTouchStart={(e) => handleDragStart(e, bookmark.id)}
           >
-            {/* Soft bubble with multiple layers for depth */}
+            {/* Solid bubble */}
             <div
-              className="w-full h-full rounded-full flex flex-col items-center justify-center relative overflow-hidden"
+              className="w-full h-full rounded-full flex flex-col items-center justify-center relative"
               style={{
-                background: `radial-gradient(circle at 30% 30%, ${heatStyles.innerGlow}, transparent 50%), ${heatStyles.background}`,
+                background: heatStyles.background,
                 border: `2px solid ${heatStyles.border}`,
-                boxShadow: `
-                  0 0 20px ${heatStyles.glow},
-                  0 0 40px ${heatStyles.glow},
-                  inset 0 0 20px ${heatStyles.innerGlow}
-                `,
-                backdropFilter: 'blur(2px)',
+                boxShadow: `0 4px 12px hsla(${heatStyles.hue}, ${heatStyles.saturation}%, 20%, 0.3)`,
               }}
               onClick={() => handleBubbleClick(bookmark)}
             >
-              {/* Inner highlight for 3D effect */}
-              <div 
-                className="absolute inset-0 rounded-full pointer-events-none"
-                style={{
-                  background: `radial-gradient(ellipse 60% 40% at 35% 25%, hsla(${heatStyles.hue}, ${heatStyles.saturation}%, 90%, 0.2), transparent 50%)`,
-                }}
-              />
               <img
                 src={bookmark.favicon}
                 alt={bookmark.title}
