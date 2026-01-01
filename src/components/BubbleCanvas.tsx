@@ -54,14 +54,14 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
           phase1: Math.random() * Math.PI * 2,
           phase2: Math.random() * Math.PI * 2,
           phase3: Math.random() * Math.PI * 2,
-          // Faster frequencies for lively movement
-          freq1: 0.02 + Math.random() * 0.015,
-          freq2: 0.03 + Math.random() * 0.02,
-          freq3: 0.01 + Math.random() * 0.008,
-          // Larger amplitudes for more motion
-          amp1: 0.4 + Math.random() * 0.3,
-          amp2: 0.25 + Math.random() * 0.15,
-          amp3: 0.5 + Math.random() * 0.3,
+          // Very fast frequencies for active movement
+          freq1: 0.04 + Math.random() * 0.03,
+          freq2: 0.06 + Math.random() * 0.04,
+          freq3: 0.025 + Math.random() * 0.02,
+          // Large amplitudes for energetic motion
+          amp1: 0.8 + Math.random() * 0.5,
+          amp2: 0.5 + Math.random() * 0.3,
+          amp3: 1.0 + Math.random() * 0.6,
         });
       }
     });
@@ -117,13 +117,13 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
             Math.sin(data.phase2 * 0.9) * data.amp2 * 0.6 +
             Math.sin(data.phase3 * 1.1) * data.amp3 * 0.4;
 
-          // Gentle acceleration toward float direction (responsive easing)
-          const targetVx = floatX * 1.2;
-          const targetVy = floatY * 1.2;
+          // Strong acceleration toward float direction
+          const targetVx = floatX * 2.5;
+          const targetVy = floatY * 2.5;
           
-          // Faster interpolation for snappier response
-          data.vx += (targetVx - data.vx) * 0.06;
-          data.vy += (targetVy - data.vy) * 0.06;
+          // Fast interpolation for very responsive movement
+          data.vx += (targetVx - data.vx) * 0.12;
+          data.vy += (targetVy - data.vy) * 0.12;
 
           // Apply velocity
           data.x += data.vx;
@@ -150,12 +150,12 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
           data.x = Math.max(radius, Math.min(canvasWidth - radius, data.x));
           data.y = Math.max(headerHeight + radius, Math.min(canvasHeight - radius, data.y));
 
-          // Light damping for continuous motion
-          data.vx *= 0.99;
-          data.vy *= 0.99;
+          // Minimal damping for active motion
+          data.vx *= 0.985;
+          data.vy *= 0.985;
 
-          // Higher velocity cap for livelier movement
-          const maxV = 2.0;
+          // High velocity cap for very active movement
+          const maxV = 4.0;
           const speed = Math.sqrt(data.vx * data.vx + data.vy * data.vy);
           if (speed > maxV) {
             data.vx = (data.vx / speed) * maxV;
