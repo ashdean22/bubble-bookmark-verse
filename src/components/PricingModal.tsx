@@ -44,30 +44,30 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
     {
       id: 'basic',
       name: 'Bubble Basic',
-      bubbles: 50,
+      bubbles: 25,
       monthlyPrice: 1.99,
-      yearlyPrice: 19.99, // 17% off yearly
+      yearlyPrice: 19.99,
       icon: <Circle className="w-6 h-6" />,
-      features: ['50 floating bubbles', 'Enhanced animations', 'Cloud sync', 'Priority loading', 'Email support']
+      features: ['25 floating bubbles', 'Enhanced animations', 'Cloud sync', 'Priority loading', 'Email support']
     },
     {
       id: 'popular',
       name: 'Bubble Pro',
-      bubbles: 999,
+      bubbles: 75,
       monthlyPrice: 4.99,
-      yearlyPrice: 39.99, // 33% off yearly
+      yearlyPrice: 39.99,
       popular: true,
       icon: <Star className="w-6 h-6" />,
-      features: ['Unlimited bubbles', '6 Premium theme packs', 'Custom color schemes', 'Advanced visual effects', 'Theme presets library', 'Export/import bookmarks', 'Priority sync', 'Priority support']
+      features: ['75 floating bubbles', '6 Premium theme packs', 'Custom color schemes', 'Advanced visual effects', 'Theme presets library', 'Export/import bookmarks', 'Priority sync', 'Priority support']
     },
     {
       id: 'premium',
       name: 'Bubble Premium',
       bubbles: 999,
       monthlyPrice: 7.99,
-      yearlyPrice: 65.99, // 31% off yearly
+      yearlyPrice: 65.99,
       icon: <Crown className="w-6 h-6" />,
-      features: ['Everything in Pro', 'Unlimited custom themes', 'Advanced theme designer', 'Animated theme effects', 'Seasonal theme updates', 'Brand-specific themes', 'Team collaboration', 'Advanced analytics', 'API access', 'White-label options', 'VIP support']
+      features: ['Unlimited bubbles', 'Unlimited custom themes', 'Advanced theme designer', 'Animated theme effects', 'Seasonal theme updates', 'Brand-specific themes', 'Team collaboration', 'Advanced analytics', 'API access', 'White-label options', 'VIP support']
     }
   ];
 
