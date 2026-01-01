@@ -64,15 +64,17 @@ export const AbstractBackground = () => {
           key={`shape-${shape.id}`}
           className="absolute border border-primary/10 animate-pulse"
           style={{
-            left: `${shape.left}%`,
-            top: `${shape.top}%`,
-            width: `${shape.size}px`,
-            height: `${shape.size}px`,
-            transform: `translate(-50%, -50%) rotate(${shape.rotation}deg)`,
+            left: `${Math.round(shape.left)}%`,
+            top: `${Math.round(shape.top)}%`,
+            width: `${Math.round(shape.size)}px`,
+            height: `${Math.round(shape.size)}px`,
+            transform: `translate(-50%, -50%) rotate(${Math.round(shape.rotation)}deg)`,
             borderRadius: shape.id % 3 === 0 ? '50%' : shape.id % 2 === 0 ? '12px' : '0px',
-            background: `linear-gradient(45deg, hsl(var(--primary) / ${shape.opacity}), transparent)`,
+            background: `linear-gradient(45deg, hsl(var(--primary) / ${shape.opacity.toFixed(2)}), transparent)`,
             animationDelay: `${shape.delay}s`,
             animationDuration: `${shape.duration}s`,
+            willChange: 'opacity',
+            backfaceVisibility: 'hidden',
           }}
         />
       ))}
