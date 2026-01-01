@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BubbleCanvas } from '@/components/BubbleCanvas';
 import { AddBookmarkModal } from '@/components/AddBookmarkModal';
 import { PricingModal } from '@/components/PricingModal';
+import { UpgradePromptModal } from '@/components/UpgradePromptModal';
 import { AnalyticsInsights } from '@/components/AnalyticsInsights';
 import { BubbleHeader } from '@/components/BubbleHeader';
 import { WelcomeMessage } from '@/components/WelcomeMessage';
@@ -38,6 +39,8 @@ export const RefactoredIndex = () => {
   // Modal states
   const [showAddModal, setShowAddModal] = useState(false);
   const [showPricingModal, setShowPricingModal] = useState(false);
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+  const [upgradePromptDismissed, setUpgradePromptDismissed] = useLocalStorage('upgradePromptDismissed', false);
   const [showAnalytics, setShowAnalytics] = useState(false);
   
   const { toast } = useToast();
@@ -52,6 +55,42 @@ export const RefactoredIndex = () => {
       description: "Ctrl/Cmd + N: Create bubble | Ctrl/Cmd + B: Buy bubbles | Ctrl/Cmd + A: Analytics | ?: Help",
     }),
   });
+
+  // Calculate max bubbles based on subscription
+  const getMaxBubbles = () => {
+    switch (currentSubscription) {
+      case 'premium': return 999;
+      case 'popular': return 75;
+      case 'basic': return 25;
+      default: return 3;
+    }
+  };
+
+  const maxBubbles = getMaxBubbles();
+  const usedBubbles = bookmarks.length;
+  const usagePercent = (usedBubbles / maxBubbles) * 100;
+
+  // Show upgrade prompt at 80% capacity (only for non-premium users)
+  useEffect(() => {
+    if (
+      usagePercent >= 80 && 
+      currentSubscription !== 'premium' && 
+      !upgradePromptDismissed &&
+      !showPricingModal
+    ) {
+      setShowUpgradePrompt(true);
+    }
+  }, [usedBubbles, maxBubbles, currentSubscription, upgradePromptDismissed, showPricingModal]);
+
+  const handleUpgradePromptClose = () => {
+    setShowUpgradePrompt(false);
+    setUpgradePromptDismissed(true);
+  };
+
+  const handleUpgradeFromPrompt = () => {
+    setShowUpgradePrompt(false);
+    setShowPricingModal(true);
+  };
 
   // Business logic functions
   const calculateBubbleSize = (accessCount: number, allBookmarks: Bookmark[]) => {
@@ -165,8 +204,8 @@ export const RefactoredIndex = () => {
 
         <BubbleHeader
           availableBubbles={availableBubbles}
-          usedBubbles={bookmarks.length}
-          maxBubbles={currentSubscription === 'premium' ? 999 : currentSubscription === 'popular' ? 75 : currentSubscription === 'basic' ? 25 : 3}
+          usedBubbles={usedBubbles}
+          maxBubbles={maxBubbles}
           onCreateBubble={() => setShowAddModal(true)}
           onBuyBubbles={() => setShowPricingModal(true)}
           onShowAnalytics={() => setShowAnalytics(prev => !prev)}
@@ -209,7 +248,14 @@ export const RefactoredIndex = () => {
           onPurchaseComplete={onPurchaseComplete}
         />
 
-        
+        <UpgradePromptModal
+          isOpen={showUpgradePrompt}
+          onClose={handleUpgradePromptClose}
+          onUpgrade={handleUpgradeFromPrompt}
+          currentTier={currentSubscription || 'free'}
+          usedBubbles={usedBubbles}
+          maxBubbles={maxBubbles}
+        />
       </div>
     </ErrorBoundary>
   );
