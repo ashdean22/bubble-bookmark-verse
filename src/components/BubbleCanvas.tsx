@@ -75,9 +75,9 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
         seed,
         // Time offset so bubbles don't sync
         timeOffset: Math.random() * 10000,
-        // Unique movement characteristics - very gentle
-        wanderStrength: 0.003 + Math.random() * 0.002,
-        wanderSpeed: 0.0001 + Math.random() * 0.00005,
+        // Unique movement characteristics - faster movement
+        wanderStrength: 0.008 + Math.random() * 0.004,
+        wanderSpeed: 0.0003 + Math.random() * 0.0002,
         // Target position for smooth wandering
         targetX: bookmark.x,
         targetY: Math.max(bookmark.y, headerHeight + 50),
@@ -139,8 +139,8 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
             const padding = radius + 60;
             data.targetX = padding + Math.random() * (canvasWidth - padding * 2);
             data.targetY = headerHeight + padding + Math.random() * (canvasHeight - headerHeight - padding * 2);
-            // Next target change in 8-15 seconds for very slow wandering
-            data.nextTargetTime = time + 8000 + Math.random() * 7000;
+            // Next target change in 3-6 seconds for faster wandering
+            data.nextTargetTime = time + 3000 + Math.random() * 3000;
           }
           
           // Calculate direction to target
@@ -211,11 +211,11 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
           data.y = Math.max(headerHeight + radius, Math.min(canvasHeight - radius, data.y));
 
           // Smooth damping
-          data.vx *= 0.992;
-          data.vy *= 0.992;
+          data.vx *= 0.985;
+          data.vy *= 0.985;
 
-          // Very gentle velocity cap
-          const maxV = 0.4;
+          // Faster velocity cap
+          const maxV = 1.0;
           const speed = Math.sqrt(data.vx * data.vx + data.vy * data.vy);
           if (speed > maxV) {
             const scale = maxV / speed;
