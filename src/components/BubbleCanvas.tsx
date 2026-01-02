@@ -29,13 +29,19 @@ const getHeatStylesAndSize = (accessCount: number, maxAccess: number, isMobile: 
   
   const size = Math.round(minSize + (heat * (maxSize - minSize)));
   
-  // Solid, opaque bubble colors
-  const baseColor = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
-  const borderColor = `hsl(${hue}, ${saturation}%, ${lightness - 10}%)`;
+  // Realistic bubble colors with transparency and depth
+  const baseColor = `hsla(${hue}, ${saturation}%, ${lightness}%, 0.7)`;
+  const borderColor = `hsla(${hue}, ${saturation}%, ${lightness + 20}%, 0.5)`;
+  const glowColor = `hsla(${hue}, ${saturation}%, ${lightness + 30}%, 0.4)`;
+  const highlightColor = `hsla(${hue}, ${saturation - 20}%, ${lightness + 40}%, 0.9)`;
+  const innerShadowColor = `hsla(${hue}, ${saturation}%, ${lightness - 20}%, 0.3)`;
   
   return {
     background: baseColor,
     border: borderColor,
+    glow: glowColor,
+    highlight: highlightColor,
+    innerShadow: innerShadowColor,
     hue,
     saturation,
     lightness,
@@ -401,20 +407,53 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
             onMouseDown={(e) => handleDragStart(e, bookmark.id)}
             onTouchStart={(e) => handleDragStart(e, bookmark.id)}
           >
-            {/* Solid bubble */}
+            {/* Realistic bubble with depth and reflections */}
             <div
-              className="w-full h-full rounded-full flex flex-col items-center justify-center relative"
+              className="w-full h-full rounded-full flex flex-col items-center justify-center relative overflow-hidden"
               style={{
-                background: heatStyles.background,
-                border: `2px solid ${heatStyles.border}`,
-                boxShadow: `0 4px 12px hsla(${heatStyles.hue}, ${heatStyles.saturation}%, 20%, 0.3)`,
+                background: `radial-gradient(ellipse 60% 40% at 30% 25%, ${heatStyles.highlight}, transparent 50%),
+                             radial-gradient(ellipse 80% 80% at 50% 50%, ${heatStyles.background}, transparent 90%),
+                             radial-gradient(ellipse 100% 100% at 50% 60%, ${heatStyles.innerShadow}, transparent 70%)`,
+                border: `1.5px solid ${heatStyles.border}`,
+                boxShadow: `
+                  0 8px 32px hsla(${heatStyles.hue}, ${heatStyles.saturation}%, 30%, 0.25),
+                  0 0 20px ${heatStyles.glow},
+                  inset 0 -8px 20px ${heatStyles.innerShadow},
+                  inset 0 4px 12px hsla(0, 0%, 100%, 0.15)
+                `,
+                backdropFilter: 'blur(2px)',
               }}
               onClick={() => handleBubbleClick(bookmark)}
             >
+              {/* Light reflection highlight */}
+              <div 
+                className="absolute rounded-full pointer-events-none"
+                style={{
+                  width: '40%',
+                  height: '25%',
+                  top: '12%',
+                  left: '18%',
+                  background: 'linear-gradient(180deg, hsla(0, 0%, 100%, 0.6) 0%, hsla(0, 0%, 100%, 0) 100%)',
+                  borderRadius: '50%',
+                  transform: 'rotate(-15deg)',
+                }}
+              />
+              {/* Secondary smaller highlight */}
+              <div 
+                className="absolute rounded-full pointer-events-none"
+                style={{
+                  width: '15%',
+                  height: '10%',
+                  top: '22%',
+                  left: '55%',
+                  background: 'hsla(0, 0%, 100%, 0.4)',
+                  borderRadius: '50%',
+                }}
+              />
               <img
                 src={bookmark.favicon}
                 alt={bookmark.title}
-                className="w-6 h-6 rounded pointer-events-none opacity-90 relative z-10"
+                className="w-6 h-6 rounded pointer-events-none relative z-10 drop-shadow-md"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMSA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDMgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K';
                 }}
