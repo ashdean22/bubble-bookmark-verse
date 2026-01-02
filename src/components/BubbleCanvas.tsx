@@ -16,15 +16,15 @@ const getHeatStylesAndSize = (accessCount: number, maxAccess: number, isMobile: 
   const lightness = 50 - (heat * 10);
   
   // Responsive bubble sizes
-  let minSize = 35;
-  let maxSize = 65;
+  let minSize = 50;
+  let maxSize = 90;
   
   if (isMobile) {
-    minSize = 28;
-    maxSize = 50;
+    minSize = 38;
+    maxSize = 65;
   } else if (isTablet) {
-    minSize = 32;
-    maxSize = 58;
+    minSize = 45;
+    maxSize = 78;
   }
   
   const size = Math.round(minSize + (heat * (maxSize - minSize)));
