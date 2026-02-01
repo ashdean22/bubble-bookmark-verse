@@ -7,8 +7,8 @@ interface WelcomeMessageProps {
 
 export const WelcomeMessage = ({ onCreateBubble }: WelcomeMessageProps) => {
   return (
-    <div className="absolute inset-0 flex items-center justify-center z-10">
-      <div className="text-center max-w-md mx-auto p-8">
+    <div className="absolute inset-0 flex items-center justify-center z-10 px-4">
+      <div className="text-center max-w-md mx-auto p-6 sm:p-8">
         <div className="relative w-20 h-20 mx-auto mb-6" role="img" aria-label="Welcome bubble animation">
           <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-2xl border border-white/30">
             <Circle className="w-10 h-10 text-white" />
@@ -27,7 +27,7 @@ export const WelcomeMessage = ({ onCreateBubble }: WelcomeMessageProps) => {
         
         <Button
           onClick={onCreateBubble}
-          className="btn-bubble font-body font-medium shadow-lg hover:shadow-xl transition-all"
+          className="btn-bubble font-body font-medium shadow-lg hover:shadow-xl transition-all min-h-[48px] px-6"
           aria-label="Create your first bubble"
         >
           <Plus className="w-4 h-4 mr-2" aria-hidden="true" />

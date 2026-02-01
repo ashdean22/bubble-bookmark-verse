@@ -44,7 +44,7 @@ export const UpgradePromptModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md bg-slate-900 border-purple-500/30 font-body">
+      <DialogContent className="w-[95vw] max-w-md bg-slate-900 border-purple-500/30 font-body p-4 sm:p-6">
         <DialogHeader className="text-center">
           <div className="mx-auto w-16 h-16 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center mb-4 animate-pulse">
             <Sparkles className="w-8 h-8 text-white" />
@@ -94,7 +94,7 @@ export const UpgradePromptModal = ({
         <div className="flex flex-col gap-2 mt-4">
           <Button
             onClick={onUpgrade}
-            className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold shadow-lg"
+            className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold shadow-lg min-h-[48px]"
           >
             <Sparkles className="w-4 h-4 mr-2" />
             Upgrade for {tierInfo.price}
@@ -102,7 +102,7 @@ export const UpgradePromptModal = ({
           <Button
             onClick={onClose}
             variant="ghost"
-            className="text-purple-300 hover:text-white hover:bg-white/10"
+            className="text-purple-300 hover:text-white hover:bg-white/10 min-h-[44px]"
           >
             Maybe later
           </Button>
