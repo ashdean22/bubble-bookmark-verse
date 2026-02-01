@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Circle, Star, Crown, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -71,21 +70,10 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
     }
   ];
 
-  const getCurrentPrice = (tier: PricingTier) => {
-    return billingCycle === 'monthly' ? tier.monthlyPrice : tier.yearlyPrice;
-  };
-
-  const getMonthlyEquivalent = (tier: PricingTier) => {
-    return billingCycle === 'yearly' ? (tier.yearlyPrice / 12).toFixed(2) : tier.monthlyPrice.toFixed(2);
-  };
-
   const getSavings = (tier: PricingTier) => {
-    if (billingCycle === 'yearly') {
-      const monthlyCost = tier.monthlyPrice * 12;
-      const yearlyCost = tier.yearlyPrice;
-      return monthlyCost - yearlyCost;
-    }
-    return 0;
+    const monthlyCost = tier.monthlyPrice * 12;
+    const yearlyCost = tier.yearlyPrice;
+    return monthlyCost - yearlyCost;
   };
 
   const handlePurchase = async (tier: PricingTier) => {
@@ -131,24 +119,6 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
           </p>
         </DialogHeader>
         
-        {/* Billing Toggle */}
-        <div className="flex flex-col items-center mt-4 sm:mt-6 gap-2">
-          <Tabs value={billingCycle} onValueChange={(value) => setBillingCycle(value as 'monthly' | 'yearly')} className="w-auto">
-            <TabsList className="grid w-full grid-cols-2 bg-slate-800 border border-purple-500/30 min-h-[44px]">
-              <TabsTrigger value="monthly" className="text-purple-300 data-[state=active]:bg-purple-600 data-[state=active]:text-white px-4 sm:px-6 min-h-[40px]">
-                Monthly
-              </TabsTrigger>
-              <TabsTrigger value="yearly" className="text-purple-300 data-[state=active]:bg-purple-600 data-[state=active]:text-white px-4 sm:px-6 min-h-[40px]">
-                Yearly
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-          {billingCycle === 'yearly' && (
-            <Badge className="bg-green-600 text-white text-xs px-2 py-1">
-              Save up to 33%
-            </Badge>
-          )}
-        </div>
         
         <ScrollArea className="w-full mt-4 sm:mt-6">
           <div className="flex md:grid md:grid-cols-4 gap-4 sm:gap-6 pb-4 px-1">
@@ -181,35 +151,10 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
                     {tier.bubbles === 999 ? 'Unlimited' : tier.bubbles} floating bubbles
                   </CardDescription>
                   
-                   <div className="flex flex-col items-center space-y-2 mt-4">
-                     <div className="flex items-center space-x-2">
-                       <span className="text-white text-3xl font-brand font-bold">
-                         {tier.monthlyPrice === 0 ? 'Free' : `$${getCurrentPrice(tier).toFixed(2)}`}
-                       </span>
-                       {tier.monthlyPrice > 0 && (
-                         <span className="text-purple-300 text-lg font-body">
-                           {billingCycle === 'yearly' ? '/year' : '/mo'}
-                         </span>
-                       )}
-                     </div>
-                     
-                     {billingCycle === 'yearly' && tier.monthlyPrice > 0 && (
-                       <div className="text-center">
-                         <div className="text-purple-300 text-sm font-body">
-                           ${getMonthlyEquivalent(tier)}/mo when billed annually
-                         </div>
-                         {getSavings(tier) > 0 && (
-                           <Badge className="bg-green-600 text-white mt-1 font-body font-medium">
-                             Save ${getSavings(tier).toFixed(2)} per year
-                           </Badge>
-                         )}
-                       </div>
-                     )}
-                   </div>
                 </CardHeader>
                 
                 <CardContent>
-                  <ul className="space-y-2 mb-6">
+                  <ul className="space-y-2 mb-4">
                     {tier.features.map((feature, index) => (
                       <li key={index} className="text-purple-300 text-sm flex items-center font-body">
                         <Circle className="w-4 h-4 mr-2 text-purple-400 fill-current" />
@@ -218,28 +163,88 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
                     ))}
                   </ul>
                   
-                   <Button
-                     onClick={() => handlePurchase(tier)}
-                     disabled={isProcessing}
-                     className={`w-full font-body font-medium shadow-lg hover:shadow-xl transition-all min-h-[48px] ${
-                       tier.monthlyPrice === 0 
-                         ? 'bg-slate-700 hover:bg-slate-600 border border-purple-500/30'
-                         : tier.popular
-                         ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
-                         : 'bg-purple-600 hover:bg-purple-700'
-                     } text-white`}
-                   >
-                     {processingTier === tier.id ? (
-                       <>
-                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                         Creating Bubbles...
-                       </>
-                     ) : tier.monthlyPrice === 0 ? (
-                       'Get Started Free'
-                     ) : (
-                       `Start ${tier.name}`
-                     )}
-                   </Button>
+                  {tier.monthlyPrice === 0 ? (
+                    <Button
+                      onClick={() => handlePurchase(tier)}
+                      disabled={isProcessing}
+                      className="w-full font-body font-medium shadow-lg hover:shadow-xl transition-all min-h-[48px] bg-slate-700 hover:bg-slate-600 border border-purple-500/30 text-white"
+                    >
+                      {processingTier === tier.id ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Creating Bubbles...
+                        </>
+                      ) : (
+                        'Get Started Free'
+                      )}
+                    </Button>
+                  ) : (
+                    <div className="space-y-3">
+                      {/* Monthly Option */}
+                      <div className="p-3 rounded-lg bg-slate-700/50 border border-purple-500/20">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-purple-300 text-sm font-body">Monthly</span>
+                          <span className="text-white font-brand font-bold">${tier.monthlyPrice.toFixed(2)}/mo</span>
+                        </div>
+                        <Button
+                          onClick={() => {
+                            setBillingCycle('monthly');
+                            handlePurchase(tier);
+                          }}
+                          disabled={isProcessing}
+                          className={`w-full font-body font-medium shadow-lg hover:shadow-xl transition-all min-h-[44px] ${
+                            tier.popular
+                              ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
+                              : 'bg-purple-600 hover:bg-purple-700'
+                          } text-white`}
+                        >
+                          {processingTier === tier.id && billingCycle === 'monthly' ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Processing...
+                            </>
+                          ) : (
+                            'Buy Monthly'
+                          )}
+                        </Button>
+                      </div>
+                      
+                      {/* Yearly Option */}
+                      <div className="p-3 rounded-lg bg-slate-700/50 border border-green-500/30 relative">
+                        <Badge className="absolute -top-2 right-2 bg-green-600 text-white text-xs">
+                          Save ${getSavings(tier).toFixed(0)}
+                        </Badge>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-purple-300 text-sm font-body">Yearly</span>
+                          <span className="text-white font-brand font-bold">${tier.yearlyPrice.toFixed(2)}/yr</span>
+                        </div>
+                        <div className="text-green-400 text-xs mb-2 font-body">
+                          ${(tier.yearlyPrice / 12).toFixed(2)}/mo billed annually
+                        </div>
+                        <Button
+                          onClick={() => {
+                            setBillingCycle('yearly');
+                            handlePurchase(tier);
+                          }}
+                          disabled={isProcessing}
+                          className={`w-full font-body font-medium shadow-lg hover:shadow-xl transition-all min-h-[44px] ${
+                            tier.popular
+                              ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600'
+                              : 'bg-green-600 hover:bg-green-700'
+                          } text-white`}
+                        >
+                          {processingTier === tier.id && billingCycle === 'yearly' ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Processing...
+                            </>
+                          ) : (
+                            'Buy Yearly'
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
