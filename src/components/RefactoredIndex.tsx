@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BubbleCanvas } from '@/components/BubbleCanvas';
 import { AddBookmarkModal } from '@/components/AddBookmarkModal';
+import { ImportBookmarksModal } from '@/components/ImportBookmarksModal';
 import { PricingModal } from '@/components/PricingModal';
 import { UpgradePromptModal } from '@/components/UpgradePromptModal';
 import { AnalyticsInsights } from '@/components/AnalyticsInsights';
@@ -14,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { Bookmark } from '@/pages/Index';
+import { ParsedBookmark } from '@/utils/bookmarkParser';
 
 export const RefactoredIndex = () => {
   // State management using custom hooks
@@ -39,6 +41,7 @@ export const RefactoredIndex = () => {
   
   // Modal states
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [showPricingModal, setShowPricingModal] = useState(false);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const [upgradePromptDismissed, setUpgradePromptDismissed] = useLocalStorage('upgradePromptDismissed', false);
@@ -166,6 +169,32 @@ export const RefactoredIndex = () => {
     saveBookmarks(updatedBookmarks);
   };
 
+  const importBookmarks = (parsedBookmarks: ParsedBookmark[]) => {
+    const colors = [
+      'rgb(147, 51, 234)', 'rgb(59, 130, 246)', 'rgb(16, 185, 129)',
+      'rgb(245, 158, 11)', 'rgb(239, 68, 68)', 'rgb(236, 72, 153)',
+    ];
+
+    const newBookmarks: Bookmark[] = parsedBookmarks.map((bookmark, index) => ({
+      ...bookmark,
+      id: `${Date.now()}-${index}`,
+      x: Math.random() * (window.innerWidth - 100),
+      y: Math.random() * (window.innerHeight - 100),
+      size: 60,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      accessCount: 0,
+    }));
+
+    const allBookmarks = [...bookmarks, ...newBookmarks];
+    saveBookmarks(allBookmarks);
+    setAvailableBubbles(prev => prev - newBookmarks.length);
+
+    toast({
+      title: `Imported ${newBookmarks.length} bubbles! 🎉`,
+      description: "Your bookmarks are now floating in the bubble universe!",
+    });
+  };
+
   const onPurchaseComplete = (bubbleCount: number, tier?: string) => {
     setAvailableBubbles(availableBubbles + bubbleCount);
     
@@ -193,6 +222,7 @@ export const RefactoredIndex = () => {
           onCreateBubble={() => setShowAddModal(true)}
           onBuyBubbles={() => setShowPricingModal(true)}
           onShowAnalytics={() => setShowAnalytics(prev => !prev)}
+          onImportBookmarks={() => setShowImportModal(true)}
           showAnalytics={showAnalytics}
         />
 
@@ -224,6 +254,14 @@ export const RefactoredIndex = () => {
           isOpen={showAddModal}
           onClose={() => setShowAddModal(false)}
           onAdd={addBookmark}
+        />
+
+        <ImportBookmarksModal
+          isOpen={showImportModal}
+          onClose={() => setShowImportModal(false)}
+          onImport={importBookmarks}
+          availableBubbles={availableBubbles}
+          isPremium={currentSubscription === 'premium'}
         />
 
         <PricingModal
