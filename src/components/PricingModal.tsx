@@ -119,7 +119,7 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-4xl bg-slate-900 border-purple-500/30 max-h-[90vh] overflow-hidden font-body">
+      <DialogContent className="w-[95vw] max-w-4xl bg-slate-900 border-purple-500/30 max-h-[85vh] overflow-hidden font-body p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle className="text-white text-center text-2xl mb-2 font-brand font-bold flex items-center justify-center gap-2">
             <Circle className="w-6 h-6 text-purple-400" />
@@ -132,28 +132,30 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
         </DialogHeader>
         
         {/* Billing Toggle */}
-        <div className="flex justify-center mt-6">
+        <div className="flex flex-col items-center mt-4 sm:mt-6 gap-2">
           <Tabs value={billingCycle} onValueChange={(value) => setBillingCycle(value as 'monthly' | 'yearly')} className="w-auto">
-            <TabsList className="grid w-full grid-cols-2 bg-slate-800 border border-purple-500/30">
-              <TabsTrigger value="monthly" className="text-purple-300 data-[state=active]:bg-purple-600 data-[state=active]:text-white">
+            <TabsList className="grid w-full grid-cols-2 bg-slate-800 border border-purple-500/30 min-h-[44px]">
+              <TabsTrigger value="monthly" className="text-purple-300 data-[state=active]:bg-purple-600 data-[state=active]:text-white px-4 sm:px-6 min-h-[40px]">
                 Monthly
               </TabsTrigger>
-              <TabsTrigger value="yearly" className="text-purple-300 data-[state=active]:bg-purple-600 data-[state=active]:text-white relative">
+              <TabsTrigger value="yearly" className="text-purple-300 data-[state=active]:bg-purple-600 data-[state=active]:text-white px-4 sm:px-6 min-h-[40px]">
                 Yearly
-                <Badge className="absolute -top-2 -right-2 bg-green-600 text-white text-xs px-1 py-0.5">
-                  Save up to 33%
-                </Badge>
               </TabsTrigger>
             </TabsList>
           </Tabs>
+          {billingCycle === 'yearly' && (
+            <Badge className="bg-green-600 text-white text-xs px-2 py-1">
+              Save up to 33%
+            </Badge>
+          )}
         </div>
         
-        <ScrollArea className="w-full mt-6">
-          <div className="flex md:grid md:grid-cols-4 gap-6 pb-4">
+        <ScrollArea className="w-full mt-4 sm:mt-6">
+          <div className="flex md:grid md:grid-cols-4 gap-4 sm:gap-6 pb-4 px-1">
             {pricingTiers.map((tier) => (
               <Card 
                 key={tier.id}
-                className={`relative bg-slate-800/50 border transition-all duration-300 hover:scale-105 min-w-[280px] md:min-w-0 ${
+                className={`relative bg-slate-800/50 border transition-all duration-300 hover:scale-105 min-w-[260px] sm:min-w-[280px] md:min-w-0 flex-shrink-0 ${
                   tier.popular 
                     ? 'border-purple-400 shadow-lg shadow-purple-500/20' 
                     : 'border-purple-500/30 hover:border-purple-400'
@@ -219,7 +221,7 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
                    <Button
                      onClick={() => handlePurchase(tier)}
                      disabled={isProcessing}
-                     className={`w-full font-body font-medium shadow-lg hover:shadow-xl transition-all ${
+                     className={`w-full font-body font-medium shadow-lg hover:shadow-xl transition-all min-h-[48px] ${
                        tier.monthlyPrice === 0 
                          ? 'bg-slate-700 hover:bg-slate-600 border border-purple-500/30'
                          : tier.popular
@@ -245,8 +247,8 @@ export const PricingModal = ({ isOpen, onClose, onPurchaseComplete }: PricingMod
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
         
-        <div className="text-center mt-6 p-4 bg-slate-800/30 rounded-lg border border-purple-500/20">
-          <p className="text-purple-300 text-sm font-body">
+        <div className="text-center mt-4 sm:mt-6 p-3 sm:p-4 bg-slate-800/30 rounded-lg border border-purple-500/20">
+          <p className="text-purple-300 text-xs sm:text-sm font-body">
             🫧 Monthly subscription • 🔒 Cancel anytime • ✨ Instant plan activation
           </p>
         </div>
