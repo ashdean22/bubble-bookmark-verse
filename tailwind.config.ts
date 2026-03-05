@@ -90,19 +90,25 @@ export default {
 						height: '0'
 					}
 				},
-				'logo-glow': {
-					'0%, 100%': {
-						boxShadow: '0 0 20px 4px hsla(280, 80%, 60%, 0.4), 0 0 40px 8px hsla(320, 80%, 60%, 0.2)'
+			'logo-glow': {
+					'0%': {
+						boxShadow: '0 0 25px 6px hsla(200, 95%, 60%, 0.6), 0 0 50px 12px hsla(180, 80%, 50%, 0.35), 0 0 80px 20px hsla(200, 90%, 55%, 0.2)'
 					},
-					'50%': {
-						boxShadow: '0 0 30px 8px hsla(280, 80%, 60%, 0.6), 0 0 60px 16px hsla(320, 80%, 60%, 0.3)'
+					'33%': {
+						boxShadow: '0 0 30px 8px hsla(35, 100%, 58%, 0.65), 0 0 60px 16px hsla(25, 95%, 52%, 0.4), 0 0 90px 24px hsla(35, 90%, 55%, 0.2)'
+					},
+					'66%': {
+						boxShadow: '0 0 28px 7px hsla(180, 80%, 50%, 0.6), 0 0 55px 14px hsla(200, 95%, 60%, 0.35), 0 0 85px 22px hsla(180, 70%, 45%, 0.2)'
+					},
+					'100%': {
+						boxShadow: '0 0 25px 6px hsla(200, 95%, 60%, 0.6), 0 0 50px 12px hsla(180, 80%, 50%, 0.35), 0 0 80px 20px hsla(200, 90%, 55%, 0.2)'
 					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
-				'logo-glow': 'logo-glow 3s ease-in-out infinite'
+				'logo-glow': 'logo-glow 4s ease-in-out infinite'
 			}
 		}
 	},
