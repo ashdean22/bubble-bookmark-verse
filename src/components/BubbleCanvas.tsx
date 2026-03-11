@@ -316,6 +316,16 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
     const rect = bubble.getBoundingClientRect();
     dragOffsetRef.current = { x: clientX - rect.left, y: clientY - rect.top };
     isDraggingRef.current = false;
+
+    // Long-press to show URL preview (touch only)
+    if ('touches' in e) {
+      if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = setTimeout(() => {
+        if (!isDraggingRef.current) {
+          setPreviewBubble(bookmarkId);
+        }
+      }, 500);
+    }
   };
 
   const handleDragMove = useCallback((e: MouseEvent | TouchEvent) => {
@@ -330,6 +340,9 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
     
     if (!isDraggingRef.current && distance > 10) {
       isDraggingRef.current = true;
+      // Cancel long-press if user starts dragging
+      if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+      setPreviewBubble(null);
       const draggedElement = document.elementFromPoint(dragStartRef.current.x, dragStartRef.current.y)?.closest('[data-bubble-id]') as HTMLElement;
       if (draggedElement) {
         const bubbleId = draggedElement.getAttribute('data-bubble-id');
@@ -360,7 +373,11 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
   const handleDragEnd = useCallback(() => {
     dragStartRef.current = null;
     setDraggedBubble(null);
-    setTimeout(() => { isDraggingRef.current = false; }, 50);
+    if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+    setTimeout(() => {
+      isDraggingRef.current = false;
+      setPreviewBubble(null);
+    }, 50);
   }, []);
 
   useEffect(() => {
