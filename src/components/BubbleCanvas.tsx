@@ -323,6 +323,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
       longPressTimerRef.current = setTimeout(() => {
         if (!isDraggingRef.current) {
           setPreviewBubble(bookmarkId);
+          setTimeout(() => setPreviewBubble(null), 3000);
         }
       }, 500);
     }
