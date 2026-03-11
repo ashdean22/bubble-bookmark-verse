@@ -113,6 +113,19 @@ export const RefactoredIndex = () => {
       return;
     }
 
+    // Check for duplicate domain
+    const getHostname = (url: string) => { try { return new URL(url).hostname; } catch { return url; } };
+    const incomingDomain = getHostname(bookmark.url);
+    const isDuplicate = bookmarks.some(b => getHostname(b.url) === incomingDomain);
+    if (isDuplicate) {
+      toast({
+        title: "Duplicate bubble! 🫧",
+        description: `A bubble for ${incomingDomain} already exists.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     const colors = [
       'rgb(147, 51, 234)', 'rgb(59, 130, 246)', 'rgb(16, 185, 129)',
       'rgb(245, 158, 11)', 'rgb(239, 68, 68)', 'rgb(236, 72, 153)',

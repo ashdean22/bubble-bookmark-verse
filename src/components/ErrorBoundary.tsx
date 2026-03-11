@@ -55,7 +55,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 Don't worry, your bubbles are safe!
               </p>
               
-              {process.env.NODE_ENV === 'development' && this.state.error && (
+              {import.meta.env.DEV && this.state.error && (
                 <details className="text-left bg-slate-900/50 p-3 rounded border border-red-500/20">
                   <summary className="text-red-400 text-xs cursor-pointer mb-2">
                     Error Details (Development Only)
