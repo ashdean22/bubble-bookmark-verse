@@ -53,11 +53,13 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
   const canvasRef = useRef<HTMLDivElement>(null);
   const [draggedBubble, setDraggedBubble] = useState<string | null>(null);
   const [clickedBubble, setClickedBubble] = useState<string | null>(null);
+  const [previewBubble, setPreviewBubble] = useState<string | null>(null);
   const animationRef = useRef<number>();
   const dragOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const dragStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
   const isDraggingRef = useRef(false);
   const bubbleDataRef = useRef<Map<string, any>>(new Map());
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Initialize bubble data
   useEffect(() => {
@@ -314,6 +316,16 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
     const rect = bubble.getBoundingClientRect();
     dragOffsetRef.current = { x: clientX - rect.left, y: clientY - rect.top };
     isDraggingRef.current = false;
+
+    // Long-press to show URL preview (touch only)
+    if ('touches' in e) {
+      if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = setTimeout(() => {
+        if (!isDraggingRef.current) {
+          setPreviewBubble(bookmarkId);
+        }
+      }, 500);
+    }
   };
 
   const handleDragMove = useCallback((e: MouseEvent | TouchEvent) => {
@@ -328,6 +340,9 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
     
     if (!isDraggingRef.current && distance > 10) {
       isDraggingRef.current = true;
+      // Cancel long-press if user starts dragging
+      if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+      setPreviewBubble(null);
       const draggedElement = document.elementFromPoint(dragStartRef.current.x, dragStartRef.current.y)?.closest('[data-bubble-id]') as HTMLElement;
       if (draggedElement) {
         const bubbleId = draggedElement.getAttribute('data-bubble-id');
@@ -358,7 +373,11 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
   const handleDragEnd = useCallback(() => {
     dragStartRef.current = null;
     setDraggedBubble(null);
-    setTimeout(() => { isDraggingRef.current = false; }, 50);
+    if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+    setTimeout(() => {
+      isDraggingRef.current = false;
+      setPreviewBubble(null);
+    }, 50);
   }, []);
 
   useEffect(() => {
@@ -389,6 +408,14 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
       {bookmarks.map((bookmark) => {
         const heatStyles = getHeatStylesAndSize(bookmark.accessCount, maxAccessCount, isMobile, isTablet);
         const isDragging = draggedBubble === bookmark.id;
+        const isPreview = previewBubble === bookmark.id;
+        
+        // Get clean display name: title or hostname
+        let displayName = bookmark.title;
+        try {
+          const hostname = new URL(bookmark.url).hostname.replace(/^www\./, '');
+          if (!displayName || displayName.length > 30) displayName = hostname;
+        } catch { /* keep title */ }
         
         return (
           <div
@@ -401,12 +428,65 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
               transform: `translate3d(${Math.round(bookmark.x)}px, ${Math.round(bookmark.y)}px, 0)`,
               width: `${heatStyles.size}px`,
               height: `${heatStyles.size}px`,
-              zIndex: isDragging ? 30 : 10,
+              zIndex: isDragging ? 30 : isPreview ? 25 : 10,
               willChange: 'transform',
             }}
             onMouseDown={(e) => handleDragStart(e, bookmark.id)}
             onTouchStart={(e) => handleDragStart(e, bookmark.id)}
           >
+            {/* URL preview tooltip on long press */}
+            {isPreview && (
+              <div
+                className="absolute pointer-events-none select-none"
+                style={{
+                  bottom: `calc(100% + 10px)`,
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  zIndex: 50,
+                  animation: 'fadeInUp 0.18s ease-out',
+                }}
+              >
+                <div
+                  style={{
+                    background: 'hsla(220, 20%, 12%, 0.92)',
+                    border: '1px solid hsla(210, 60%, 70%, 0.3)',
+                    backdropFilter: 'blur(12px)',
+                    borderRadius: '10px',
+                    padding: '6px 10px',
+                    whiteSpace: 'nowrap',
+                    boxShadow: '0 4px 20px hsla(0,0%,0%,0.35)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <img
+                      src={bookmark.favicon}
+                      alt=""
+                      style={{ width: 14, height: 14, borderRadius: 3, flexShrink: 0 }}
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    />
+                    <span style={{ color: 'hsla(210, 80%, 90%, 1)', fontSize: 12, fontWeight: 500, letterSpacing: '0.01em' }}>
+                      {displayName}
+                    </span>
+                  </div>
+                  {/* Arrow */}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      bottom: -5,
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      width: 10,
+                      height: 10,
+                      background: 'hsla(220, 20%, 12%, 0.92)',
+                      border: '1px solid hsla(210, 60%, 70%, 0.3)',
+                      borderTop: 'none',
+                      borderLeft: 'none',
+                      rotate: '45deg',
+                    }}
+                  />
+                </div>
+              </div>
+            )}
             {/* Realistic bubble with depth and reflections */}
             <div
               className="w-full h-full rounded-full flex flex-col items-center justify-center relative overflow-hidden"
