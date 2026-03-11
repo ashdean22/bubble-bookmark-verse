@@ -309,3 +309,15 @@
     }
   }
 }
+
+@keyframes float-bubble-1 {
+  0%, 100% { transform: translateY(0px) translateX(0px); }
+  33% { transform: translateY(-6px) translateX(2px); }
+  66% { transform: translateY(-3px) translateX(-2px); }
+}
+
+@keyframes float-bubble-2 {
+  0%, 100% { transform: translateY(0px) translateX(0px); }
+  40% { transform: translateY(-5px) translateX(-2px); }
+  70% { transform: translateY(-2px) translateX(3px); }
+}
