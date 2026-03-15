@@ -47,6 +47,7 @@ export const RefactoredIndex = () => {
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const [upgradePromptDismissed, setUpgradePromptDismissed] = useLocalStorage('upgradePromptDismissed', false);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [editingBookmark, setEditingBookmark] = useState<Bookmark | null>(null);
   
   const { toast } = useToast();
 
