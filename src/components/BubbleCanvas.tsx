@@ -237,7 +237,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
               const overlap = minDistance - distance;
               const nx = dx / distance;
               const ny = dy / distance;
-              const separationForce = overlap * 0.001;
+              const separationForce = overlap * 0.0003;
 
               data1.ax -= nx * separationForce;
               data1.ay -= ny * separationForce;
