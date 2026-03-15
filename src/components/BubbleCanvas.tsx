@@ -338,9 +338,8 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
     
     if (!isDraggingRef.current && distance > 10) {
       isDraggingRef.current = true;
-      clearAllTouchTimers();
+      clearLongPress();
       setContextMenu(null);
-      setUrlTooltip(null);
       const draggedElement = document.elementFromPoint(dragStartRef.current.x, dragStartRef.current.y)?.closest('[data-bubble-id]') as HTMLElement;
       if (draggedElement) {
         const bubbleId = draggedElement.getAttribute('data-bubble-id');
