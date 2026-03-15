@@ -72,7 +72,7 @@ export const BubbleHeader = ({
             <img 
               src={bubbleLinkLogo} 
               alt="BubbleMark - Your Bookmarks. In a Bubble." 
-              className="h-20 md:h-24 w-auto object-contain drop-shadow-lg"
+              className="h-20 md:h-24 w-20 md:w-24 rounded-full object-cover drop-shadow-lg"
             />
           </div>
           
