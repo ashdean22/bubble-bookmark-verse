@@ -231,7 +231,22 @@ export const RefactoredIndex = () => {
       'rgb(245, 158, 11)', 'rgb(239, 68, 68)', 'rgb(236, 72, 153)',
     ];
 
-    const newBookmarks: Bookmark[] = parsedBookmarks.map((bookmark, index) => ({
+    // Get existing domains
+    const existingDomains = new Set(bookmarks.map(b => getHostname(b.url)));
+    
+    // Filter out duplicates from import (both against existing and within import itself)
+    const uniqueParsed: ParsedBookmark[] = [];
+    const seenDomains = new Set<string>();
+    
+    parsedBookmarks.forEach(bookmark => {
+      const domain = getHostname(bookmark.url);
+      if (!existingDomains.has(domain) && !seenDomains.has(domain)) {
+        uniqueParsed.push(bookmark);
+        seenDomains.add(domain);
+      }
+    });
+
+    const newBookmarks: Bookmark[] = uniqueParsed.map((bookmark, index) => ({
       ...bookmark,
       id: `${Date.now()}-${index}`,
       x: Math.random() * (window.innerWidth - 100),
@@ -245,9 +260,14 @@ export const RefactoredIndex = () => {
     saveBookmarks(allBookmarks);
     setAvailableBubbles(prev => prev - newBookmarks.length);
 
+    const skipped = parsedBookmarks.length - newBookmarks.length;
+    const description = skipped > 0 
+      ? `${newBookmarks.length} bubbles imported, ${skipped} duplicates skipped!`
+      : "Your bookmarks are now floating in the bubble universe!";
+
     toast({
       title: `Imported ${newBookmarks.length} bubbles! 🎉`,
-      description: "Your bookmarks are now floating in the bubble universe!",
+      description,
     });
   };
 
