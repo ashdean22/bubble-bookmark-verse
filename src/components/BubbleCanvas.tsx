@@ -396,7 +396,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
   const handleDragEnd = useCallback(() => {
     dragStartRef.current = null;
     setDraggedBubble(null);
-    if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+    clearAllTouchTimers();
     setTimeout(() => {
       isDraggingRef.current = false;
     }, 50);
