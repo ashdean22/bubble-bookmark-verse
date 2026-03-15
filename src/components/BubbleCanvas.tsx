@@ -59,12 +59,16 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
   const [draggedBubble, setDraggedBubble] = useState<string | null>(null);
   const [clickedBubble, setClickedBubble] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null);
+  const [urlTooltip, setUrlTooltip] = useState<{ bookmarkId: string; x: number; y: number } | null>(null);
   const animationRef = useRef<number>();
   const dragOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const dragStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
   const isDraggingRef = useRef(false);
   const bubbleDataRef = useRef<Map<string, any>>(new Map());
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const urlTooltipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const contextMenuTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const urlTooltipDismissRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Initialize bubble data
   useEffect(() => {
@@ -273,17 +277,27 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
     };
   }, [bookmarks, draggedBubble]);
 
-  // Close context menu on outside click
+  // Close context menu and url tooltip on outside click
   useEffect(() => {
-    if (!contextMenu) return;
-    const close = () => setContextMenu(null);
+    if (!contextMenu && !urlTooltip) return;
+    const close = () => {
+      setContextMenu(null);
+      setUrlTooltip(null);
+    };
     document.addEventListener('click', close);
     document.addEventListener('touchstart', close);
     return () => {
       document.removeEventListener('click', close);
       document.removeEventListener('touchstart', close);
     };
-  }, [contextMenu]);
+  }, [contextMenu, urlTooltip]);
+
+  const clearAllTouchTimers = () => {
+    if (urlTooltipTimerRef.current) clearTimeout(urlTooltipTimerRef.current);
+    if (contextMenuTimerRef.current) clearTimeout(contextMenuTimerRef.current);
+    if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+    if (urlTooltipDismissRef.current) clearTimeout(urlTooltipDismissRef.current);
+  };
 
   const handleBubbleClick = (bookmark: Bookmark) => {
     if (!isDraggingRef.current) {
@@ -311,14 +325,29 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
     dragOffsetRef.current = { x: clientX - rect.left, y: clientY - rect.top };
     isDraggingRef.current = false;
 
-    // Long-press to show context menu (touch only)
+    // Touch: 1s → show URL tooltip, 3s → show edit/delete menu
     if ('touches' in e) {
-      if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = setTimeout(() => {
+      clearAllTouchTimers();
+
+      // 1 second: show URL tooltip
+      urlTooltipTimerRef.current = setTimeout(() => {
         if (!isDraggingRef.current) {
+          setUrlTooltip({ bookmarkId, x: clientX, y: clientY });
+          // Auto-dismiss tooltip after 2 seconds (unless 3s menu fires)
+          urlTooltipDismissRef.current = setTimeout(() => {
+            setUrlTooltip(null);
+          }, 2000);
+        }
+      }, 1000);
+
+      // 3 seconds: show edit/delete context menu
+      contextMenuTimerRef.current = setTimeout(() => {
+        if (!isDraggingRef.current) {
+          setUrlTooltip(null);
+          if (urlTooltipDismissRef.current) clearTimeout(urlTooltipDismissRef.current);
           setContextMenu({ bookmarkId, x: clientX, y: clientY });
         }
-      }, 500);
+      }, 3000);
     }
   };
 
@@ -334,8 +363,9 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
     
     if (!isDraggingRef.current && distance > 10) {
       isDraggingRef.current = true;
-      if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+      clearAllTouchTimers();
       setContextMenu(null);
+      setUrlTooltip(null);
       const draggedElement = document.elementFromPoint(dragStartRef.current.x, dragStartRef.current.y)?.closest('[data-bubble-id]') as HTMLElement;
       if (draggedElement) {
         const bubbleId = draggedElement.getAttribute('data-bubble-id');
@@ -366,7 +396,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
   const handleDragEnd = useCallback(() => {
     dragStartRef.current = null;
     setDraggedBubble(null);
-    if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+    clearAllTouchTimers();
     setTimeout(() => {
       isDraggingRef.current = false;
     }, 50);
@@ -479,7 +509,53 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
         );
       })}
 
-      {/* Context menu */}
+      {/* URL Tooltip (1s touch hold) */}
+      {urlTooltip && (() => {
+        const tooltipBookmark = bookmarks.find(b => b.id === urlTooltip.bookmarkId);
+        if (!tooltipBookmark) return null;
+        const screenW = window.innerWidth;
+        const tipX = Math.min(urlTooltip.x, screenW - 180);
+        const tipY = urlTooltip.y - 60;
+        return (
+          <div
+            className="fixed z-50 pointer-events-none select-none"
+            style={{ left: tipX, top: tipY }}
+          >
+            <div
+              style={{
+                background: 'hsla(220, 20%, 10%, 0.95)',
+                border: '1px solid hsla(210, 60%, 60%, 0.3)',
+                backdropFilter: 'blur(16px)',
+                borderRadius: '10px',
+                padding: '7px 12px',
+                maxWidth: '200px',
+                boxShadow: '0 4px 20px hsla(0,0%,0%,0.5)',
+                animation: 'fadeInUp 0.15s ease-out',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <img
+                  src={tooltipBookmark.favicon}
+                  alt=""
+                  style={{ width: 14, height: 14, borderRadius: 2, flexShrink: 0 }}
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
+                <span style={{ color: 'hsla(210, 80%, 85%, 1)', fontSize: 11, fontWeight: 600, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {tooltipBookmark.title}
+                </span>
+              </div>
+              <div style={{ color: 'hsla(210, 60%, 65%, 0.8)', fontSize: 10, marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 175 }}>
+                {tooltipBookmark.url}
+              </div>
+              <div style={{ color: 'hsla(210, 40%, 60%, 0.6)', fontSize: 9, marginTop: 4, textAlign: 'center' }}>
+                Hold 2 more seconds for options
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Context menu (3s touch hold) */}
       {contextMenu && contextBookmark && (
         <div
           className="fixed z-50 select-none"
