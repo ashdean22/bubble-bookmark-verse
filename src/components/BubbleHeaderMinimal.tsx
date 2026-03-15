@@ -24,8 +24,8 @@ export const BubbleHeaderMinimal = ({
           <div className="flex items-center relative">
             <img 
               src={bubbleLinkLogo} 
-              alt="BubbleLink - Your Bookmarks. In a Bubble." 
-              className="h-36 md:h-52 w-36 md:w-52 rounded-full object-cover drop-shadow-lg animate-logo-glow"
+              alt="BubbleMark - Your Bookmarks. In a Bubble." 
+              className="h-32 md:h-44 w-auto object-contain drop-shadow-lg animate-logo-glow"
             />
             {/* Decorative bubble 1 — larger, top-right */}
             <div
