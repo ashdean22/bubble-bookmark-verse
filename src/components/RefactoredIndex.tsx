@@ -184,6 +184,14 @@ export const RefactoredIndex = () => {
     saveBookmarks(updatedBookmarks);
   };
 
+  const editBookmark = (id: string, updates: { url: string; title: string; favicon: string }) => {
+    const updatedBookmarks = bookmarks.map(b =>
+      b.id === id ? { ...b, ...updates } : b
+    );
+    saveBookmarks(updatedBookmarks);
+    toast({ title: "Bubble updated! ✏️", description: "Your bubble has been saved." });
+  };
+
   const importBookmarks = (parsedBookmarks: ParsedBookmark[]) => {
     const colors = [
       'rgb(147, 51, 234)', 'rgb(59, 130, 246)', 'rgb(16, 185, 129)',
