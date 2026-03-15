@@ -137,7 +137,6 @@ export const RefactoredIndex = () => {
     }
 
     // Check for duplicate domain
-    const getHostname = (url: string) => { try { return new URL(url).hostname; } catch { return url; } };
     const incomingDomain = getHostname(bookmark.url);
     const isDuplicate = bookmarks.some(b => getHostname(b.url) === incomingDomain);
     if (isDuplicate) {
