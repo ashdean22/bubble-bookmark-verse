@@ -34,8 +34,8 @@ export const FloatingActionButton = ({
       {/* Secondary actions - shown when expanded */}
       <div
         className={cn(
-          'flex flex-col-reverse items-end gap-3 transition-all duration-300',
-          isExpanded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
+          'flex flex-col items-end gap-3 transition-all duration-300',
+          isExpanded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'
         )}
       >
         {/* Import Bookmarks */}
