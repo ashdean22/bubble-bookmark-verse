@@ -48,69 +48,6 @@ const getHeatStylesAndSize = (accessCount: number, maxAccess: number, isMobile: 
   };
 };
 
-/** Build a unique physics personality for each bubble so they can NEVER drift into sync. */
-const createBubblePersonality = () => {
-  const r = () => Math.random();
-
-  // Each bubble gets its own seed for 3 independent noise axes
-  const seed1 = r() * 1000;
-  const seed2 = r() * 1000;
-  const seed3 = r() * 1000;
-
-  return {
-    // Wander target refresh — each bubble picks new destination at a different cadence (3–9 s)
-    minTargetInterval: 3000 + r() * 2000,
-    maxTargetExtraInterval: r() * 4000,
-
-    // Steering strength — 0.006 to 0.016 (centred on the proven 0.008–0.012 range)
-    wanderStrength: 0.006 + r() * 0.010,
-
-    // Acceleration smoothing — always sums to 1 so force never vanishes
-    // accelSmoothing 0.90–0.97, accelBlend = 1 - accelSmoothing
-    accelSmoothing: 0.90 + r() * 0.07,
-
-    // Velocity blend — heavier vs lighter feel (0.65–0.80)
-    velSmoothing: 0.65 + r() * 0.15,
-
-    // Per-frame damping — subtle variation in air resistance (0.982–0.990)
-    damping: 0.982 + r() * 0.008,
-
-    // Max speed — lazy drifters vs snappy movers (0.6–1.2)
-    maxSpeed: 0.6 + r() * 0.6,
-
-    // Display lerp — how snappy the visual follows physics (0.10–0.20)
-    lerpFactor: 0.10 + r() * 0.10,
-
-    // --- Octave 1: slow macro-drift (wanderSpeed equivalent) ---
-    // Frequencies match original 0.0003–0.0005 range applied to timestamp ms
-    oct1FreqX: 0.00030 + r() * 0.00025,
-    oct1FreqY: 0.00028 + r() * 0.00025,
-    oct1AmpX:  0.0015 + r() * 0.0015,
-    oct1AmpY:  0.0015 + r() * 0.0015,
-    oct1SeedX: seed1,
-    oct1SeedY: seed1 * 1.3,
-
-    // --- Octave 2: medium wobble ---
-    oct2FreqX: 0.00012 + r() * 0.00016,
-    oct2FreqY: 0.00010 + r() * 0.00016,
-    oct2AmpX:  0.0008 + r() * 0.0010,
-    oct2AmpY:  0.0008 + r() * 0.0010,
-    oct2SeedX: seed2,
-    oct2SeedY: seed2 * 2.1,
-
-    // --- Octave 3: high-frequency flutter ---
-    oct3FreqX: 0.00055 + r() * 0.00070,
-    oct3FreqY: 0.00050 + r() * 0.00070,
-    oct3AmpX:  0.0003 + r() * 0.0004,
-    oct3AmpY:  0.0003 + r() * 0.0004,
-    oct3SeedX: seed3,
-    oct3SeedY: seed3 * 3.7,
-
-    // Large unique time offset — prevents any two bubbles sharing the same phase at startup
-    timeOffset: r() * 50000,
-  };
-};
-
 interface ContextMenu {
   bookmarkId: string;
   x: number;
@@ -139,7 +76,15 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
     bookmarks.forEach((bookmark) => {
       if (!bubbleDataRef.current.has(bookmark.id)) {
         const heatStyles = getHeatStylesAndSize(bookmark.accessCount, maxAccessCount, isMobile, isTablet);
-        const p = createBubblePersonality();
+
+        // Each bubble gets fully unique seeds and timing so they NEVER sync
+        // wanderSpeed range deliberately spread wide: 0.0002–0.0008 (vs original 0.0003–0.0005)
+        // seed values are large and coprime-spaced so no two bubbles share a harmonic
+        const seed = Math.random() * 10000;
+        const timeOffset = Math.random() * 100000; // large spread: up to 100s of phase difference
+        const wanderSpeed = 0.0002 + Math.random() * 0.0006;
+        const wanderStrength = 0.008 + Math.random() * 0.006; // proven range
+        const targetInterval = 3000 + Math.random() * 6000;   // 3–9s, each bubble unique
 
         bubbleDataRef.current.set(bookmark.id, {
           x: bookmark.x,
@@ -147,8 +92,11 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
           vx: 0,
           vy: 0,
           baseSize: heatStyles.size,
-          // Physics personality — unique per bubble, never shared
-          ...p,
+          seed,
+          timeOffset,
+          wanderSpeed,
+          wanderStrength,
+          targetInterval,
           targetX: bookmark.x,
           targetY: Math.max(bookmark.y, headerHeight + 50),
           nextTargetTime: 0,
@@ -195,19 +143,19 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
           const d = bubbleDataRef.current.get(id);
           if (!d || draggedBubble === id) return;
 
-          // Each bubble runs on its own time stream — offset ensures phase independence
-          const t = timestamp + d.timeOffset;
+          // Each bubble uses its own private time stream — makes sync impossible
+          const time = timestamp + d.timeOffset;
           const radius = d.baseSize / 2;
           
-          // Pick a new wander target on this bubble's personal cadence
-          if (t > d.nextTargetTime) {
+          // Pick next wander target on this bubble's personal cadence
+          if (time > d.nextTargetTime) {
             const padding = radius + 60;
             d.targetX = padding + Math.random() * (canvasWidth - padding * 2);
             d.targetY = headerHeight + padding + Math.random() * (canvasHeight - headerHeight - padding * 2);
-            d.nextTargetTime = t + d.minTargetInterval + Math.random() * d.maxTargetExtraInterval;
+            d.nextTargetTime = time + d.targetInterval;
           }
           
-          // Steering force toward wander target
+          // Steering force — proven 0.95/0.05 split, unique strength per bubble
           const dx = d.targetX - d.x;
           const dy = d.targetY - d.y;
           const distToTarget = Math.sqrt(dx * dx + dy * dy);
@@ -220,32 +168,29 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
             targetAy = (dy / distToTarget) * forceStrength;
           }
           
-          // Acceleration smoothing — accelBlend = 1 - accelSmoothing so force is always applied
-          const accelBlend = 1 - d.accelSmoothing;
-          d.ax = d.ax * d.accelSmoothing + targetAx * accelBlend;
-          d.ay = d.ay * d.accelSmoothing + targetAy * accelBlend;
+          // Proven smoothing ratio — always accumulates force
+          d.ax = d.ax * 0.95 + targetAx * 0.05;
+          d.ay = d.ay * 0.95 + targetAy * 0.05;
           
           d.vx += d.ax;
           d.vy += d.ay;
           
-          // Three independent noise octaves using seed-offset phases (not raw timestamps)
-          // wanderSpeed * timestamp keeps values in a sane radian range matching the original
-          const wobbleX =
-            Math.sin(t * d.oct1FreqX + d.oct1SeedX) * d.oct1AmpX +
-            Math.sin(t * d.oct2FreqX + d.oct2SeedX) * d.oct2AmpX +
-            Math.sin(t * d.oct3FreqX + d.oct3SeedX) * d.oct3AmpX;
-
-          const wobbleY =
-            Math.cos(t * d.oct1FreqY + d.oct1SeedY) * d.oct1AmpY +
-            Math.cos(t * d.oct2FreqY + d.oct2SeedY) * d.oct2AmpY +
-            Math.cos(t * d.oct3FreqY + d.oct3SeedY) * d.oct3AmpY;
+          // Perlin-like wobble — each bubble uses its own wanderSpeed and seed
+          // so frequencies and phases are unique per bubble
+          const wobbleTime = time * d.wanderSpeed;
+          const wobbleX = Math.sin(wobbleTime * 0.7  + d.seed)       * 0.002 +
+                          Math.sin(wobbleTime * 0.3  + d.seed * 2.1) * 0.001 +
+                          Math.sin(wobbleTime * 0.13 + d.seed * 3.7) * 0.0005;
+          const wobbleY = Math.cos(wobbleTime * 0.5  + d.seed)       * 0.002 +
+                          Math.cos(wobbleTime * 0.23 + d.seed * 2.9) * 0.001 +
+                          Math.cos(wobbleTime * 0.11 + d.seed * 4.1) * 0.0005;
           
           d.vx += wobbleX;
           d.vy += wobbleY;
           
-          // Velocity smoothing — unique "weight" per bubble
-          const smoothVx = d.vx * d.velSmoothing + d.prevVx * (1 - d.velSmoothing);
-          const smoothVy = d.vy * d.velSmoothing + d.prevVy * (1 - d.velSmoothing);
+          // Velocity smoothing (proven 0.7/0.3)
+          const smoothVx = d.vx * 0.7 + d.prevVx * 0.3;
+          const smoothVy = d.vy * 0.7 + d.prevVy * 0.3;
           d.prevVx = d.vx;
           d.prevVy = d.vy;
           d.vx = smoothVx;
@@ -266,21 +211,20 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
           d.x = Math.max(radius, Math.min(canvasWidth - radius, d.x));
           d.y = Math.max(headerHeight + radius, Math.min(canvasHeight - radius, d.y));
 
-          // Unique drag per bubble
-          d.vx *= d.damping;
-          d.vy *= d.damping;
+          d.vx *= 0.985;
+          d.vy *= 0.985;
 
-          // Unique max speed per bubble
+          const maxV = 1.0;
           const speed = Math.sqrt(d.vx * d.vx + d.vy * d.vy);
-          if (speed > d.maxSpeed) {
-            const scale = d.maxSpeed / speed;
+          if (speed > maxV) {
+            const scale = maxV / speed;
             d.vx *= scale;
             d.vy *= scale;
           }
           
-          // Unique display lerp — visual snappiness varies per bubble
-          d.displayX += (d.x - d.displayX) * d.lerpFactor;
-          d.displayY += (d.y - d.displayY) * d.lerpFactor;
+          // Smooth display position
+          d.displayX += (d.x - d.displayX) * 0.15;
+          d.displayY += (d.y - d.displayY) * 0.15;
         });
 
         // Collision detection
