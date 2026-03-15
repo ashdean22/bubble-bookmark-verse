@@ -52,58 +52,62 @@ const getHeatStylesAndSize = (accessCount: number, maxAccess: number, isMobile: 
 const createBubblePersonality = () => {
   const r = () => Math.random();
 
-  // Three completely independent noise octaves per axis — each with its own
-  // frequency, amplitude, and phase offset so no two bubbles share a harmonic.
+  // Each bubble gets its own seed for 3 independent noise axes
+  const seed1 = r() * 1000;
+  const seed2 = r() * 1000;
+  const seed3 = r() * 1000;
+
   return {
-    // Wander target refresh — spread across 2 s – 9 s
-    minTargetInterval: 2000 + r() * 2000,
-    maxTargetExtraInterval: 1500 + r() * 5500,
+    // Wander target refresh — each bubble picks new destination at a different cadence (3–9 s)
+    minTargetInterval: 3000 + r() * 2000,
+    maxTargetExtraInterval: r() * 4000,
 
-    // Steering force to target (uniquely strong/weak per bubble)
-    wanderStrength: 0.004 + r() * 0.010,
+    // Steering strength — 0.006 to 0.016 (centred on the proven 0.008–0.012 range)
+    wanderStrength: 0.006 + r() * 0.010,
 
-    // Acceleration smoothing ratio (0.85 – 0.98) — affects how "laggy" steering feels
-    accelSmoothing: 0.85 + r() * 0.13,
-    accelBlend: 0.02 + r() * 0.08,
+    // Acceleration smoothing — always sums to 1 so force never vanishes
+    // accelSmoothing 0.90–0.97, accelBlend = 1 - accelSmoothing
+    accelSmoothing: 0.90 + r() * 0.07,
 
-    // Velocity smoothing ratio (0.60 – 0.85) — affects "weight" of the bubble
-    velSmoothing: 0.60 + r() * 0.25,
+    // Velocity blend — heavier vs lighter feel (0.65–0.80)
+    velSmoothing: 0.65 + r() * 0.15,
 
-    // Damping per frame — slight variation in "drag"
-    damping: 0.980 + r() * 0.010,
+    // Per-frame damping — subtle variation in air resistance (0.982–0.990)
+    damping: 0.982 + r() * 0.008,
 
-    // Max speed — some bubbles are sprinters, some are lazy drifters
-    maxSpeed: 0.4 + r() * 0.9,
+    // Max speed — lazy drifters vs snappy movers (0.6–1.2)
+    maxSpeed: 0.6 + r() * 0.6,
 
-    // Display lerp — affects how snappy the visual follows physics
-    lerpFactor: 0.08 + r() * 0.14,
+    // Display lerp — how snappy the visual follows physics (0.10–0.20)
+    lerpFactor: 0.10 + r() * 0.10,
 
-    // --- Octave 1: slow, large-amplitude drift ---
-    oct1FreqX: 0.00008 + r() * 0.00018,
-    oct1FreqY: 0.00008 + r() * 0.00018,
-    oct1AmpX:  0.0010 + r() * 0.0020,
-    oct1AmpY:  0.0010 + r() * 0.0020,
-    oct1PhaseX: r() * Math.PI * 2,
-    oct1PhaseY: r() * Math.PI * 2,
+    // --- Octave 1: slow macro-drift (wanderSpeed equivalent) ---
+    // Frequencies match original 0.0003–0.0005 range applied to timestamp ms
+    oct1FreqX: 0.00030 + r() * 0.00025,
+    oct1FreqY: 0.00028 + r() * 0.00025,
+    oct1AmpX:  0.0015 + r() * 0.0015,
+    oct1AmpY:  0.0015 + r() * 0.0015,
+    oct1SeedX: seed1,
+    oct1SeedY: seed1 * 1.3,
 
-    // --- Octave 2: medium frequency micro-drift ---
-    oct2FreqX: 0.00025 + r() * 0.00045,
-    oct2FreqY: 0.00025 + r() * 0.00045,
-    oct2AmpX:  0.0006 + r() * 0.0012,
-    oct2AmpY:  0.0006 + r() * 0.0012,
-    oct2PhaseX: r() * Math.PI * 2,
-    oct2PhaseY: r() * Math.PI * 2,
+    // --- Octave 2: medium wobble ---
+    oct2FreqX: 0.00012 + r() * 0.00016,
+    oct2FreqY: 0.00010 + r() * 0.00016,
+    oct2AmpX:  0.0008 + r() * 0.0010,
+    oct2AmpY:  0.0008 + r() * 0.0010,
+    oct2SeedX: seed2,
+    oct2SeedY: seed2 * 2.1,
 
-    // --- Octave 3: high-frequency flutter (very subtle) ---
-    oct3FreqX: 0.00080 + r() * 0.00140,
-    oct3FreqY: 0.00080 + r() * 0.00140,
-    oct3AmpX:  0.0002 + r() * 0.0005,
-    oct3AmpY:  0.0002 + r() * 0.0005,
-    oct3PhaseX: r() * Math.PI * 2,
-    oct3PhaseY: r() * Math.PI * 2,
+    // --- Octave 3: high-frequency flutter ---
+    oct3FreqX: 0.00055 + r() * 0.00070,
+    oct3FreqY: 0.00050 + r() * 0.00070,
+    oct3AmpX:  0.0003 + r() * 0.0004,
+    oct3AmpY:  0.0003 + r() * 0.0004,
+    oct3SeedX: seed3,
+    oct3SeedY: seed3 * 3.7,
 
-    // Independent time offset so timestamp-based cycles start out of phase
-    timeOffset: r() * 999983,  // large prime-ish multiplier
+    // Large unique time offset — prevents any two bubbles sharing the same phase at startup
+    timeOffset: r() * 50000,
   };
 };
 
@@ -191,11 +195,11 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
           const d = bubbleDataRef.current.get(id);
           if (!d || draggedBubble === id) return;
 
-          // Each bubble uses its own time stream — impossible to sync
+          // Each bubble runs on its own time stream — offset ensures phase independence
           const t = timestamp + d.timeOffset;
           const radius = d.baseSize / 2;
           
-          // Pick a new wander target using this bubble's personal interval
+          // Pick a new wander target on this bubble's personal cadence
           if (t > d.nextTargetTime) {
             const padding = radius + 60;
             d.targetX = padding + Math.random() * (canvasWidth - padding * 2);
@@ -203,42 +207,43 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
             d.nextTargetTime = t + d.minTargetInterval + Math.random() * d.maxTargetExtraInterval;
           }
           
-          // Steering toward target using this bubble's unique strength
+          // Steering force toward wander target
           const dx = d.targetX - d.x;
           const dy = d.targetY - d.y;
           const distToTarget = Math.sqrt(dx * dx + dy * dy);
           
           let targetAx = 0;
           let targetAy = 0;
-          
           if (distToTarget > 1) {
             const forceStrength = d.wanderStrength * 0.5;
             targetAx = (dx / distToTarget) * forceStrength;
             targetAy = (dy / distToTarget) * forceStrength;
           }
           
-          // Acceleration smoothing — unique ratio per bubble
-          d.ax = d.ax * d.accelSmoothing + targetAx * d.accelBlend;
-          d.ay = d.ay * d.accelSmoothing + targetAy * d.accelBlend;
+          // Acceleration smoothing — accelBlend = 1 - accelSmoothing so force is always applied
+          const accelBlend = 1 - d.accelSmoothing;
+          d.ax = d.ax * d.accelSmoothing + targetAx * accelBlend;
+          d.ay = d.ay * d.accelSmoothing + targetAy * accelBlend;
           
           d.vx += d.ax;
           d.vy += d.ay;
           
-          // Three independent noise octaves, each with unique frequency & phase
+          // Three independent noise octaves using seed-offset phases (not raw timestamps)
+          // wanderSpeed * timestamp keeps values in a sane radian range matching the original
           const wobbleX =
-            Math.sin(t * d.oct1FreqX + d.oct1PhaseX) * d.oct1AmpX +
-            Math.sin(t * d.oct2FreqX + d.oct2PhaseX) * d.oct2AmpX +
-            Math.sin(t * d.oct3FreqX + d.oct3PhaseX) * d.oct3AmpX;
+            Math.sin(t * d.oct1FreqX + d.oct1SeedX) * d.oct1AmpX +
+            Math.sin(t * d.oct2FreqX + d.oct2SeedX) * d.oct2AmpX +
+            Math.sin(t * d.oct3FreqX + d.oct3SeedX) * d.oct3AmpX;
 
           const wobbleY =
-            Math.cos(t * d.oct1FreqY + d.oct1PhaseY) * d.oct1AmpY +
-            Math.cos(t * d.oct2FreqY + d.oct2PhaseY) * d.oct2AmpY +
-            Math.cos(t * d.oct3FreqY + d.oct3PhaseY) * d.oct3AmpY;
+            Math.cos(t * d.oct1FreqY + d.oct1SeedY) * d.oct1AmpY +
+            Math.cos(t * d.oct2FreqY + d.oct2SeedY) * d.oct2AmpY +
+            Math.cos(t * d.oct3FreqY + d.oct3SeedY) * d.oct3AmpY;
           
           d.vx += wobbleX;
           d.vy += wobbleY;
           
-          // Velocity smoothing — each bubble feels a different "weight"
+          // Velocity smoothing — unique "weight" per bubble
           const smoothVx = d.vx * d.velSmoothing + d.prevVx * (1 - d.velSmoothing);
           const smoothVy = d.vy * d.velSmoothing + d.prevVy * (1 - d.velSmoothing);
           d.prevVx = d.vx;
