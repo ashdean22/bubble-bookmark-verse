@@ -509,7 +509,53 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
         );
       })}
 
-      {/* Context menu */}
+      {/* URL Tooltip (1s touch hold) */}
+      {urlTooltip && (() => {
+        const tooltipBookmark = bookmarks.find(b => b.id === urlTooltip.bookmarkId);
+        if (!tooltipBookmark) return null;
+        const screenW = window.innerWidth;
+        const tipX = Math.min(urlTooltip.x, screenW - 180);
+        const tipY = urlTooltip.y - 60;
+        return (
+          <div
+            className="fixed z-50 pointer-events-none select-none"
+            style={{ left: tipX, top: tipY }}
+          >
+            <div
+              style={{
+                background: 'hsla(220, 20%, 10%, 0.95)',
+                border: '1px solid hsla(210, 60%, 60%, 0.3)',
+                backdropFilter: 'blur(16px)',
+                borderRadius: '10px',
+                padding: '7px 12px',
+                maxWidth: '200px',
+                boxShadow: '0 4px 20px hsla(0,0%,0%,0.5)',
+                animation: 'fadeInUp 0.15s ease-out',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <img
+                  src={tooltipBookmark.favicon}
+                  alt=""
+                  style={{ width: 14, height: 14, borderRadius: 2, flexShrink: 0 }}
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
+                <span style={{ color: 'hsla(210, 80%, 85%, 1)', fontSize: 11, fontWeight: 600, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {tooltipBookmark.title}
+                </span>
+              </div>
+              <div style={{ color: 'hsla(210, 60%, 65%, 0.8)', fontSize: 10, marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 175 }}>
+                {tooltipBookmark.url}
+              </div>
+              <div style={{ color: 'hsla(210, 40%, 60%, 0.6)', fontSize: 9, marginTop: 4, textAlign: 'center' }}>
+                Hold 2 more seconds for options
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Context menu (3s touch hold) */}
       {contextMenu && contextBookmark && (
         <div
           className="fixed z-50 select-none"
