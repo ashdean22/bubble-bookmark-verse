@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BubbleCanvas } from '@/components/BubbleCanvas';
 import { AddBookmarkModal } from '@/components/AddBookmarkModal';
+import { EditBubbleModal } from '@/components/EditBubbleModal';
 import { ImportBookmarksModal } from '@/components/ImportBookmarksModal';
 import { PricingModal } from '@/components/PricingModal';
 import { UpgradePromptModal } from '@/components/UpgradePromptModal';
