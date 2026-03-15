@@ -260,7 +260,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
               const ny = dy / distance;
               
               // Extremely gradual separation force
-              const separationForce = overlap * 0.005;
+              const separationForce = overlap * 0.001;
 
               data1.ax -= nx * separationForce;
               data1.ay -= ny * separationForce;
