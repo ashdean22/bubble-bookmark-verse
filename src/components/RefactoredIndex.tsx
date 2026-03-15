@@ -176,9 +176,15 @@ export const RefactoredIndex = () => {
   };
 
   const incrementAccessCount = (id: string) => {
+    const now = Date.now();
     const updatedBookmarks = bookmarks.map(bookmark => 
       bookmark.id === id 
-        ? { ...bookmark, accessCount: bookmark.accessCount + 1 }
+        ? { 
+            ...bookmark, 
+            accessCount: bookmark.accessCount + 1,
+            lastAccessed: now,
+            accessHistory: [...(bookmark.accessHistory || []), now],
+          }
         : bookmark
     );
     saveBookmarks(updatedBookmarks);

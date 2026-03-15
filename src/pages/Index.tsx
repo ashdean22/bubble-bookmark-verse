@@ -10,6 +10,9 @@ export interface Bookmark {
   size: number;
   color: string;
   accessCount: number;
+  lastAccessed?: number; // Unix timestamp of last access
+  accessHistory?: number[]; // Array of Unix timestamps for each access
+  sharedBy?: string[]; // Names/identifiers of people who shared this
 }
 
 const Index = () => {
