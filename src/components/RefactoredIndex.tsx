@@ -18,7 +18,13 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { Bookmark } from '@/pages/Index';
 import { ParsedBookmark } from '@/utils/bookmarkParser';
 
-const getHostname = (url: string) => { try { return new URL(url).hostname; } catch { return url; } };
+// Normalize hostname: strip www. so nba.com and www.nba.com are treated as the same
+const getHostname = (url: string) => {
+  try {
+    const host = new URL(url.startsWith('http') ? url : `https://${url}`).hostname;
+    return host.replace(/^www\./, '');
+  } catch { return url; }
+};
 
 const deduplicateBookmarks = (bms: Bookmark[]): Bookmark[] => {
   const seen = new Set<string>();
@@ -37,8 +43,9 @@ export const RefactoredIndex = () => {
 
   // Remove any duplicate domains from stored bookmarks on mount
   useEffect(() => {
-    const deduped = deduplicateBookmarks(bookmarks);
-    if (deduped.length !== bookmarks.length) {
+    const stored: Bookmark[] = JSON.parse(localStorage.getItem('bubbleBookmarks') || '[]');
+    const deduped = deduplicateBookmarks(stored);
+    if (deduped.length !== stored.length) {
       setBookmarks(deduped);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
