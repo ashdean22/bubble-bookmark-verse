@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BubbleCanvas } from '@/components/BubbleCanvas';
 import { AddBookmarkModal } from '@/components/AddBookmarkModal';
+import { EditBubbleModal } from '@/components/EditBubbleModal';
 import { ImportBookmarksModal } from '@/components/ImportBookmarksModal';
 import { PricingModal } from '@/components/PricingModal';
 import { UpgradePromptModal } from '@/components/UpgradePromptModal';
@@ -46,6 +47,7 @@ export const RefactoredIndex = () => {
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const [upgradePromptDismissed, setUpgradePromptDismissed] = useLocalStorage('upgradePromptDismissed', false);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [editingBookmark, setEditingBookmark] = useState<Bookmark | null>(null);
   
   const { toast } = useToast();
 
@@ -182,6 +184,14 @@ export const RefactoredIndex = () => {
     saveBookmarks(updatedBookmarks);
   };
 
+  const editBookmark = (id: string, updates: { url: string; title: string; favicon: string }) => {
+    const updatedBookmarks = bookmarks.map(b =>
+      b.id === id ? { ...b, ...updates } : b
+    );
+    saveBookmarks(updatedBookmarks);
+    toast({ title: "Bubble updated! ✏️", description: "Your bubble has been saved." });
+  };
+
   const importBookmarks = (parsedBookmarks: ParsedBookmark[]) => {
     const colors = [
       'rgb(147, 51, 234)', 'rgb(59, 130, 246)', 'rgb(16, 185, 129)',
@@ -255,7 +265,15 @@ export const RefactoredIndex = () => {
           bookmarks={bookmarks} 
           onRemoveBookmark={removeBookmark}
           onBubbleClick={incrementAccessCount}
+          onEditBookmark={setEditingBookmark}
           currentSubscription={currentSubscription}
+        />
+
+        <EditBubbleModal
+          bookmark={editingBookmark}
+          isOpen={!!editingBookmark}
+          onClose={() => setEditingBookmark(null)}
+          onSave={editBookmark}
         />
 
         {bookmarks.length === 0 && (

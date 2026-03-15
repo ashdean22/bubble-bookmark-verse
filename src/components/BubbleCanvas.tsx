@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Bookmark } from '@/pages/Index';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, Pencil, Trash2 } from 'lucide-react';
 
 interface BubbleCanvasProps {
   bookmarks: Bookmark[];
   onRemoveBookmark: (id: string) => void;
   onBubbleClick: (id: string) => void;
+  onEditBookmark: (bookmark: Bookmark) => void;
   currentSubscription?: string | null;
 }
 
@@ -15,7 +16,6 @@ const getHeatStylesAndSize = (accessCount: number, maxAccess: number, isMobile: 
   const saturation = 65 + (heat * 15);
   const lightness = 50 - (heat * 10);
   
-  // Responsive bubble sizes
   let minSize = 50;
   let maxSize = 90;
   
@@ -29,7 +29,6 @@ const getHeatStylesAndSize = (accessCount: number, maxAccess: number, isMobile: 
   
   const size = Math.round(minSize + (heat * (maxSize - minSize)));
   
-  // Realistic bubble colors with transparency and depth
   const baseColor = `hsla(${hue}, ${saturation}%, ${lightness}%, 0.7)`;
   const borderColor = `hsla(${hue}, ${saturation}%, ${lightness + 20}%, 0.5)`;
   const glowColor = `hsla(${hue}, ${saturation}%, ${lightness + 30}%, 0.4)`;
@@ -49,11 +48,17 @@ const getHeatStylesAndSize = (accessCount: number, maxAccess: number, isMobile: 
   };
 };
 
-export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, currentSubscription }: BubbleCanvasProps) => {
+interface ContextMenu {
+  bookmarkId: string;
+  x: number;
+  y: number;
+}
+
+export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEditBookmark, currentSubscription }: BubbleCanvasProps) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [draggedBubble, setDraggedBubble] = useState<string | null>(null);
   const [clickedBubble, setClickedBubble] = useState<string | null>(null);
-  const [previewBubble, setPreviewBubble] = useState<string | null>(null);
+  const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null);
   const animationRef = useRef<number>();
   const dragOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const dragStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
@@ -68,10 +73,9 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
     const isTablet = window.innerWidth >= 640 && window.innerWidth < 1024;
     const headerHeight = isMobile ? 120 : 100;
 
-    bookmarks.forEach((bookmark, index) => {
+    bookmarks.forEach((bookmark) => {
       if (!bubbleDataRef.current.has(bookmark.id)) {
         const heatStyles = getHeatStylesAndSize(bookmark.accessCount, maxAccessCount, isMobile, isTablet);
-        // Create unique random seed for each bubble
         const seed = Math.random() * 1000;
         bubbleDataRef.current.set(bookmark.id, {
           x: bookmark.x,
@@ -79,32 +83,23 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
           vx: 0,
           vy: 0,
           baseSize: heatStyles.size,
-        // Unique seed for noise-like movement
-        seed,
-        // Time offset so bubbles don't sync
-        timeOffset: Math.random() * 10000,
-        // Unique movement characteristics - faster movement
-        wanderStrength: 0.008 + Math.random() * 0.004,
-        wanderSpeed: 0.0003 + Math.random() * 0.0002,
-        // Target position for smooth wandering
-        targetX: bookmark.x,
-        targetY: Math.max(bookmark.y, headerHeight + 50),
-        // Time until next target change
-        nextTargetTime: 0,
-        // Smoothed display position (for lerp rendering)
-        displayX: bookmark.x,
-        displayY: Math.max(bookmark.y, headerHeight + 50),
-        // Previous velocities for smoothing
-        prevVx: 0,
-        prevVy: 0,
-        // Acceleration smoothing
-        ax: 0,
-        ay: 0,
+          seed,
+          timeOffset: Math.random() * 10000,
+          wanderStrength: 0.008 + Math.random() * 0.004,
+          wanderSpeed: 0.0003 + Math.random() * 0.0002,
+          targetX: bookmark.x,
+          targetY: Math.max(bookmark.y, headerHeight + 50),
+          nextTargetTime: 0,
+          displayX: bookmark.x,
+          displayY: Math.max(bookmark.y, headerHeight + 50),
+          prevVx: 0,
+          prevVy: 0,
+          ax: 0,
+          ay: 0,
         });
       }
     });
 
-    // Clean up removed bookmarks
     const currentIds = new Set(bookmarks.map(b => b.id));
     bubbleDataRef.current.forEach((_, id) => {
       if (!currentIds.has(id)) {
@@ -113,7 +108,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
     });
   }, [bookmarks]);
 
-  // Simple animation loop
+  // Animation loop
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || bookmarks.length === 0) return;
@@ -132,7 +127,6 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
         const canvasWidth = canvas.clientWidth;
         const canvasHeight = canvas.clientHeight;
 
-        // Update movement for each bubble
         const bubbleIds = Array.from(bubbleDataRef.current.keys());
         
         bubbleIds.forEach((id) => {
@@ -142,21 +136,17 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
           const time = timestamp + data.timeOffset;
           const radius = data.baseSize / 2;
           
-          // Check if it's time to pick a new wander target (longer intervals for slower movement)
           if (time > data.nextTargetTime) {
             const padding = radius + 60;
             data.targetX = padding + Math.random() * (canvasWidth - padding * 2);
             data.targetY = headerHeight + padding + Math.random() * (canvasHeight - headerHeight - padding * 2);
-            // Next target change in 3-6 seconds for faster wandering
             data.nextTargetTime = time + 3000 + Math.random() * 3000;
           }
           
-          // Calculate direction to target
           const dx = data.targetX - data.x;
           const dy = data.targetY - data.y;
           const distToTarget = Math.sqrt(dx * dx + dy * dy);
           
-          // Very gentle force toward target with acceleration smoothing
           let targetAx = 0;
           let targetAy = 0;
           
@@ -166,15 +156,12 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
             targetAy = (dy / distToTarget) * forceStrength;
           }
           
-          // Smooth acceleration (lerp toward target acceleration)
           data.ax = data.ax * 0.95 + targetAx * 0.05;
           data.ay = data.ay * 0.95 + targetAy * 0.05;
           
-          // Apply smoothed acceleration to velocity
           data.vx += data.ax;
           data.vy += data.ay;
           
-          // Add very subtle organic wobble using multiple sine waves
           const wobbleTime = time * data.wanderSpeed;
           const wobbleX = Math.sin(wobbleTime * 0.7 + data.seed) * 0.002 + 
                          Math.sin(wobbleTime * 0.3 + data.seed * 2.1) * 0.001 +
@@ -186,7 +173,6 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
           data.vx += wobbleX;
           data.vy += wobbleY;
           
-          // Smooth velocity (average with previous)
           const smoothVx = data.vx * 0.7 + data.prevVx * 0.3;
           const smoothVy = data.vy * 0.7 + data.prevVy * 0.3;
           data.prevVx = data.vx;
@@ -194,11 +180,9 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
           data.vx = smoothVx;
           data.vy = smoothVy;
 
-          // Apply velocity
           data.x += data.vx;
           data.y += data.vy;
 
-          // Very soft boundary steering
           const margin = 50;
           const boundaryForce = 0.005;
           
@@ -214,15 +198,12 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
             data.vy -= boundaryForce;
           }
 
-          // Keep within bounds
           data.x = Math.max(radius, Math.min(canvasWidth - radius, data.x));
           data.y = Math.max(headerHeight + radius, Math.min(canvasHeight - radius, data.y));
 
-          // Smooth damping
           data.vx *= 0.985;
           data.vy *= 0.985;
 
-          // Faster velocity cap
           const maxV = 1.0;
           const speed = Math.sqrt(data.vx * data.vx + data.vy * data.vy);
           if (speed > maxV) {
@@ -231,13 +212,12 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
             data.vy *= scale;
           }
           
-          // Lerp display position toward actual position (smooths rendering)
           const lerpFactor = 0.15;
           data.displayX = data.displayX + (data.x - data.displayX) * lerpFactor;
           data.displayY = data.displayY + (data.y - data.displayY) * lerpFactor;
         });
 
-        // Collision detection between bubbles
+        // Collision detection
         for (let i = 0; i < bubbleIds.length; i++) {
           const id1 = bubbleIds[i];
           const data1 = bubbleDataRef.current.get(id1);
@@ -254,12 +234,9 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
             const minDistance = (data1.baseSize + data2.baseSize) / 2;
 
             if (distance < minDistance && distance > 0) {
-              // Very gentle separation to avoid jerky movement
               const overlap = minDistance - distance;
               const nx = dx / distance;
               const ny = dy / distance;
-              
-              // Extremely gradual separation force
               const separationForce = overlap * 0.001;
 
               data1.ax -= nx * separationForce;
@@ -270,14 +247,13 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
           }
         }
 
-        // Update DOM for all bubbles using smoothed display positions (no rounding for sub-pixel smoothness)
+        // Update DOM
         bubbleIds.forEach((id) => {
           const data = bubbleDataRef.current.get(id);
           if (!data) return;
           
           const el = canvas.querySelector(`[data-bubble-id="${id}"]`) as HTMLElement;
           if (el) {
-            // Use displayX/displayY for lerped smooth rendering, no rounding for sub-pixel precision
             const x = data.displayX - data.baseSize / 2;
             const y = data.displayY - data.baseSize / 2;
             el.style.transform = `translate3d(${x}px, ${y}px, 0)`;
@@ -297,6 +273,18 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
     };
   }, [bookmarks, draggedBubble]);
 
+  // Close context menu on outside click
+  useEffect(() => {
+    if (!contextMenu) return;
+    const close = () => setContextMenu(null);
+    document.addEventListener('click', close);
+    document.addEventListener('touchstart', close);
+    return () => {
+      document.removeEventListener('click', close);
+      document.removeEventListener('touchstart', close);
+    };
+  }, [contextMenu]);
+
   const handleBubbleClick = (bookmark: Bookmark) => {
     if (!isDraggingRef.current) {
       setClickedBubble(bookmark.id);
@@ -304,6 +292,12 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
       setTimeout(() => setClickedBubble(null), 150);
       window.open(bookmark.url, '_blank');
     }
+  };
+
+  const handleContextMenu = (e: React.MouseEvent, bookmarkId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({ bookmarkId, x: e.clientX, y: e.clientY });
   };
 
   const handleDragStart = (e: React.MouseEvent | React.TouchEvent, bookmarkId: string) => {
@@ -317,13 +311,12 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
     dragOffsetRef.current = { x: clientX - rect.left, y: clientY - rect.top };
     isDraggingRef.current = false;
 
-    // Long-press to show URL preview (touch only)
+    // Long-press to show context menu (touch only)
     if ('touches' in e) {
       if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
       longPressTimerRef.current = setTimeout(() => {
         if (!isDraggingRef.current) {
-          setPreviewBubble(bookmarkId);
-          setTimeout(() => setPreviewBubble(null), 3000);
+          setContextMenu({ bookmarkId, x: clientX, y: clientY });
         }
       }, 500);
     }
@@ -341,9 +334,8 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
     
     if (!isDraggingRef.current && distance > 10) {
       isDraggingRef.current = true;
-      // Cancel long-press if user starts dragging
       if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
-      setPreviewBubble(null);
+      setContextMenu(null);
       const draggedElement = document.elementFromPoint(dragStartRef.current.x, dragStartRef.current.y)?.closest('[data-bubble-id]') as HTMLElement;
       if (draggedElement) {
         const bubbleId = draggedElement.getAttribute('data-bubble-id');
@@ -377,7 +369,6 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
     if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
     setTimeout(() => {
       isDraggingRef.current = false;
-      setPreviewBubble(null);
     }, 50);
   }, []);
 
@@ -404,19 +395,13 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
   const isTablet = typeof window !== 'undefined' && window.innerWidth >= 640 && window.innerWidth < 1024;
 
+  const contextBookmark = contextMenu ? bookmarks.find(b => b.id === contextMenu.bookmarkId) : null;
+
   return (
     <div ref={canvasRef} className="absolute inset-0 overflow-hidden">
       {bookmarks.map((bookmark) => {
         const heatStyles = getHeatStylesAndSize(bookmark.accessCount, maxAccessCount, isMobile, isTablet);
         const isDragging = draggedBubble === bookmark.id;
-        const isPreview = previewBubble === bookmark.id;
-        
-        // Get clean display name: title or hostname
-        let displayName = bookmark.title;
-        try {
-          const hostname = new URL(bookmark.url).hostname.replace(/^www\./, '');
-          if (!displayName || displayName.length > 30) displayName = hostname;
-        } catch { /* keep title */ }
         
         return (
           <div
@@ -429,66 +414,14 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
               transform: `translate3d(${Math.round(bookmark.x)}px, ${Math.round(bookmark.y)}px, 0)`,
               width: `${heatStyles.size}px`,
               height: `${heatStyles.size}px`,
-              zIndex: isDragging ? 30 : isPreview ? 25 : 10,
+              zIndex: isDragging ? 30 : 10,
               willChange: 'transform',
             }}
             onMouseDown={(e) => handleDragStart(e, bookmark.id)}
             onTouchStart={(e) => handleDragStart(e, bookmark.id)}
+            onContextMenu={(e) => handleContextMenu(e, bookmark.id)}
           >
-            {/* URL preview tooltip on long press */}
-            {isPreview && (
-              <div
-                className="absolute pointer-events-none select-none"
-                style={{
-                  bottom: `calc(100% + 10px)`,
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  zIndex: 50,
-                  animation: 'fadeInUp 0.18s ease-out',
-                }}
-              >
-                <div
-                  style={{
-                    background: 'hsla(220, 20%, 12%, 0.92)',
-                    border: '1px solid hsla(210, 60%, 70%, 0.3)',
-                    backdropFilter: 'blur(12px)',
-                    borderRadius: '10px',
-                    padding: '6px 10px',
-                    whiteSpace: 'nowrap',
-                    boxShadow: '0 4px 20px hsla(0,0%,0%,0.35)',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <img
-                      src={bookmark.favicon}
-                      alt=""
-                      style={{ width: 14, height: 14, borderRadius: 3, flexShrink: 0 }}
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                    />
-                    <span style={{ color: 'hsla(210, 80%, 90%, 1)', fontSize: 12, fontWeight: 500, letterSpacing: '0.01em' }}>
-                      {displayName}
-                    </span>
-                  </div>
-                  {/* Arrow */}
-                  <div
-                    style={{
-                      position: 'absolute',
-                      bottom: -5,
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      width: 10,
-                      height: 10,
-                      background: 'hsla(220, 20%, 12%, 0.92)',
-                      border: '1px solid hsla(210, 60%, 70%, 0.3)',
-                      borderTop: 'none',
-                      borderLeft: 'none',
-                      rotate: '45deg',
-                    }}
-                  />
-                </div>
-              </div>
-            )}
-            {/* Realistic bubble with depth and reflections */}
+            {/* Realistic bubble */}
             <div
               className="w-full h-full rounded-full flex flex-col items-center justify-center relative overflow-hidden"
               style={{
@@ -519,7 +452,6 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
                   transform: 'rotate(-15deg)',
                 }}
               />
-              {/* Secondary smaller highlight */}
               <div 
                 className="absolute rounded-full pointer-events-none"
                 style={{
@@ -546,6 +478,79 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, curre
           </div>
         );
       })}
+
+      {/* Context menu */}
+      {contextMenu && contextBookmark && (
+        <div
+          className="fixed z-50 select-none"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+          onClick={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+        >
+          <div
+            style={{
+              background: 'hsla(220, 20%, 10%, 0.96)',
+              border: '1px solid hsla(210, 60%, 60%, 0.25)',
+              backdropFilter: 'blur(16px)',
+              borderRadius: '12px',
+              padding: '6px',
+              minWidth: '160px',
+              boxShadow: '0 8px 32px hsla(0,0%,0%,0.5)',
+              animation: 'fadeInUp 0.15s ease-out',
+            }}
+          >
+            {/* Site name header */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '6px 10px 8px',
+                borderBottom: '1px solid hsla(210, 60%, 60%, 0.15)',
+                marginBottom: '4px',
+              }}
+            >
+              <img
+                src={contextBookmark.favicon}
+                alt=""
+                style={{ width: 16, height: 16, borderRadius: 3, flexShrink: 0 }}
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+              />
+              <span style={{ color: 'hsla(210, 80%, 85%, 1)', fontSize: 12, fontWeight: 600, letterSpacing: '0.01em', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {contextBookmark.title}
+              </span>
+            </div>
+            {/* Edit */}
+            <button
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors"
+              style={{ color: 'hsla(210, 80%, 85%, 1)', fontSize: 13 }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'hsla(210, 60%, 50%, 0.2)')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+              onClick={() => {
+                setContextMenu(null);
+                onEditBookmark(contextBookmark);
+              }}
+            >
+              <Pencil style={{ width: 14, height: 14, flexShrink: 0 }} />
+              Edit bubble
+            </button>
+            {/* Delete */}
+            <button
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors"
+              style={{ color: 'hsla(0, 80%, 70%, 1)', fontSize: 13 }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'hsla(0, 60%, 50%, 0.2)')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+              onClick={() => {
+                setContextMenu(null);
+                onRemoveBookmark(contextBookmark.id);
+              }}
+            >
+              <Trash2 style={{ width: 14, height: 14, flexShrink: 0 }} />
+              Delete bubble
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
