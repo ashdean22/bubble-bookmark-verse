@@ -2,7 +2,13 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { BarChart3, TrendingUp, Eye, Clock, Crown, Lock } from 'lucide-react';
+import {
+  BarChart3, TrendingUp, Eye, Clock, Crown, Lock,
+  Share2, Copy, Check, Flame, Users
+} from 'lucide-react';
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell
+} from 'recharts';
 import { Bookmark } from '@/pages/Index';
 
 interface AnalyticsInsightsProps {
@@ -11,168 +17,365 @@ interface AnalyticsInsightsProps {
   onUpgradeClick: () => void;
 }
 
-export const AnalyticsInsights = ({ bookmarks, currentSubscription, onUpgradeClick }: AnalyticsInsightsProps) => {
-  const isPremium = currentSubscription === 'premium';
-  
-  // Calculate analytics data
-  const totalClicks = bookmarks.reduce((sum, bookmark) => sum + bookmark.accessCount, 0);
-  const averageClicks = bookmarks.length > 0 ? Math.round(totalClicks / bookmarks.length * 10) / 10 : 0;
-  const mostUsed = bookmarks.reduce((prev, current) => 
-    (prev.accessCount > current.accessCount) ? prev : current, bookmarks[0] || null
+// ─── helpers ──────────────────────────────────────────────────────────────────
+
+function formatLastAccessed(ts?: number): string {
+  if (!ts) return 'Never';
+  const diff = Date.now() - ts;
+  const mins = Math.floor(diff / 60_000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(ts).toLocaleDateString();
+}
+
+/** Returns the last-7-days access count grouped by day label */
+function buildTrendData(history?: number[]) {
+  const days: { label: string; count: number }[] = [];
+  const now = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    days.push({
+      label: d.toLocaleDateString('en', { weekday: 'short' }),
+      count: 0,
+    });
+  }
+  if (!history) return days;
+  const weekAgo = Date.now() - 7 * 86_400_000;
+  history.forEach(ts => {
+    if (ts < weekAgo) return;
+    const diff = Date.now() - ts;
+    const dayIndex = 6 - Math.floor(diff / 86_400_000);
+    if (dayIndex >= 0 && dayIndex <= 6) days[dayIndex].count++;
+  });
+  return days;
+}
+
+/** Aggregate all access history into a daily series for the full-view chart */
+function buildAllTrendData(bookmarks: Bookmark[]) {
+  const allHistory = bookmarks.flatMap(b => b.accessHistory || []);
+  return buildTrendData(allHistory);
+}
+
+// ─── subcomponents ─────────────────────────────────────────────────────────────
+
+const TrendMiniChart = ({ history }: { history?: number[] }) => {
+  const data = buildTrendData(history);
+  const max = Math.max(...data.map(d => d.count), 1);
+  return (
+    <ResponsiveContainer width="100%" height={40}>
+      <BarChart data={data} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+        <Bar dataKey="count" radius={[2, 2, 0, 0]}>
+          {data.map((_, i) => (
+            <Cell key={i} fill={`hsla(270, 70%, ${45 + (data[i].count / max) * 25}%, 0.9)`} />
+          ))}
+        </Bar>
+      </BarChart>
+    </ResponsiveContainer>
   );
+};
+
+const FullTrendChart = ({ bookmarks }: { bookmarks: Bookmark[] }) => {
+  const data = buildAllTrendData(bookmarks);
+  const max = Math.max(...data.map(d => d.count), 1);
+  return (
+    <ResponsiveContainer width="100%" height={160}>
+      <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
+        <XAxis dataKey="label" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} axisLine={false} tickLine={false} />
+        <YAxis allowDecimals={false} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} axisLine={false} tickLine={false} />
+        <Tooltip
+          contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, color: 'hsl(var(--card-foreground))' }}
+          cursor={{ fill: 'hsla(270,60%,60%,0.08)' }}
+        />
+        <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+          {data.map((_, i) => (
+            <Cell key={i} fill={`hsla(270, 70%, ${40 + (data[i].count / max) * 30}%, 0.85)`} />
+          ))}
+        </Bar>
+      </BarChart>
+    </ResponsiveContainer>
+  );
+};
+
+// Share-a-bubble row
+const ShareRow = ({ bookmark }: { bookmark: Bookmark }) => {
+  const [copied, setCopied] = useState(false);
+  const shareUrl = `${window.location.origin}?shared=${encodeURIComponent(bookmark.url)}&title=${encodeURIComponent(bookmark.title)}`;
+
+  const copy = () => {
+    navigator.clipboard.writeText(shareUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const sharedCount = bookmark.sharedBy?.length ?? 0;
+
+  return (
+    <div className="flex items-center justify-between p-3 rounded-lg" style={{ background: 'hsla(270,30%,20%,0.5)' }}>
+      <div className="flex items-center gap-3 min-w-0">
+        {bookmark.favicon ? (
+          <img src={bookmark.favicon} alt="" className="w-5 h-5 rounded flex-shrink-0" onError={e => (e.currentTarget.style.display = 'none')} />
+        ) : (
+          <div className="w-5 h-5 rounded flex-shrink-0" style={{ background: 'hsla(270,60%,50%,0.4)' }} />
+        )}
+        <div className="min-w-0">
+          <p className="text-sm font-medium truncate" style={{ color: 'hsl(var(--foreground))' }}>{bookmark.title}</p>
+          {sharedCount > 0 && (
+            <p className="text-xs" style={{ color: 'hsl(var(--muted-foreground))' }}>
+              Shared with {sharedCount} friend{sharedCount !== 1 ? 's' : ''}
+            </p>
+          )}
+        </div>
+      </div>
+      <Button size="sm" variant="ghost" onClick={copy} className="flex-shrink-0 gap-1 text-xs px-2 h-7" style={{ color: 'hsl(var(--muted-foreground))' }}>
+        {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+        {copied ? 'Copied!' : 'Share'}
+      </Button>
+    </div>
+  );
+};
+
+// ─── main premium content ──────────────────────────────────────────────────────
+
+const PremiumContent = ({
+  bookmarks,
+  onUpgradeClick,
+}: {
+  bookmarks: Bookmark[];
+  onUpgradeClick: () => void;
+}) => {
+  const totalClicks = bookmarks.reduce((s, b) => s + b.accessCount, 0);
+  const averageClicks = bookmarks.length > 0 ? Math.round((totalClicks / bookmarks.length) * 10) / 10 : 0;
   const unusedBubbles = bookmarks.filter(b => b.accessCount === 0).length;
+  const sorted = [...bookmarks].sort((a, b) => b.accessCount - a.accessCount);
+  const trending = sorted.slice(0, 5);
 
-  // Premium Analytics Content
-  const PremiumContent = () => (
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [shareTab, setShareTab] = useState(false);
+
+  return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-slate-800/50 border-purple-500/30">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-white text-sm flex items-center">
-              <Eye className="w-4 h-4 mr-2 text-purple-400" />
-              Total Interactions
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">{totalClicks}</div>
-            <p className="text-purple-300 text-xs">All-time clicks</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-slate-800/50 border-purple-500/30">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-white text-sm flex items-center">
-              <TrendingUp className="w-4 h-4 mr-2 text-emerald-400" />
-              Average Usage
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">{averageClicks}</div>
-            <p className="text-purple-300 text-xs">Per bubble</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-slate-800/50 border-purple-500/30">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-white text-sm flex items-center">
-              <BarChart3 className="w-4 h-4 mr-2 text-cyan-400" />
-              Active Bubbles
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">{bookmarks.length - unusedBubbles}</div>
-            <p className="text-purple-300 text-xs">With interactions</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-slate-800/50 border-purple-500/30">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-white text-sm flex items-center">
-              <Clock className="w-4 h-4 mr-2 text-amber-400" />
-              Unused Bubbles
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">{unusedBubbles}</div>
-            <p className="text-purple-300 text-xs">Never clicked</p>
-          </CardContent>
-        </Card>
+      {/* Stat cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {[
+          { icon: <Eye className="w-4 h-4" style={{ color: 'hsla(270,70%,70%,1)' }} />, label: 'Total Interactions', value: totalClicks, sub: 'All-time clicks' },
+          { icon: <TrendingUp className="w-4 h-4" style={{ color: 'hsla(145,70%,50%,1)' }} />, label: 'Avg Usage', value: averageClicks, sub: 'Per bubble' },
+          { icon: <BarChart3 className="w-4 h-4" style={{ color: 'hsla(190,70%,55%,1)' }} />, label: 'Active Bubbles', value: bookmarks.length - unusedBubbles, sub: 'With interactions' },
+          { icon: <Clock className="w-4 h-4" style={{ color: 'hsla(40,90%,60%,1)' }} />, label: 'Unused Bubbles', value: unusedBubbles, sub: 'Never clicked' },
+        ].map(card => (
+          <Card key={card.label} className="border" style={{ background: 'hsla(270,30%,12%,0.7)', borderColor: 'hsla(270,50%,50%,0.25)' }}>
+            <CardHeader className="pb-1 pt-4 px-4">
+              <CardTitle className="text-xs flex items-center gap-1.5" style={{ color: 'hsl(var(--muted-foreground))' }}>
+                {card.icon}{card.label}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-4">
+              <div className="text-2xl font-bold" style={{ color: 'hsl(var(--foreground))' }}>{card.value}</div>
+              <p className="text-xs mt-0.5" style={{ color: 'hsla(270,60%,70%,0.8)' }}>{card.sub}</p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      {/* Top Performing Bubbles */}
-      <Card className="bg-slate-800/50 border-purple-500/30">
-        <CardHeader>
-          <CardTitle className="text-white flex items-center">
-            <TrendingUp className="w-5 h-5 mr-2 text-purple-400" />
+      {/* Overall 7-day usage trend */}
+      <Card className="border" style={{ background: 'hsla(270,30%,12%,0.7)', borderColor: 'hsla(270,50%,50%,0.25)' }}>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2" style={{ color: 'hsl(var(--foreground))' }}>
+            <TrendingUp className="w-4 h-4" style={{ color: 'hsla(270,70%,70%,1)' }} />
+            Overall Usage — Last 7 Days
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <FullTrendChart bookmarks={bookmarks} />
+        </CardContent>
+      </Card>
+
+      {/* Top performing with last accessed + per-bubble trend */}
+      <Card className="border" style={{ background: 'hsla(270,30%,12%,0.7)', borderColor: 'hsla(270,50%,50%,0.25)' }}>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2" style={{ color: 'hsl(var(--foreground))' }}>
+            <Flame className="w-4 h-4" style={{ color: 'hsla(30,90%,60%,1)' }} />
             Top Performing Bubbles
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {bookmarks
-              .sort((a, b) => b.accessCount - a.accessCount)
-              .slice(0, 5)
-              .map((bookmark, index) => (
-                <div key={bookmark.id} className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="flex items-center justify-center w-6 h-6 bg-purple-600 text-white rounded-full text-xs font-bold">
-                      {index + 1}
+          <div className="space-y-2">
+            {trending.map((bookmark, index) => (
+              <div key={bookmark.id}>
+                <button
+                  className="w-full text-left p-3 rounded-lg transition-colors"
+                  style={{ background: expandedId === bookmark.id ? 'hsla(270,40%,25%,0.6)' : 'hsla(270,30%,18%,0.5)' }}
+                  onClick={() => setExpandedId(expandedId === bookmark.id ? null : bookmark.id)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="flex items-center justify-center w-5 h-5 rounded-full text-white text-xs font-bold flex-shrink-0"
+                        style={{ background: 'hsla(270,70%,50%,0.9)' }}>
+                        {index + 1}
+                      </div>
+                      {bookmark.favicon && (
+                        <img src={bookmark.favicon} alt="" className="w-4 h-4 rounded flex-shrink-0"
+                          onError={e => (e.currentTarget.style.display = 'none')} />
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate" style={{ color: 'hsl(var(--foreground))' }}>{bookmark.title}</p>
+                        <p className="text-xs" style={{ color: 'hsl(var(--muted-foreground))' }}>
+                          Last opened: {formatLastAccessed(bookmark.lastAccessed)}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-white font-medium text-sm">{bookmark.title}</p>
-                      <p className="text-purple-300 text-xs">{new URL(bookmark.url).hostname}</p>
-                    </div>
+                    <Badge className="ml-2 flex-shrink-0 text-white border-0"
+                      style={{ background: 'hsla(270,60%,45%,0.9)' }}>
+                      {bookmark.accessCount} clicks
+                    </Badge>
                   </div>
-                  <Badge className="bg-purple-600 text-white">
-                    {bookmark.accessCount} clicks
-                  </Badge>
+                </button>
+                {expandedId === bookmark.id && (
+                  <div className="px-3 pb-3 rounded-b-lg -mt-1 pt-2"
+                    style={{ background: 'hsla(270,40%,22%,0.5)' }}>
+                    <p className="text-xs mb-1" style={{ color: 'hsl(var(--muted-foreground))' }}>7-day trend</p>
+                    <TrendMiniChart history={bookmark.accessHistory} />
+                  </div>
+                )}
+              </div>
+            ))}
+            {trending.length === 0 && (
+              <p className="text-sm text-center py-4" style={{ color: 'hsl(var(--muted-foreground))' }}>
+                No bubbles yet. Start clicking to see analytics!
+              </p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Shared with / Trending among friends */}
+      <Card className="border" style={{ background: 'hsla(270,30%,12%,0.7)', borderColor: 'hsla(270,50%,50%,0.25)' }}>
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm flex items-center gap-2" style={{ color: 'hsl(var(--foreground))' }}>
+              <Users className="w-4 h-4" style={{ color: 'hsla(200,80%,60%,1)' }} />
+              Share Bubbles
+            </CardTitle>
+            <div className="flex rounded-md overflow-hidden text-xs border" style={{ borderColor: 'hsla(270,50%,40%,0.4)' }}>
+              {['Share', 'Trending'].map(tab => (
+                <button key={tab} onClick={() => setShareTab(tab === 'Trending')}
+                  className="px-3 py-1 transition-colors"
+                  style={{
+                    background: (shareTab ? tab === 'Trending' : tab === 'Share') ? 'hsla(270,60%,40%,0.8)' : 'transparent',
+                    color: (shareTab ? tab === 'Trending' : tab === 'Share') ? 'white' : 'hsl(var(--muted-foreground))'
+                  }}>
+                  {tab}
+                </button>
+              ))}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {!shareTab ? (
+            <div className="space-y-2">
+              <p className="text-xs mb-3" style={{ color: 'hsl(var(--muted-foreground))' }}>
+                Copy a shareable link for any bubble to send to friends.
+              </p>
+              {bookmarks.slice(0, 6).map(b => <ShareRow key={b.id} bookmark={b} />)}
+              {bookmarks.length === 0 && (
+                <p className="text-sm text-center py-4" style={{ color: 'hsl(var(--muted-foreground))' }}>Add bubbles to start sharing!</p>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-xs mb-3" style={{ color: 'hsl(var(--muted-foreground))' }}>
+                Your most-clicked bubbles — your personal trending list.
+              </p>
+              {sorted.slice(0, 5).map((b, i) => (
+                <div key={b.id} className="flex items-center gap-3 p-3 rounded-lg"
+                  style={{ background: 'hsla(270,30%,18%,0.5)' }}>
+                  <span className="text-lg font-bold w-6 text-center" style={{ color: i === 0 ? 'hsla(40,90%,60%,1)' : i === 1 ? 'hsl(var(--muted-foreground))' : 'hsla(30,60%,45%,1)' }}>
+                    {i === 0 ? '🔥' : `#${i + 1}`}
+                  </span>
+                  {b.favicon && <img src={b.favicon} alt="" className="w-5 h-5 rounded" onError={e => (e.currentTarget.style.display = 'none')} />}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate" style={{ color: 'hsl(var(--foreground))' }}>{b.title}</p>
+                    <p className="text-xs" style={{ color: 'hsl(var(--muted-foreground))' }}>{b.accessCount} total opens</p>
+                  </div>
+                  <TrendMiniChart history={b.accessHistory} />
                 </div>
               ))}
-          </div>
+              {sorted.length === 0 && (
+                <p className="text-sm text-center py-4" style={{ color: 'hsl(var(--muted-foreground))' }}>No activity yet!</p>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
   );
+};
 
-  // Locked Content for Non-Premium Users
-  const LockedContent = () => (
-    <div className="text-center py-12 px-6">
-      <div className="relative w-20 h-20 mx-auto mb-6">
-        <div className="w-20 h-20 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center shadow-2xl">
-          <Lock className="w-10 h-10 text-white" />
-        </div>
-        <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 flex items-center justify-center">
-          <Crown className="w-4 h-4 text-white" />
-        </div>
+// ─── locked content ────────────────────────────────────────────────────────────
+
+const LockedContent = ({ onUpgradeClick }: { onUpgradeClick: () => void }) => (
+  <div className="text-center py-12 px-6">
+    <div className="relative w-20 h-20 mx-auto mb-6">
+      <div className="w-20 h-20 rounded-full flex items-center justify-center shadow-2xl"
+        style={{ background: 'linear-gradient(135deg, hsla(270,70%,55%,1), hsla(320,70%,55%,1))' }}>
+        <Lock className="w-10 h-10 text-white" />
       </div>
-      
-      <h3 className="text-2xl font-bold text-white mb-4">Analytics & Insights</h3>
-      <p className="text-purple-300 mb-6 max-w-md mx-auto">
-        Unlock detailed analytics about your bubble usage, performance metrics, and insights to optimize your bookmark experience.
-      </p>
-      
-      <div className="bg-slate-800/50 border border-purple-500/30 rounded-lg p-6 mb-6 max-w-md mx-auto">
-        <h4 className="text-white font-semibold mb-3">Premium Analytics Include:</h4>
-        <ul className="text-purple-300 text-sm space-y-2 text-left">
-          <li className="flex items-center">
-            <TrendingUp className="w-4 h-4 mr-2 text-emerald-400" />
-            Detailed usage statistics
-          </li>
-          <li className="flex items-center">
-            <BarChart3 className="w-4 h-4 mr-2 text-cyan-400" />
-            Performance rankings
-          </li>
-          <li className="flex items-center">
-            <Eye className="w-4 h-4 mr-2 text-purple-400" />
-            Click-through analytics
-          </li>
-          <li className="flex items-center">
-            <Clock className="w-4 h-4 mr-2 text-amber-400" />
-            Usage patterns & trends
-          </li>
-        </ul>
+      <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full flex items-center justify-center"
+        style={{ background: 'linear-gradient(135deg, hsla(40,90%,60%,1), hsla(25,90%,55%,1))' }}>
+        <Crown className="w-4 h-4 text-white" />
       </div>
-      
-      <Button
-        onClick={onUpgradeClick}
-        className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 font-medium shadow-lg hover:shadow-xl transition-all min-h-[48px] px-6"
-      >
-        <Crown className="w-4 h-4 mr-2" />
-        Upgrade to Premium
-      </Button>
     </div>
-  );
+
+    <h3 className="text-2xl font-bold mb-4" style={{ color: 'hsl(var(--foreground))' }}>Analytics & Insights</h3>
+    <p className="mb-6 max-w-md mx-auto" style={{ color: 'hsla(270,60%,75%,0.9)' }}>
+      Unlock detailed analytics, usage trends, and sharing features to supercharge your bookmark experience.
+    </p>
+
+    <div className="border rounded-lg p-6 mb-6 max-w-md mx-auto"
+      style={{ background: 'hsla(270,30%,14%,0.7)', borderColor: 'hsla(270,50%,50%,0.25)' }}>
+      <h4 className="font-semibold mb-3" style={{ color: 'hsl(var(--foreground))' }}>Premium Analytics Include:</h4>
+      <ul className="text-sm space-y-2 text-left" style={{ color: 'hsla(270,60%,75%,0.9)' }}>
+        {[
+          [<Clock className="w-4 h-4" style={{ color: 'hsla(40,90%,60%,1)' }} />, 'Last accessed timestamps'],
+          [<TrendingUp className="w-4 h-4" style={{ color: 'hsla(145,70%,50%,1)' }} />, '7-day usage trend graphs'],
+          [<BarChart3 className="w-4 h-4" style={{ color: 'hsla(190,70%,55%,1)' }} />, 'Performance rankings'],
+          [<Share2 className="w-4 h-4" style={{ color: 'hsla(200,80%,60%,1)' }} />, 'Share bubbles with friends'],
+          [<Flame className="w-4 h-4" style={{ color: 'hsla(30,90%,60%,1)' }} />, 'Trending bookmarks'],
+        ].map(([icon, label], i) => (
+          <li key={i} className="flex items-center gap-2">{icon}{label}</li>
+        ))}
+      </ul>
+    </div>
+
+    <Button onClick={onUpgradeClick}
+      className="text-white border-0 font-medium shadow-lg hover:shadow-xl transition-all min-h-[48px] px-6"
+      style={{ background: 'linear-gradient(135deg, hsla(270,70%,55%,1), hsla(320,70%,55%,1))' }}>
+      <Crown className="w-4 h-4 mr-2" />
+      Upgrade to Premium
+    </Button>
+  </div>
+);
+
+// ─── root export ───────────────────────────────────────────────────────────────
+
+export const AnalyticsInsights = ({ bookmarks, currentSubscription, onUpgradeClick }: AnalyticsInsightsProps) => {
+  const isPremium = currentSubscription === 'premium';
 
   return (
-    <Card className="bg-slate-800/30 border-purple-500/30 backdrop-blur-sm">
+    <Card className="border" style={{ background: 'hsla(270,30%,10%,0.6)', borderColor: 'hsla(270,50%,50%,0.25)', backdropFilter: 'blur(12px)' }}>
       <CardHeader>
-        <CardTitle className="text-white flex items-center justify-between">
-          <div className="flex items-center">
-            <BarChart3 className="w-5 h-5 mr-2 text-purple-400" />
+        <CardTitle className="flex items-center justify-between" style={{ color: 'hsl(var(--foreground))' }}>
+          <div className="flex items-center gap-2">
+            <BarChart3 className="w-5 h-5" style={{ color: 'hsla(270,70%,70%,1)' }} />
             Analytics & Insights
           </div>
           {isPremium && (
-            <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+            <Badge className="text-white border-0"
+              style={{ background: 'linear-gradient(135deg, hsla(270,70%,55%,1), hsla(320,70%,55%,1))' }}>
               <Crown className="w-3 h-3 mr-1" />
               Premium
             </Badge>
@@ -180,7 +383,9 @@ export const AnalyticsInsights = ({ bookmarks, currentSubscription, onUpgradeCli
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {isPremium ? <PremiumContent /> : <LockedContent />}
+        {isPremium
+          ? <PremiumContent bookmarks={bookmarks} onUpgradeClick={onUpgradeClick} />
+          : <LockedContent onUpgradeClick={onUpgradeClick} />}
       </CardContent>
     </Card>
   );
