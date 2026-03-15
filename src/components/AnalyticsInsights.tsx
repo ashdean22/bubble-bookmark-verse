@@ -32,6 +32,24 @@ function formatLastAccessed(ts?: number): string {
   return new Date(ts).toLocaleDateString();
 }
 
+/**
+ * Heat color: mirrors BubbleCanvas heat system.
+ * heat=1 → red (hue 0°), heat=0 → blue (hue 210°)
+ */
+function getHeatColor(accessCount: number, maxAccess: number) {
+  const heat = maxAccess > 0 ? Math.min(accessCount / maxAccess, 1) : 0;
+  const hue = Math.round(210 - heat * 210);          // 210=blue → 0=red
+  const sat = Math.round(65 + heat * 20);             // more vivid when hot
+  const lit = Math.round(55 - heat * 10);             // slightly darker when hot
+  return {
+    base:   `hsla(${hue},${sat}%,${lit}%,0.85)`,
+    glow:   `hsla(${hue},${sat}%,${lit + 25}%,0.35)`,
+    text:   `hsla(${hue},${sat}%,${lit + 25}%,1)`,
+    border: `hsla(${hue},${sat}%,${lit + 15}%,0.5)`,
+    heat,
+  };
+}
+
 /** Returns the last-7-days access count grouped by day label */
 function buildTrendData(history?: number[]) {
   const days: { label: string; count: number }[] = [];
