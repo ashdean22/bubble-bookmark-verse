@@ -407,18 +407,6 @@ const PremiumContent = ({
         ))}
       </div>
 
-      {/* Overall 7-day usage trend */}
-      <Card className="border" style={{ background: 'hsla(270,30%,12%,0.7)', borderColor: 'hsla(270,50%,50%,0.25)' }}>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2" style={{ color: 'hsl(var(--foreground))' }}>
-            <TrendingUp className="w-4 h-4" style={{ color: 'hsla(270,70%,70%,1)' }} />
-            Overall Usage — Last 7 Days
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <FullTrendChart bookmarks={bookmarks} />
-        </CardContent>
-      </Card>
 
       {/* Top performing with last accessed + per-bubble trend */}
       <Card className="border" style={{ background: 'hsla(270,30%,12%,0.7)', borderColor: 'hsla(270,50%,50%,0.25)' }}>
