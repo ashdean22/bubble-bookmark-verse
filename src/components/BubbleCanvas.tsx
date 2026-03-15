@@ -59,16 +59,12 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
   const [draggedBubble, setDraggedBubble] = useState<string | null>(null);
   const [clickedBubble, setClickedBubble] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null);
-  const [urlTooltip, setUrlTooltip] = useState<{ bookmarkId: string; x: number; y: number } | null>(null);
   const animationRef = useRef<number>();
   const dragOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const dragStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
   const isDraggingRef = useRef(false);
   const bubbleDataRef = useRef<Map<string, any>>(new Map());
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const urlTooltipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const contextMenuTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const urlTooltipDismissRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Initialize bubble data
   useEffect(() => {
