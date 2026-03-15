@@ -265,7 +265,15 @@ export const RefactoredIndex = () => {
           bookmarks={bookmarks} 
           onRemoveBookmark={removeBookmark}
           onBubbleClick={incrementAccessCount}
+          onEditBookmark={setEditingBookmark}
           currentSubscription={currentSubscription}
+        />
+
+        <EditBubbleModal
+          bookmark={editingBookmark}
+          isOpen={!!editingBookmark}
+          onClose={() => setEditingBookmark(null)}
+          onSave={editBookmark}
         />
 
         {bookmarks.length === 0 && (
