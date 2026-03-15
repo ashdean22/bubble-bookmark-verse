@@ -48,6 +48,65 @@ const getHeatStylesAndSize = (accessCount: number, maxAccess: number, isMobile: 
   };
 };
 
+/** Build a unique physics personality for each bubble so they can NEVER drift into sync. */
+const createBubblePersonality = () => {
+  const r = () => Math.random();
+
+  // Three completely independent noise octaves per axis — each with its own
+  // frequency, amplitude, and phase offset so no two bubbles share a harmonic.
+  return {
+    // Wander target refresh — spread across 2 s – 9 s
+    minTargetInterval: 2000 + r() * 2000,
+    maxTargetExtraInterval: 1500 + r() * 5500,
+
+    // Steering force to target (uniquely strong/weak per bubble)
+    wanderStrength: 0.004 + r() * 0.010,
+
+    // Acceleration smoothing ratio (0.85 – 0.98) — affects how "laggy" steering feels
+    accelSmoothing: 0.85 + r() * 0.13,
+    accelBlend: 0.02 + r() * 0.08,
+
+    // Velocity smoothing ratio (0.60 – 0.85) — affects "weight" of the bubble
+    velSmoothing: 0.60 + r() * 0.25,
+
+    // Damping per frame — slight variation in "drag"
+    damping: 0.980 + r() * 0.010,
+
+    // Max speed — some bubbles are sprinters, some are lazy drifters
+    maxSpeed: 0.4 + r() * 0.9,
+
+    // Display lerp — affects how snappy the visual follows physics
+    lerpFactor: 0.08 + r() * 0.14,
+
+    // --- Octave 1: slow, large-amplitude drift ---
+    oct1FreqX: 0.00008 + r() * 0.00018,
+    oct1FreqY: 0.00008 + r() * 0.00018,
+    oct1AmpX:  0.0010 + r() * 0.0020,
+    oct1AmpY:  0.0010 + r() * 0.0020,
+    oct1PhaseX: r() * Math.PI * 2,
+    oct1PhaseY: r() * Math.PI * 2,
+
+    // --- Octave 2: medium frequency micro-drift ---
+    oct2FreqX: 0.00025 + r() * 0.00045,
+    oct2FreqY: 0.00025 + r() * 0.00045,
+    oct2AmpX:  0.0006 + r() * 0.0012,
+    oct2AmpY:  0.0006 + r() * 0.0012,
+    oct2PhaseX: r() * Math.PI * 2,
+    oct2PhaseY: r() * Math.PI * 2,
+
+    // --- Octave 3: high-frequency flutter (very subtle) ---
+    oct3FreqX: 0.00080 + r() * 0.00140,
+    oct3FreqY: 0.00080 + r() * 0.00140,
+    oct3AmpX:  0.0002 + r() * 0.0005,
+    oct3AmpY:  0.0002 + r() * 0.0005,
+    oct3PhaseX: r() * Math.PI * 2,
+    oct3PhaseY: r() * Math.PI * 2,
+
+    // Independent time offset so timestamp-based cycles start out of phase
+    timeOffset: r() * 999983,  // large prime-ish multiplier
+  };
+};
+
 interface ContextMenu {
   bookmarkId: string;
   x: number;
@@ -76,17 +135,16 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
     bookmarks.forEach((bookmark) => {
       if (!bubbleDataRef.current.has(bookmark.id)) {
         const heatStyles = getHeatStylesAndSize(bookmark.accessCount, maxAccessCount, isMobile, isTablet);
-        const seed = Math.random() * 1000;
+        const p = createBubblePersonality();
+
         bubbleDataRef.current.set(bookmark.id, {
           x: bookmark.x,
           y: Math.max(bookmark.y, headerHeight + 50),
           vx: 0,
           vy: 0,
           baseSize: heatStyles.size,
-          seed,
-          timeOffset: Math.random() * 10000,
-          wanderStrength: 0.008 + Math.random() * 0.004,
-          wanderSpeed: 0.0003 + Math.random() * 0.0002,
+          // Physics personality — unique per bubble, never shared
+          ...p,
           targetX: bookmark.x,
           targetY: Math.max(bookmark.y, headerHeight + 50),
           nextTargetTime: 0,
@@ -130,91 +188,94 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
         const bubbleIds = Array.from(bubbleDataRef.current.keys());
         
         bubbleIds.forEach((id) => {
-          const data = bubbleDataRef.current.get(id);
-          if (!data || draggedBubble === id) return;
+          const d = bubbleDataRef.current.get(id);
+          if (!d || draggedBubble === id) return;
 
-          const time = timestamp + data.timeOffset;
-          const radius = data.baseSize / 2;
+          // Each bubble uses its own time stream — impossible to sync
+          const t = timestamp + d.timeOffset;
+          const radius = d.baseSize / 2;
           
-          if (time > data.nextTargetTime) {
+          // Pick a new wander target using this bubble's personal interval
+          if (t > d.nextTargetTime) {
             const padding = radius + 60;
-            data.targetX = padding + Math.random() * (canvasWidth - padding * 2);
-            data.targetY = headerHeight + padding + Math.random() * (canvasHeight - headerHeight - padding * 2);
-            data.nextTargetTime = time + 3000 + Math.random() * 3000;
+            d.targetX = padding + Math.random() * (canvasWidth - padding * 2);
+            d.targetY = headerHeight + padding + Math.random() * (canvasHeight - headerHeight - padding * 2);
+            d.nextTargetTime = t + d.minTargetInterval + Math.random() * d.maxTargetExtraInterval;
           }
           
-          const dx = data.targetX - data.x;
-          const dy = data.targetY - data.y;
+          // Steering toward target using this bubble's unique strength
+          const dx = d.targetX - d.x;
+          const dy = d.targetY - d.y;
           const distToTarget = Math.sqrt(dx * dx + dy * dy);
           
           let targetAx = 0;
           let targetAy = 0;
           
           if (distToTarget > 1) {
-            const forceStrength = data.wanderStrength * 0.5;
+            const forceStrength = d.wanderStrength * 0.5;
             targetAx = (dx / distToTarget) * forceStrength;
             targetAy = (dy / distToTarget) * forceStrength;
           }
           
-          data.ax = data.ax * 0.95 + targetAx * 0.05;
-          data.ay = data.ay * 0.95 + targetAy * 0.05;
+          // Acceleration smoothing — unique ratio per bubble
+          d.ax = d.ax * d.accelSmoothing + targetAx * d.accelBlend;
+          d.ay = d.ay * d.accelSmoothing + targetAy * d.accelBlend;
           
-          data.vx += data.ax;
-          data.vy += data.ay;
+          d.vx += d.ax;
+          d.vy += d.ay;
           
-          const wobbleTime = time * data.wanderSpeed;
-          const wobbleX = Math.sin(wobbleTime * 0.7 + data.seed) * 0.002 + 
-                         Math.sin(wobbleTime * 0.3 + data.seed * 2.1) * 0.001 +
-                         Math.sin(wobbleTime * 0.13 + data.seed * 3.7) * 0.0005;
-          const wobbleY = Math.cos(wobbleTime * 0.5 + data.seed) * 0.002 + 
-                         Math.cos(wobbleTime * 0.23 + data.seed * 2.9) * 0.001 +
-                         Math.cos(wobbleTime * 0.11 + data.seed * 4.1) * 0.0005;
-          
-          data.vx += wobbleX;
-          data.vy += wobbleY;
-          
-          const smoothVx = data.vx * 0.7 + data.prevVx * 0.3;
-          const smoothVy = data.vy * 0.7 + data.prevVy * 0.3;
-          data.prevVx = data.vx;
-          data.prevVy = data.vy;
-          data.vx = smoothVx;
-          data.vy = smoothVy;
+          // Three independent noise octaves, each with unique frequency & phase
+          const wobbleX =
+            Math.sin(t * d.oct1FreqX + d.oct1PhaseX) * d.oct1AmpX +
+            Math.sin(t * d.oct2FreqX + d.oct2PhaseX) * d.oct2AmpX +
+            Math.sin(t * d.oct3FreqX + d.oct3PhaseX) * d.oct3AmpX;
 
-          data.x += data.vx;
-          data.y += data.vy;
+          const wobbleY =
+            Math.cos(t * d.oct1FreqY + d.oct1PhaseY) * d.oct1AmpY +
+            Math.cos(t * d.oct2FreqY + d.oct2PhaseY) * d.oct2AmpY +
+            Math.cos(t * d.oct3FreqY + d.oct3PhaseY) * d.oct3AmpY;
+          
+          d.vx += wobbleX;
+          d.vy += wobbleY;
+          
+          // Velocity smoothing — each bubble feels a different "weight"
+          const smoothVx = d.vx * d.velSmoothing + d.prevVx * (1 - d.velSmoothing);
+          const smoothVy = d.vy * d.velSmoothing + d.prevVy * (1 - d.velSmoothing);
+          d.prevVx = d.vx;
+          d.prevVy = d.vy;
+          d.vx = smoothVx;
+          d.vy = smoothVy;
 
+          d.x += d.vx;
+          d.y += d.vy;
+
+          // Soft boundary repulsion
           const margin = 50;
           const boundaryForce = 0.005;
-          
-          if (data.x < radius + margin) {
-            data.vx += boundaryForce;
-          } else if (data.x > canvasWidth - radius - margin) {
-            data.vx -= boundaryForce;
+          if (d.x < radius + margin) d.vx += boundaryForce;
+          else if (d.x > canvasWidth - radius - margin) d.vx -= boundaryForce;
+          if (d.y < headerHeight + radius + margin) d.vy += boundaryForce;
+          else if (d.y > canvasHeight - radius - margin) d.vy -= boundaryForce;
+
+          // Hard clamp
+          d.x = Math.max(radius, Math.min(canvasWidth - radius, d.x));
+          d.y = Math.max(headerHeight + radius, Math.min(canvasHeight - radius, d.y));
+
+          // Unique drag per bubble
+          d.vx *= d.damping;
+          d.vy *= d.damping;
+
+          // Unique max speed per bubble
+          const speed = Math.sqrt(d.vx * d.vx + d.vy * d.vy);
+          if (speed > d.maxSpeed) {
+            const scale = d.maxSpeed / speed;
+            d.vx *= scale;
+            d.vy *= scale;
           }
           
-          if (data.y < headerHeight + radius + margin) {
-            data.vy += boundaryForce;
-          } else if (data.y > canvasHeight - radius - margin) {
-            data.vy -= boundaryForce;
-          }
-
-          data.x = Math.max(radius, Math.min(canvasWidth - radius, data.x));
-          data.y = Math.max(headerHeight + radius, Math.min(canvasHeight - radius, data.y));
-
-          data.vx *= 0.985;
-          data.vy *= 0.985;
-
-          const maxV = 1.0;
-          const speed = Math.sqrt(data.vx * data.vx + data.vy * data.vy);
-          if (speed > maxV) {
-            const scale = maxV / speed;
-            data.vx *= scale;
-            data.vy *= scale;
-          }
-          
-          const lerpFactor = 0.15;
-          data.displayX = data.displayX + (data.x - data.displayX) * lerpFactor;
-          data.displayY = data.displayY + (data.y - data.displayY) * lerpFactor;
+          // Unique display lerp — visual snappiness varies per bubble
+          d.displayX += (d.x - d.displayX) * d.lerpFactor;
+          d.displayY += (d.y - d.displayY) * d.lerpFactor;
         });
 
         // Collision detection
