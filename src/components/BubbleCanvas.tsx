@@ -277,17 +277,27 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
     };
   }, [bookmarks, draggedBubble]);
 
-  // Close context menu on outside click
+  // Close context menu and url tooltip on outside click
   useEffect(() => {
-    if (!contextMenu) return;
-    const close = () => setContextMenu(null);
+    if (!contextMenu && !urlTooltip) return;
+    const close = () => {
+      setContextMenu(null);
+      setUrlTooltip(null);
+    };
     document.addEventListener('click', close);
     document.addEventListener('touchstart', close);
     return () => {
       document.removeEventListener('click', close);
       document.removeEventListener('touchstart', close);
     };
-  }, [contextMenu]);
+  }, [contextMenu, urlTooltip]);
+
+  const clearAllTouchTimers = () => {
+    if (urlTooltipTimerRef.current) clearTimeout(urlTooltipTimerRef.current);
+    if (contextMenuTimerRef.current) clearTimeout(contextMenuTimerRef.current);
+    if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+    if (urlTooltipDismissRef.current) clearTimeout(urlTooltipDismissRef.current);
+  };
 
   const handleBubbleClick = (bookmark: Bookmark) => {
     if (!isDraggingRef.current) {
@@ -315,14 +325,29 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
     dragOffsetRef.current = { x: clientX - rect.left, y: clientY - rect.top };
     isDraggingRef.current = false;
 
-    // Long-press to show context menu (touch only)
+    // Touch: 1s → show URL tooltip, 3s → show edit/delete menu
     if ('touches' in e) {
-      if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = setTimeout(() => {
+      clearAllTouchTimers();
+
+      // 1 second: show URL tooltip
+      urlTooltipTimerRef.current = setTimeout(() => {
         if (!isDraggingRef.current) {
+          setUrlTooltip({ bookmarkId, x: clientX, y: clientY });
+          // Auto-dismiss tooltip after 2 seconds (unless 3s menu fires)
+          urlTooltipDismissRef.current = setTimeout(() => {
+            setUrlTooltip(null);
+          }, 2000);
+        }
+      }, 1000);
+
+      // 3 seconds: show edit/delete context menu
+      contextMenuTimerRef.current = setTimeout(() => {
+        if (!isDraggingRef.current) {
+          setUrlTooltip(null);
+          if (urlTooltipDismissRef.current) clearTimeout(urlTooltipDismissRef.current);
           setContextMenu({ bookmarkId, x: clientX, y: clientY });
         }
-      }, 500);
+      }, 3000);
     }
   };
 
