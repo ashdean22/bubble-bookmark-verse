@@ -69,11 +69,11 @@ export const BubbleHeader = ({
         {/* Top row with enhanced logo and bubble count */}
         <div className="flex items-center justify-between mb-4 md:mb-0">
           <div className="flex items-center space-x-3">
-            <div className="h-28 md:h-32 w-28 md:w-32 rounded-full overflow-hidden drop-shadow-lg flex items-center justify-center" style={{ background: '#0ec0d9' }}>
+            <div className="h-28 md:h-32 w-28 md:w-32 rounded-full overflow-hidden drop-shadow-lg flex items-center justify-center">
               <img 
                 src={bubbleLinkLogo} 
                 alt="BubbleMark - Your Bookmarks. In a Bubble." 
-                className="w-full h-full object-contain"
+                className="w-full h-full object-cover"
               />
             </div>
           </div>
