@@ -81,15 +81,20 @@ function buildAllTrendData(bookmarks: Bookmark[]) {
 
 // ─── subcomponents ─────────────────────────────────────────────────────────────
 
-const TrendMiniChart = ({ history }: { history?: number[] }) => {
+const TrendMiniChart = ({ history, maxAccess, accessCount }: { history?: number[]; maxAccess: number; accessCount: number }) => {
   const data = buildTrendData(history);
   const max = Math.max(...data.map(d => d.count), 1);
+  const { hue, sat, lit } = (() => {
+    const heat = maxAccess > 0 ? Math.min(accessCount / maxAccess, 1) : 0;
+    const hue = Math.round(210 - heat * 210);
+    return { hue, sat: Math.round(65 + heat * 20), lit: Math.round(55 - heat * 10) };
+  })();
   return (
     <ResponsiveContainer width="100%" height={40}>
       <BarChart data={data} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
         <Bar dataKey="count" radius={[2, 2, 0, 0]}>
           {data.map((_, i) => (
-            <Cell key={i} fill={`hsla(270, 70%, ${45 + (data[i].count / max) * 25}%, 0.9)`} />
+            <Cell key={i} fill={`hsla(${hue}, ${sat}%, ${lit + (data[i].count / max) * 20}%, 0.9)`} />
           ))}
         </Bar>
       </BarChart>
@@ -99,7 +104,13 @@ const TrendMiniChart = ({ history }: { history?: number[] }) => {
 
 const FullTrendChart = ({ bookmarks }: { bookmarks: Bookmark[] }) => {
   const data = buildAllTrendData(bookmarks);
-  const max = Math.max(...data.map(d => d.count), 1);
+  const maxCount = Math.max(...data.map(d => d.count), 1);
+  const total = data.reduce((s, d) => s + d.count, 0);
+  // Overall heat based on total activity
+  const overallHeat = Math.min(total / (bookmarks.length * 5 + 1), 1);
+  const hue = Math.round(210 - overallHeat * 210);
+  const sat = Math.round(65 + overallHeat * 20);
+  const lit = Math.round(50 - overallHeat * 10);
   return (
     <ResponsiveContainer width="100%" height={160}>
       <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
@@ -107,11 +118,11 @@ const FullTrendChart = ({ bookmarks }: { bookmarks: Bookmark[] }) => {
         <YAxis allowDecimals={false} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} axisLine={false} tickLine={false} />
         <Tooltip
           contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, color: 'hsl(var(--card-foreground))' }}
-          cursor={{ fill: 'hsla(270,60%,60%,0.08)' }}
+          cursor={{ fill: `hsla(${hue},${sat}%,${lit + 30}%,0.08)` }}
         />
         <Bar dataKey="count" radius={[4, 4, 0, 0]}>
           {data.map((_, i) => (
-            <Cell key={i} fill={`hsla(270, 70%, ${40 + (data[i].count / max) * 30}%, 0.85)`} />
+            <Cell key={i} fill={`hsla(${hue}, ${sat}%, ${lit + (data[i].count / maxCount) * 20}%, 0.85)`} />
           ))}
         </Bar>
       </BarChart>
