@@ -18,10 +18,31 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { Bookmark } from '@/pages/Index';
 import { ParsedBookmark } from '@/utils/bookmarkParser';
 
+const getHostname = (url: string) => { try { return new URL(url).hostname; } catch { return url; } };
+
+const deduplicateBookmarks = (bms: Bookmark[]): Bookmark[] => {
+  const seen = new Set<string>();
+  return bms.filter(b => {
+    const host = getHostname(b.url);
+    if (seen.has(host)) return false;
+    seen.add(host);
+    return true;
+  });
+};
+
 export const RefactoredIndex = () => {
   // State management using custom hooks
   const [bookmarks, setBookmarks] = useLocalStorage<Bookmark[]>('bubbleBookmarks', []);
   const [currentSubscription, setCurrentSubscription] = useLocalStorage<string | null>('currentSubscription', null);
+
+  // Remove any duplicate domains from stored bookmarks on mount
+  useEffect(() => {
+    const deduped = deduplicateBookmarks(bookmarks);
+    if (deduped.length !== bookmarks.length) {
+      setBookmarks(deduped);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   
   // Initialize available bubbles based on existing bookmarks and subscription
   const initializeBubbles = () => {
