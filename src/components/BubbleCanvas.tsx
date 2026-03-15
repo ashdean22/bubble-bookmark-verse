@@ -273,13 +273,15 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
     };
   }, [bookmarks, draggedBubble]);
 
-  // Close context menu on outside click
+  // Close context menu on outside click or after 3s
   useEffect(() => {
     if (!contextMenu) return;
     const close = () => setContextMenu(null);
+    const timer = setTimeout(close, 3000);
     document.addEventListener('click', close);
     document.addEventListener('touchstart', close);
     return () => {
+      clearTimeout(timer);
       document.removeEventListener('click', close);
       document.removeEventListener('touchstart', close);
     };
