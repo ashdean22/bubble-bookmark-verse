@@ -132,20 +132,34 @@
     @apply border-border;
   }
 
+  html {
+    scroll-behavior: smooth;
+    /* Prevent layout shift from scrollbar appearing */
+    scrollbar-gutter: stable;
+  }
+
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    /* Sub-pixel text rendering */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Prevent content jump on iOS tap highlight */
+    -webkit-tap-highlight-color: transparent;
+    /* Prevent unwanted touch actions that can feel sluggish */
+    touch-action: pan-y;
+  }
+
+  /* Contain layout/style for root so the browser can batch reflows more efficiently */
+  #root {
+    contain: layout style;
+    min-height: 100dvh;
   }
   
   /* Focus styles for accessibility */
   *:focus-visible {
     outline: none;
     box-shadow: var(--focus-ring);
-  }
-  
-  /* Smooth scrolling */
-  html {
-    scroll-behavior: smooth;
   }
   
   /* Reduce motion for users who prefer it */
