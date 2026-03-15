@@ -370,7 +370,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
   const handleDragEnd = useCallback(() => {
     dragStartRef.current = null;
     setDraggedBubble(null);
-    clearAllTouchTimers();
+    clearLongPress();
     setTimeout(() => {
       isDraggingRef.current = false;
     }, 50);
