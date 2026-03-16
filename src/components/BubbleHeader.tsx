@@ -72,13 +72,13 @@ export const BubbleHeader = ({
             <img 
               src={bubbleLinkLogo} 
               alt="BubbleMark - Your Bookmarks. In a Bubble." 
-              className="h-28 md:h-32 w-auto drop-shadow-lg"
+              className="h-36 md:h-40 w-auto drop-shadow-lg"
             />
           </div>
           
           {/* Capacity Indicator */}
           <div 
-            className="glass-card px-3 py-2 md:px-4 md:py-3 rounded-xl min-w-[160px] md:min-w-[200px]"
+            className="px-3 py-2 md:px-4 md:py-3 rounded-xl min-w-[160px] md:min-w-[200px]"
             role="status"
             aria-label={`Bubbles used: ${usedBubbles} of ${maxBubbles === 999 ? 'unlimited' : maxBubbles}`}
           >
