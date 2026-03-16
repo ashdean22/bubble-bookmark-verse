@@ -65,7 +65,7 @@ export const BubbleHeaderMinimal = ({
           
           {/* Compact Capacity Indicator */}
           <div 
-            className="glass-card px-3 py-2 rounded-xl min-w-[140px]"
+            className="px-3 py-2 rounded-xl min-w-[140px]"
             role="status"
             aria-label={`Bubbles used: ${usedBubbles} of ${maxBubbles === 999 ? 'unlimited' : maxBubbles}`}
           >
