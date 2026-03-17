@@ -14,15 +14,15 @@ export const BubbleHeaderMinimal = ({
 
   return (
     <header 
-      className="relative z-20 p-4 md:p-6"
+      className="relative z-20 p-2 md:p-3"
       role="banner"
       aria-label="BubbleLink navigation"
     >
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between">
+        <div className="flex items-start justify-between">
           {/* Logo with decorative bubbles */}
-          <div className="flex items-center relative">
-     <div className="h-44 md:h-64 w-44 md:w-64 shrink-0 animate-logo-glow">
+          <div className="flex items-center relative -mt-4 -ml-4 md:-mt-6 md:-ml-6">
+            <div className="h-44 md:h-64 w-44 md:w-64 shrink-0 animate-logo-glow">
               <img 
                 src={bubbleLinkLogo} 
                 alt="BubbleMark - Your Bookmarks. In a Bubble." 
