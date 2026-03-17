@@ -26,7 +26,7 @@ export const BubbleHeaderMinimal = ({
               <img 
                 src={bubbleLinkLogo} 
                 alt="BubbleMark - Your Bookmarks. In a Bubble." 
-                className="w-[82%] h-[82%] object-contain"
+                className="w-full h-full object-cover"
               />
             </div>
             {/* Decorative bubble 1 — larger, top-right */}
