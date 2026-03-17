@@ -22,11 +22,16 @@ export const BubbleHeaderMinimal = ({
         <div className="flex items-start justify-between">
           {/* Logo with decorative bubbles */}
           <div className="flex items-center relative -mt-4 -ml-4 md:-mt-6 md:-ml-6">
-            <div className="h-44 md:h-64 w-44 md:w-64 shrink-0 animate-logo-glow">
+            <div className="h-44 md:h-64 w-44 md:w-64 shrink-0">
               <img 
                 src={bubbleLinkLogo} 
                 alt="BubbleMark - Your Bookmarks. In a Bubble." 
-                className="w-full h-full object-contain drop-shadow-lg"
+                className="w-full h-full object-contain"
+                style={{
+                  willChange: 'filter',
+                  transform: 'translateZ(0)',
+                  animation: 'logo-glow-filter 4s ease-in-out infinite',
+                }}
               />
             </div>
             {/* Decorative bubble 1 — larger, top-right */}
