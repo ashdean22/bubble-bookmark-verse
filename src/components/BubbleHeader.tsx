@@ -69,16 +69,18 @@ export const BubbleHeader = ({
         {/* Top row with enhanced logo and bubble count */}
         <div className="flex items-center justify-between mb-4 md:mb-0">
           <div className="flex items-center space-x-3">
-            <img 
-              src={bubbleLinkLogo} 
-              alt="BubbleMark - Your Bookmarks. In a Bubble." 
-              className="h-36 md:h-40 w-auto drop-shadow-lg"
-            />
+            <div className="h-28 md:h-32 w-28 md:w-32 rounded-full overflow-hidden drop-shadow-lg flex items-center justify-center" style={{ background: '#0ec0d9' }}>
+              <img 
+                src={bubbleLinkLogo} 
+                alt="BubbleMark - Your Bookmarks. In a Bubble." 
+                className="w-full h-full object-contain"
+              />
+            </div>
           </div>
           
           {/* Capacity Indicator */}
           <div 
-            className="px-3 py-2 md:px-4 md:py-3 rounded-xl min-w-[160px] md:min-w-[200px]"
+            className="glass-card px-3 py-2 md:px-4 md:py-3 rounded-xl min-w-[160px] md:min-w-[200px]"
             role="status"
             aria-label={`Bubbles used: ${usedBubbles} of ${maxBubbles === 999 ? 'unlimited' : maxBubbles}`}
           >

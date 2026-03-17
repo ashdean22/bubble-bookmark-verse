@@ -22,11 +22,13 @@ export const BubbleHeaderMinimal = ({
         <div className="flex items-center justify-between">
           {/* Logo with decorative bubbles */}
           <div className="flex items-center relative">
-            <img 
-              src={bubbleLinkLogo} 
-              alt="BubbleMark - Your Bookmarks. In a Bubble." 
-              className="h-40 md:h-56 w-auto drop-shadow-lg animate-logo-glow"
-            />
+     <div className="h-36 md:h-52 w-36 md:w-52 rounded-full overflow-hidden drop-shadow-lg animate-logo-glow flex items-center justify-center shrink-0" style={{ background: '#0ec0d9' }}>
+              <img 
+                src={bubbleLinkLogo} 
+                alt="BubbleMark - Your Bookmarks. In a Bubble." 
+                className="w-[82%] h-[82%] object-contain"
+              />
+            </div>
             {/* Decorative bubble 1 — larger, top-right */}
             <div
               className="absolute pointer-events-none"
@@ -65,7 +67,7 @@ export const BubbleHeaderMinimal = ({
           
           {/* Compact Capacity Indicator */}
           <div 
-            className="px-3 py-2 rounded-xl min-w-[140px]"
+            className="glass-card px-3 py-2 rounded-xl min-w-[140px]"
             role="status"
             aria-label={`Bubbles used: ${usedBubbles} of ${maxBubbles === 999 ? 'unlimited' : maxBubbles}`}
           >
