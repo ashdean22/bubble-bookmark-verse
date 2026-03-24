@@ -1,5 +1,6 @@
 import { Progress } from '@/components/ui/progress';
-import bubbleLinkLogo from '@/assets/bubblelink-logo.png';
+import bubbleLinkLogoWebP from '@/assets/bubblelink-logo.webp';
+import bubbleLinkLogoPNG from '@/assets/bubblelink-logo.png';
 
 interface BubbleHeaderMinimalProps {
   usedBubbles: number;
@@ -23,16 +24,23 @@ export const BubbleHeaderMinimal = ({
           {/* Logo with decorative bubbles */}
           <div className="flex items-center relative -mt-4 -ml-4 md:-mt-6 md:-ml-6">
             <div className="h-44 md:h-64 w-44 md:w-64 shrink-0">
-              <img 
-                src={bubbleLinkLogo} 
-                alt="BubbleMark - Your Bookmarks. In a Bubble." 
-                className="w-full h-full object-contain"
-                style={{
-                  willChange: 'filter',
-                  transform: 'translateZ(0)',
-                  animation: 'logo-glow-filter 4s ease-in-out infinite',
-                }}
-              />
+              {/* <picture> serves WebP to modern browsers, PNG as fallback.
+                  fetchpriority="high" + decoding="sync" = zero flicker on first paint */}
+              <picture>
+                <source srcSet={bubbleLinkLogoWebP} type="image/webp" />
+                <img 
+                  src={bubbleLinkLogoPNG}
+                  alt="BubbleMark - Your Bookmarks. In a Bubble." 
+                  className="w-full h-full object-contain"
+                  fetchPriority="high"
+                  decoding="sync"
+                  style={{
+                    willChange: 'filter',
+                    transform: 'translateZ(0)',
+                    animation: 'logo-glow-filter 4s ease-in-out infinite',
+                  }}
+                />
+              </picture>
             </div>
             {/* Decorative bubble 1 — larger, top-right */}
             <div
