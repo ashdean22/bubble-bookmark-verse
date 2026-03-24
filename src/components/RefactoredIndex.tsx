@@ -257,14 +257,19 @@ export const RefactoredIndex = () => {
     // Get existing domains
     const existingDomains = new Set(bookmarks.map(b => getHostname(b.url)));
     
-    // Filter out duplicates from import (both against existing and within import itself)
+    // Filter: safe URLs only + no duplicates
     const uniqueParsed: ParsedBookmark[] = [];
     const seenDomains = new Set<string>();
     
     parsedBookmarks.forEach(bookmark => {
+      if (!isSafeUrl(bookmark.url)) return; // drop unsafe protocols
       const domain = getHostname(bookmark.url);
       if (!existingDomains.has(domain) && !seenDomains.has(domain)) {
-        uniqueParsed.push(bookmark);
+        uniqueParsed.push({
+          url: bookmark.url,
+          title: sanitizeText(bookmark.title, 200),
+          favicon: safeFavicon(bookmark.url),
+        });
         seenDomains.add(domain);
       }
     });
@@ -285,7 +290,7 @@ export const RefactoredIndex = () => {
 
     const skipped = parsedBookmarks.length - newBookmarks.length;
     const description = skipped > 0 
-      ? `${newBookmarks.length} bubbles imported, ${skipped} duplicates skipped!`
+      ? `${newBookmarks.length} bubbles imported, ${skipped} duplicates/unsafe skipped!`
       : "Your bookmarks are now floating in the bubble universe!";
 
     toast({
