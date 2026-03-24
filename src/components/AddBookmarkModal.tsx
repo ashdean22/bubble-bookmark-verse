@@ -38,7 +38,7 @@ export const AddBookmarkModal = ({ isOpen, onClose, onAdd }: AddBookmarkModalPro
     if (!checkRateLimit('add_bookmark', 20, 60_000)) {
       toast({
         title: 'Slow down! 🐢',
-        description: 'You're adding bookmarks too fast. Please wait a moment.',
+        description: "You're adding bookmarks too fast. Please wait a moment.",
         variant: 'destructive',
       });
       return;
