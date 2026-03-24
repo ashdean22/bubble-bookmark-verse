@@ -17,6 +17,7 @@ import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { Bookmark } from '@/pages/Index';
 import { ParsedBookmark } from '@/utils/bookmarkParser';
+import { validateStoredBookmarks, sanitizeText, sanitizeUrl, safeFavicon, checkRateLimit, isSafeUrl } from '@/utils/security';
 
 // Normalize hostname: strip www. so nba.com and www.nba.com are treated as the same
 const getHostname = (url: string) => {
@@ -42,10 +43,12 @@ export const RefactoredIndex = () => {
   const [currentSubscription, setCurrentSubscription] = useLocalStorage<string | null>('currentSubscription', null);
 
   // Remove any duplicate domains from stored bookmarks on mount
+  // and strip any unsafe entries from localStorage (poisoned data defense)
   useEffect(() => {
-    const stored: Bookmark[] = JSON.parse(localStorage.getItem('bubbleBookmarks') || '[]');
-    const deduped = deduplicateBookmarks(stored);
-    if (deduped.length !== stored.length) {
+    const raw: unknown[] = JSON.parse(localStorage.getItem('bubbleBookmarks') || '[]');
+    const validated = validateStoredBookmarks(raw) as Bookmark[];
+    const deduped = deduplicateBookmarks(validated);
+    if (deduped.length !== raw.length) {
       setBookmarks(deduped);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -143,8 +146,25 @@ export const RefactoredIndex = () => {
       return;
     }
 
+    // Rate-limit guard (belt + suspenders alongside modal-level limit)
+    if (!checkRateLimit('add_bookmark_main', 20, 60_000)) {
+      toast({ title: "Too many requests", description: "Please slow down.", variant: "destructive" });
+      return;
+    }
+
+    // Sanitize inputs from the modal
+    let safeUrl: string;
+    let safeTitle: string;
+    try {
+      safeUrl = sanitizeUrl(bookmark.url);
+      safeTitle = sanitizeText(bookmark.title || '', 200) || new URL(safeUrl).hostname;
+    } catch {
+      toast({ title: "Invalid URL 🚫", description: "Only http/https URLs are allowed.", variant: "destructive" });
+      return;
+    }
+
     // Check for duplicate domain
-    const incomingDomain = getHostname(bookmark.url);
+    const incomingDomain = getHostname(safeUrl);
     const isDuplicate = bookmarks.some(b => getHostname(b.url) === incomingDomain);
     if (isDuplicate) {
       toast({
@@ -162,6 +182,9 @@ export const RefactoredIndex = () => {
 
     const newBookmark: Bookmark = {
       ...bookmark,
+      url: safeUrl,
+      title: safeTitle,
+      favicon: safeFavicon(safeUrl),
       id: Date.now().toString(),
       x: Math.random() * (window.innerWidth - 100),
       y: Math.random() * (window.innerHeight - 100),
@@ -234,14 +257,19 @@ export const RefactoredIndex = () => {
     // Get existing domains
     const existingDomains = new Set(bookmarks.map(b => getHostname(b.url)));
     
-    // Filter out duplicates from import (both against existing and within import itself)
+    // Filter: safe URLs only + no duplicates
     const uniqueParsed: ParsedBookmark[] = [];
     const seenDomains = new Set<string>();
     
     parsedBookmarks.forEach(bookmark => {
+      if (!isSafeUrl(bookmark.url)) return; // drop unsafe protocols
       const domain = getHostname(bookmark.url);
       if (!existingDomains.has(domain) && !seenDomains.has(domain)) {
-        uniqueParsed.push(bookmark);
+        uniqueParsed.push({
+          url: bookmark.url,
+          title: sanitizeText(bookmark.title, 200),
+          favicon: safeFavicon(bookmark.url),
+        });
         seenDomains.add(domain);
       }
     });
@@ -262,7 +290,7 @@ export const RefactoredIndex = () => {
 
     const skipped = parsedBookmarks.length - newBookmarks.length;
     const description = skipped > 0 
-      ? `${newBookmarks.length} bubbles imported, ${skipped} duplicates skipped!`
+      ? `${newBookmarks.length} bubbles imported, ${skipped} duplicates/unsafe skipped!`
       : "Your bookmarks are now floating in the bubble universe!";
 
     toast({
