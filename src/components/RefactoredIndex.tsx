@@ -146,8 +146,25 @@ export const RefactoredIndex = () => {
       return;
     }
 
+    // Rate-limit guard (belt + suspenders alongside modal-level limit)
+    if (!checkRateLimit('add_bookmark_main', 20, 60_000)) {
+      toast({ title: "Too many requests", description: "Please slow down.", variant: "destructive" });
+      return;
+    }
+
+    // Sanitize inputs from the modal
+    let safeUrl: string;
+    let safeTitle: string;
+    try {
+      safeUrl = sanitizeUrl(bookmark.url);
+      safeTitle = sanitizeText(bookmark.title || '', 200) || new URL(safeUrl).hostname;
+    } catch {
+      toast({ title: "Invalid URL 🚫", description: "Only http/https URLs are allowed.", variant: "destructive" });
+      return;
+    }
+
     // Check for duplicate domain
-    const incomingDomain = getHostname(bookmark.url);
+    const incomingDomain = getHostname(safeUrl);
     const isDuplicate = bookmarks.some(b => getHostname(b.url) === incomingDomain);
     if (isDuplicate) {
       toast({
@@ -165,6 +182,9 @@ export const RefactoredIndex = () => {
 
     const newBookmark: Bookmark = {
       ...bookmark,
+      url: safeUrl,
+      title: safeTitle,
+      favicon: safeFavicon(safeUrl),
       id: Date.now().toString(),
       x: Math.random() * (window.innerWidth - 100),
       y: Math.random() * (window.innerHeight - 100),
