@@ -17,6 +17,7 @@ import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { Bookmark } from '@/pages/Index';
 import { ParsedBookmark } from '@/utils/bookmarkParser';
+import { validateStoredBookmarks, sanitizeText, sanitizeUrl, safeFavicon, checkRateLimit, isSafeUrl } from '@/utils/security';
 
 // Normalize hostname: strip www. so nba.com and www.nba.com are treated as the same
 const getHostname = (url: string) => {
