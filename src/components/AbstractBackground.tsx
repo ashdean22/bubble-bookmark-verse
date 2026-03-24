@@ -33,7 +33,12 @@ export const AbstractBackground = () => {
     })), []);
 
   return (
-    <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
+    <div
+      className="abstract-bg absolute inset-0 overflow-hidden"
+      aria-hidden="true"
+      // content-visibility lets the browser skip painting offscreen background layers
+      style={{ contentVisibility: 'auto' }}
+    >
 
       {/* ── Layer 1: deep vignette so edges feel like deep space ── */}
       <div
@@ -47,7 +52,7 @@ export const AbstractBackground = () => {
       {auroraBlobs.map(b => (
         <div
           key={`aurora-${b.id}`}
-          className="absolute rounded-full"
+          className={`absolute rounded-full aurora-blob-${b.id % 3}`}
           style={{
             left: `${b.cx}%`,
             top:  `${b.cy}%`,
@@ -56,8 +61,9 @@ export const AbstractBackground = () => {
             marginLeft: `-${b.r}px`,
             marginTop:  `-${b.r}px`,
             background: `radial-gradient(circle, hsla(${b.hue},${b.sat}%,${b.lit}%,${b.alpha}) 0%, transparent 70%)`,
-            animation: `aurora-drift-${b.id % 3} ${b.dur}s ease-in-out ${b.delay}s infinite`,
-            willChange: 'transform, opacity',
+            animationDuration: `${b.dur}s`,
+            animationDelay: `${b.delay}s`,
+            willChange: 'transform',
             filter: 'blur(2px)',
           }}
         />
@@ -67,7 +73,7 @@ export const AbstractBackground = () => {
       {beams.map(beam => (
         <div
           key={`beam-${beam.id}`}
-          className="absolute pointer-events-none"
+          className="beam absolute pointer-events-none"
           style={{
             left: `${beam.x1}%`,
             top:  `${beam.y1}%`,
@@ -76,7 +82,8 @@ export const AbstractBackground = () => {
             transformOrigin: '0 0',
             transform: `rotate(${Math.atan2(beam.y2 - beam.y1, beam.x2 - beam.x1) * (180 / Math.PI) + 90}deg)`,
             background: 'linear-gradient(to bottom, transparent, hsl(var(--primary) / 0.07) 40%, hsl(var(--primary) / 0.12) 60%, transparent)',
-            animation: `beam-fade ${beam.dur}s ease-in-out ${beam.delay}s infinite`,
+            animationDuration: `${beam.dur}s`,
+            animationDelay: `${beam.delay}s`,
           }}
         />
       ))}
@@ -85,7 +92,7 @@ export const AbstractBackground = () => {
       {sparkles.map(s => (
         <div
           key={`spark-${s.id}`}
-          className="absolute rounded-full"
+          className="sparkle absolute rounded-full"
           style={{
             left:   `${s.left}%`,
             top:    `${s.top}%`,
@@ -93,7 +100,8 @@ export const AbstractBackground = () => {
             height: `${s.size}px`,
             background: 'hsl(var(--primary) / 0.7)',
             boxShadow: '0 0 4px 1px hsl(var(--primary) / 0.5)',
-            animation: `sparkle-blink ${s.dur}s ease-in-out ${s.delay}s infinite`,
+            animationDuration: `${s.dur}s`,
+            animationDelay: `${s.delay}s`,
           }}
         />
       ))}
@@ -107,32 +115,6 @@ export const AbstractBackground = () => {
           backgroundSize: '48px 48px',
         }}
       />
-
-      {/* ── Keyframe definitions ── */}
-      <style>{`
-        @keyframes aurora-drift-0 {
-          0%, 100% { transform: translate(0, 0) scale(1); opacity: 1; }
-          33%       { transform: translate(30px, -20px) scale(1.08); opacity: 0.85; }
-          66%       { transform: translate(-20px, 25px) scale(0.95); opacity: 0.9; }
-        }
-        @keyframes aurora-drift-1 {
-          0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.9; }
-          40%       { transform: translate(-35px, 20px) scale(1.1); opacity: 1; }
-          70%       { transform: translate(20px, -30px) scale(0.92); opacity: 0.8; }
-        }
-        @keyframes aurora-drift-2 {
-          0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.85; }
-          50%       { transform: translate(25px, 35px) scale(1.06); opacity: 1; }
-        }
-        @keyframes beam-fade {
-          0%, 100% { opacity: 0; }
-          40%, 60%  { opacity: 1; }
-        }
-        @keyframes sparkle-blink {
-          0%, 100% { opacity: 0.1; transform: scale(0.8); }
-          50%       { opacity: 0.9; transform: scale(1.4); }
-        }
-      `}</style>
     </div>
   );
 };

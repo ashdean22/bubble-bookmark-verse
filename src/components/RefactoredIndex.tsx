@@ -1,11 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense, memo } from 'react';
 import { BubbleCanvas } from '@/components/BubbleCanvas';
-import { AddBookmarkModal } from '@/components/AddBookmarkModal';
-import { EditBubbleModal } from '@/components/EditBubbleModal';
-import { ImportBookmarksModal } from '@/components/ImportBookmarksModal';
-import { PricingModal } from '@/components/PricingModal';
-import { UpgradePromptModal } from '@/components/UpgradePromptModal';
-import { AnalyticsInsights } from '@/components/AnalyticsInsights';
 import { BubbleHeaderMinimal } from '@/components/BubbleHeaderMinimal';
 import { FloatingActionButton } from '@/components/FloatingActionButton';
 import { WelcomeMessage } from '@/components/WelcomeMessage';
@@ -18,6 +12,15 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { Bookmark } from '@/pages/Index';
 import { ParsedBookmark } from '@/utils/bookmarkParser';
 import { validateStoredBookmarks, sanitizeText, sanitizeUrl, safeFavicon, checkRateLimit, isSafeUrl } from '@/utils/security';
+
+// ── Lazy-load ALL heavy modals & analytics so they never block first paint ──
+const AddBookmarkModal    = lazy(() => import('@/components/AddBookmarkModal').then(m => ({ default: m.AddBookmarkModal })));
+const EditBubbleModal     = lazy(() => import('@/components/EditBubbleModal').then(m => ({ default: m.EditBubbleModal })));
+const ImportBookmarksModal = lazy(() => import('@/components/ImportBookmarksModal').then(m => ({ default: m.ImportBookmarksModal })));
+const PricingModal        = lazy(() => import('@/components/PricingModal').then(m => ({ default: m.PricingModal })));
+const UpgradePromptModal  = lazy(() => import('@/components/UpgradePromptModal').then(m => ({ default: m.UpgradePromptModal })));
+// AnalyticsInsights is the heaviest — recharts 223 KB — always lazy
+const AnalyticsInsights   = lazy(() => import('@/components/AnalyticsInsights').then(m => ({ default: m.AnalyticsInsights })));
 
 // Normalize hostname: strip www. so nba.com and www.nba.com are treated as the same
 const getHostname = (url: string) => {
@@ -36,6 +39,34 @@ const deduplicateBookmarks = (bms: Bookmark[]): Bookmark[] => {
     return true;
   });
 };
+
+// Analytics panel wrapper — only rendered when toggled open, zero cost otherwise
+const AnalyticsPanel = memo(({
+  bookmarks,
+  currentSubscription,
+  onUpgradeClick,
+}: {
+  bookmarks: Bookmark[];
+  currentSubscription: string | null;
+  onUpgradeClick: () => void;
+}) => (
+  <div className="relative z-20 p-4 md:p-6">
+    <div className="max-w-7xl mx-auto">
+      <Suspense fallback={
+        <div className="flex items-center justify-center py-16">
+          <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+        </div>
+      }>
+        <AnalyticsInsights
+          bookmarks={bookmarks}
+          currentSubscription={currentSubscription}
+          onUpgradeClick={onUpgradeClick}
+        />
+      </Suspense>
+    </div>
+  </div>
+));
+AnalyticsPanel.displayName = 'AnalyticsPanel';
 
 export const RefactoredIndex = () => {
   // State management using custom hooks
@@ -58,20 +89,14 @@ export const RefactoredIndex = () => {
   const initializeBubbles = () => {
     const existingBookmarks = JSON.parse(localStorage.getItem('bubbleBookmarks') || '[]');
     const subscription = localStorage.getItem('currentSubscription');
-    
-    if (subscription && subscription !== 'null') {
-      // Premium users get unlimited bubbles
-      return 999;
-    } else {
-      // Free users: 3 total bubbles minus existing bookmarks
-      const usedBubbles = existingBookmarks.length;
-      return Math.max(0, 3 - usedBubbles);
-    }
+    if (subscription && subscription !== 'null') return 999;
+    const usedBubbles = existingBookmarks.length;
+    return Math.max(0, 3 - usedBubbles);
   };
   
   const [availableBubbles, setAvailableBubbles] = useLocalStorage('availableBubbles', initializeBubbles());
   
-  // Modal states
+  // Modal states — all false on first paint (nothing heavy loaded)
   const [showAddModal, setShowAddModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [showPricingModal, setShowPricingModal] = useState(false);
@@ -79,6 +104,23 @@ export const RefactoredIndex = () => {
   const [upgradePromptDismissed, setUpgradePromptDismissed] = useLocalStorage('upgradePromptDismissed', false);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [editingBookmark, setEditingBookmark] = useState<Bookmark | null>(null);
+
+  // Preload heavy chunks after the main thread is idle — improves perceived perf
+  useEffect(() => {
+    const id = requestIdleCallback
+      ? requestIdleCallback(() => {
+          import('@/components/AddBookmarkModal');
+          import('@/components/PricingModal');
+        }, { timeout: 3000 })
+      : setTimeout(() => {
+          import('@/components/AddBookmarkModal');
+          import('@/components/PricingModal');
+        }, 2000);
+    return () => {
+      if (requestIdleCallback && typeof id === 'number') cancelIdleCallback(id as number);
+      else clearTimeout(id as ReturnType<typeof setTimeout>);
+    };
+  }, []);
   
   const { toast } = useToast();
 
@@ -131,7 +173,6 @@ export const RefactoredIndex = () => {
 
   // Business logic functions
   const saveBookmarks = (newBookmarks: Bookmark[]) => {
-    // Size is now calculated dynamically in BubbleCanvas based on access count
     setBookmarks(newBookmarks);
   };
 
@@ -146,13 +187,11 @@ export const RefactoredIndex = () => {
       return;
     }
 
-    // Rate-limit guard (belt + suspenders alongside modal-level limit)
     if (!checkRateLimit('add_bookmark_main', 20, 60_000)) {
       toast({ title: "Too many requests", description: "Please slow down.", variant: "destructive" });
       return;
     }
 
-    // Sanitize inputs from the modal
     let safeUrl: string;
     let safeTitle: string;
     try {
@@ -163,7 +202,6 @@ export const RefactoredIndex = () => {
       return;
     }
 
-    // Check for duplicate domain
     const incomingDomain = getHostname(safeUrl);
     const isDuplicate = bookmarks.some(b => getHostname(b.url) === incomingDomain);
     if (isDuplicate) {
@@ -199,7 +237,6 @@ export const RefactoredIndex = () => {
     
     const remainingBubbles = availableBubbles - 1;
     let description = `Your new bubble is floating in the bubble universe ✨`;
-    
     if (remainingBubbles <= 0) {
       description += ` You've reached your free limit!`;
     } else if (remainingBubbles <= 2) {
@@ -208,21 +245,14 @@ export const RefactoredIndex = () => {
       description += ` (${remainingBubbles} free bubbles remaining)`;
     }
     
-    toast({
-      title: "Bubble created! 🫧",
-      description: description,
-    });
+    toast({ title: "Bubble created! 🫧", description });
   };
 
   const removeBookmark = (id: string) => {
     const newBookmarks = bookmarks.filter(b => b.id !== id);
     saveBookmarks(newBookmarks);
     setAvailableBubbles(availableBubbles + 1);
-    
-    toast({
-      title: "Bubble popped! 💥",
-      description: "Bubble returned to your bubble collection",
-    });
+    toast({ title: "Bubble popped! 💥", description: "Bubble returned to your bubble collection" });
   };
 
   const incrementAccessCount = (id: string) => {
@@ -254,15 +284,13 @@ export const RefactoredIndex = () => {
       'rgb(245, 158, 11)', 'rgb(239, 68, 68)', 'rgb(236, 72, 153)',
     ];
 
-    // Get existing domains
     const existingDomains = new Set(bookmarks.map(b => getHostname(b.url)));
     
-    // Filter: safe URLs only + no duplicates
     const uniqueParsed: ParsedBookmark[] = [];
     const seenDomains = new Set<string>();
     
     parsedBookmarks.forEach(bookmark => {
-      if (!isSafeUrl(bookmark.url)) return; // drop unsafe protocols
+      if (!isSafeUrl(bookmark.url)) return;
       const domain = getHostname(bookmark.url);
       if (!existingDomains.has(domain) && !seenDomains.has(domain)) {
         uniqueParsed.push({
@@ -293,19 +321,12 @@ export const RefactoredIndex = () => {
       ? `${newBookmarks.length} bubbles imported, ${skipped} duplicates/unsafe skipped!`
       : "Your bookmarks are now floating in the bubble universe!";
 
-    toast({
-      title: `Imported ${newBookmarks.length} bubbles! 🎉`,
-      description,
-    });
+    toast({ title: `Imported ${newBookmarks.length} bubbles! 🎉`, description });
   };
 
   const onPurchaseComplete = (bubbleCount: number, tier?: string) => {
     setAvailableBubbles(availableBubbles + bubbleCount);
-    
-    if (tier) {
-      setCurrentSubscription(tier);
-    }
-    
+    if (tier) setCurrentSubscription(tier);
     toast({
       title: "Bubbles delivered! 🎉",
       description: `${bubbleCount} fresh bubbles added to your collection!`,
@@ -331,15 +352,11 @@ export const RefactoredIndex = () => {
         />
 
         {showAnalytics && (
-          <div className="relative z-20 p-4 md:p-6">
-            <div className="max-w-7xl mx-auto">
-              <AnalyticsInsights 
-                bookmarks={bookmarks}
-                currentSubscription={currentSubscription}
-                onUpgradeClick={() => setShowPricingModal(true)}
-              />
-            </div>
-          </div>
+          <AnalyticsPanel
+            bookmarks={bookmarks}
+            currentSubscription={currentSubscription}
+            onUpgradeClick={() => setShowPricingModal(true)}
+          />
         )}
 
         <BubbleCanvas 
@@ -350,46 +367,58 @@ export const RefactoredIndex = () => {
           currentSubscription={currentSubscription}
         />
 
-        <EditBubbleModal
-          bookmark={editingBookmark}
-          isOpen={!!editingBookmark}
-          onClose={() => setEditingBookmark(null)}
-          onSave={editBookmark}
-        />
-
         {bookmarks.length === 0 && (
           <WelcomeMessage onCreateBubble={() => setShowAddModal(true)} />
         )}
 
-        {/* Modals */}
-        <AddBookmarkModal
-          isOpen={showAddModal}
-          onClose={() => setShowAddModal(false)}
-          onAdd={addBookmark}
-        />
+        {/* Modals — only rendered (and their JS loaded) when actually opened */}
+        <Suspense fallback={null}>
+          {editingBookmark && (
+            <EditBubbleModal
+              bookmark={editingBookmark}
+              isOpen={!!editingBookmark}
+              onClose={() => setEditingBookmark(null)}
+              onSave={editBookmark}
+            />
+          )}
 
-        <ImportBookmarksModal
-          isOpen={showImportModal}
-          onClose={() => setShowImportModal(false)}
-          onImport={importBookmarks}
-          availableBubbles={availableBubbles}
-          isPremium={currentSubscription === 'premium'}
-        />
+          {showAddModal && (
+            <AddBookmarkModal
+              isOpen={showAddModal}
+              onClose={() => setShowAddModal(false)}
+              onAdd={addBookmark}
+            />
+          )}
 
-        <PricingModal
-          isOpen={showPricingModal}
-          onClose={() => setShowPricingModal(false)}
-          onPurchaseComplete={onPurchaseComplete}
-        />
+          {showImportModal && (
+            <ImportBookmarksModal
+              isOpen={showImportModal}
+              onClose={() => setShowImportModal(false)}
+              onImport={importBookmarks}
+              availableBubbles={availableBubbles}
+              isPremium={currentSubscription === 'premium'}
+            />
+          )}
 
-        <UpgradePromptModal
-          isOpen={showUpgradePrompt}
-          onClose={handleUpgradePromptClose}
-          onUpgrade={handleUpgradeFromPrompt}
-          currentTier={currentSubscription || 'free'}
-          usedBubbles={usedBubbles}
-          maxBubbles={maxBubbles}
-        />
+          {showPricingModal && (
+            <PricingModal
+              isOpen={showPricingModal}
+              onClose={() => setShowPricingModal(false)}
+              onPurchaseComplete={onPurchaseComplete}
+            />
+          )}
+
+          {showUpgradePrompt && (
+            <UpgradePromptModal
+              isOpen={showUpgradePrompt}
+              onClose={handleUpgradePromptClose}
+              onUpgrade={handleUpgradeFromPrompt}
+              currentTier={currentSubscription || 'free'}
+              usedBubbles={usedBubbles}
+              maxBubbles={maxBubbles}
+            />
+          )}
+        </Suspense>
       </div>
     </ErrorBoundary>
   );
