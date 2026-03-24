@@ -43,10 +43,12 @@ export const RefactoredIndex = () => {
   const [currentSubscription, setCurrentSubscription] = useLocalStorage<string | null>('currentSubscription', null);
 
   // Remove any duplicate domains from stored bookmarks on mount
+  // and strip any unsafe entries from localStorage (poisoned data defense)
   useEffect(() => {
-    const stored: Bookmark[] = JSON.parse(localStorage.getItem('bubbleBookmarks') || '[]');
-    const deduped = deduplicateBookmarks(stored);
-    if (deduped.length !== stored.length) {
+    const raw: unknown[] = JSON.parse(localStorage.getItem('bubbleBookmarks') || '[]');
+    const validated = validateStoredBookmarks(raw) as Bookmark[];
+    const deduped = deduplicateBookmarks(validated);
+    if (deduped.length !== raw.length) {
       setBookmarks(deduped);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
