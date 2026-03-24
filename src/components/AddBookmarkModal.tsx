@@ -1,11 +1,11 @@
-
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Globe } from 'lucide-react';
+import { Loader2, Globe, ShieldCheck } from 'lucide-react';
+import { BookmarkInputSchema, sanitizeText, sanitizeUrl, safeFavicon, checkRateLimit } from '@/utils/security';
 
 interface AddBookmarkModalProps {
   isOpen: boolean;
@@ -16,63 +16,58 @@ interface AddBookmarkModalProps {
 export const AddBookmarkModal = ({ isOpen, onClose, onAdd }: AddBookmarkModalProps) => {
   const [url, setUrl] = useState('');
   const [title, setTitle] = useState('');
+  const [urlError, setUrlError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const extractDomain = (url: string) => {
-    try {
-      const urlObj = new URL(url.startsWith('http') ? url : `https://${url}`);
-      return urlObj.hostname;
-    } catch {
-      return url;
-    }
+  const handleUrlChange = (value: string) => {
+    // Hard-cap raw input length in the field itself
+    setUrl(value.slice(0, 2048));
+    setUrlError('');
   };
 
-  const getFaviconUrl = (url: string) => {
-    try {
-      const domain = extractDomain(url);
-      return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
-    } catch {
-      return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMSA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDMgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSIjNjY2Ii8+Cjwvc3ZnPgo=';
-    }
+  const handleTitleChange = (value: string) => {
+    // Strip HTML as the user types; cap at 200 chars
+    setTitle(value.replace(/<[^>]*>/g, '').slice(0, 200));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!url.trim()) {
+
+    // Rate-limit: max 20 bookmarks per minute
+    if (!checkRateLimit('add_bookmark', 20, 60_000)) {
       toast({
-        title: "URL required",
-        description: "Please enter a valid URL",
-        variant: "destructive",
+        title: 'Slow down! 🐢',
+        description: 'You're adding bookmarks too fast. Please wait a moment.',
+        variant: 'destructive',
       });
       return;
     }
 
+    // Zod validation
+    const parsed = BookmarkInputSchema.safeParse({ url: url.trim(), title: title.trim() });
+    if (!parsed.success) {
+      const msg = parsed.error.errors[0]?.message ?? 'Invalid input';
+      setUrlError(msg);
+      toast({ title: 'Invalid URL', description: msg, variant: 'destructive' });
+      return;
+    }
+
     setIsLoading(true);
-
     try {
-      // Normalize URL
-      const normalizedUrl = url.startsWith('http') ? url : `https://${url}`;
-      const finalTitle = title.trim() || extractDomain(normalizedUrl);
-      const favicon = getFaviconUrl(normalizedUrl);
+      const safeUrl = sanitizeUrl(parsed.data.url);
+      const safeTitle = sanitizeText(parsed.data.title || '') || new URL(safeUrl).hostname;
+      const favicon = safeFavicon(safeUrl);
 
-      onAdd({
-        url: normalizedUrl,
-        title: finalTitle,
-        favicon,
-      });
-
-      // Reset form
+      onAdd({ url: safeUrl, title: safeTitle, favicon });
       setUrl('');
       setTitle('');
+      setUrlError('');
       onClose();
-    } catch (error) {
-      toast({
-        title: "Error adding bookmark",
-        description: "Please check the URL and try again",
-        variant: "destructive",
-      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Please check the URL and try again';
+      setUrlError(msg);
+      toast({ title: 'Error adding bookmark', description: msg, variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
@@ -82,37 +77,46 @@ export const AddBookmarkModal = ({ isOpen, onClose, onAdd }: AddBookmarkModalPro
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="w-[95vw] max-w-md bg-slate-900 border-purple-500/30 p-4 sm:p-6">
         <DialogHeader>
-          <DialogTitle className="text-white flex items-center">
-            <Globe className="w-5 h-5 mr-2 text-purple-400" />
+          <DialogTitle className="text-white flex items-center gap-2">
+            <Globe className="w-5 h-5 text-purple-400" />
             Add New Bookmark
+            <ShieldCheck className="w-4 h-4 text-emerald-400 ml-auto" title="Inputs are sanitized" />
           </DialogTitle>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="url" className="text-purple-300">Website URL</Label>
             <Input
               id="url"
               value={url}
-              onChange={(e) => setUrl(e.target.value)}
+              onChange={(e) => handleUrlChange(e.target.value)}
               placeholder="https://example.com"
-              className="bg-slate-800 border-purple-500/30 text-white placeholder:text-slate-400 focus:border-purple-400"
+              maxLength={2048}
+              autoComplete="url"
+              spellCheck={false}
+              className={`bg-slate-800 border-purple-500/30 text-white placeholder:text-slate-400 focus:border-purple-400 ${urlError ? 'border-red-500' : ''}`}
               disabled={isLoading}
             />
+            {urlError && (
+              <p className="text-xs text-red-400 mt-1">{urlError}</p>
+            )}
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="title" className="text-purple-300">Title (optional)</Label>
             <Input
               id="title"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => handleTitleChange(e.target.value)}
               placeholder="Leave empty to auto-detect"
+              maxLength={200}
+              autoComplete="off"
               className="bg-slate-800 border-purple-500/30 text-white placeholder:text-slate-400 focus:border-purple-400"
               disabled={isLoading}
             />
           </div>
-          
+
           <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2 pt-4">
             <Button
               type="button"
