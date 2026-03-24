@@ -73,7 +73,7 @@ export const EditBubbleModal = ({ bookmark, isOpen, onClose, onSave }: EditBubbl
           <DialogTitle className="text-white flex items-center gap-2">
             <Pencil className="w-5 h-5 text-purple-400" />
             Edit Bubble
-            <ShieldCheck className="w-4 h-4 text-emerald-400 ml-auto" title="Inputs are sanitized" />
+            <ShieldCheck className="w-4 h-4 text-emerald-400 ml-auto" aria-label="Inputs are sanitized" />
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">

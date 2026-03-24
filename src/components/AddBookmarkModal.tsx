@@ -80,7 +80,7 @@ export const AddBookmarkModal = ({ isOpen, onClose, onAdd }: AddBookmarkModalPro
           <DialogTitle className="text-white flex items-center gap-2">
             <Globe className="w-5 h-5 text-purple-400" />
             Add New Bookmark
-            <ShieldCheck className="w-4 h-4 text-emerald-400 ml-auto" title="Inputs are sanitized" />
+            <ShieldCheck className="w-4 h-4 text-emerald-400 ml-auto" aria-label="Inputs are sanitized" />
           </DialogTitle>
         </DialogHeader>
 
