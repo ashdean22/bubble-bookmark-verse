@@ -60,7 +60,6 @@ export const sanitizeHtml = (html: string): string => {
   return DOMPurify.sanitize(html, {
     ALLOWED_TAGS: ['html', 'head', 'body', 'dl', 'dt', 'dd', 'p', 'h1', 'h3', 'a', 'hr'],
     ALLOWED_ATTR: ['href', 'add_date', 'last_modified', 'icon'],
-    FORBID_SCRIPTS: true,
     FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'style'],
   });
 };
