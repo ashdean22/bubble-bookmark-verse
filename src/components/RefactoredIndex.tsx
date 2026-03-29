@@ -107,17 +107,17 @@ export const RefactoredIndex = () => {
 
   // Preload heavy chunks after the main thread is idle — improves perceived perf
   useEffect(() => {
-    const id = requestIdleCallback
-      ? requestIdleCallback(() => {
-          import('@/components/AddBookmarkModal');
-          import('@/components/PricingModal');
-        }, { timeout: 3000 })
-      : setTimeout(() => {
-          import('@/components/AddBookmarkModal');
-          import('@/components/PricingModal');
-        }, 2000);
+    const rIC = typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function'
+      ? window.requestIdleCallback : null;
+    const preload = () => {
+      import('@/components/AddBookmarkModal');
+      import('@/components/PricingModal');
+    };
+    const id = rIC
+      ? rIC(preload, { timeout: 3000 })
+      : window.setTimeout(preload, 2000);
     return () => {
-      if (requestIdleCallback && typeof id === 'number') cancelIdleCallback(id as number);
+      if (rIC) window.cancelIdleCallback(id as number);
       else clearTimeout(id as ReturnType<typeof setTimeout>);
     };
   }, []);
