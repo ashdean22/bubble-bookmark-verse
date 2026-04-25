@@ -3,18 +3,7 @@ type IdleCallbackDeadline = {
   timeRemaining: () => number;
 };
 
-type IdleCallbackHandle = ReturnType<typeof window.setTimeout>;
 type IdleCallback = (deadline: IdleCallbackDeadline) => void;
-
-declare global {
-  interface Window {
-    requestIdleCallback?: (
-      callback: IdleCallback,
-      options?: { timeout?: number }
-    ) => IdleCallbackHandle;
-    cancelIdleCallback?: (handle: IdleCallbackHandle) => void;
-  }
-}
 
 if (typeof window !== 'undefined') {
   window.requestIdleCallback ??= (callback) => {
