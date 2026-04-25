@@ -145,7 +145,7 @@ export const RefactoredIndex = () => {
     switch (currentSubscription) {
       case 'premium': return 999;
       case 'popular': return 75;
-      case 'basic': return 25;
+      case 'basic': return 50;
       default: return 3;
     }
   };

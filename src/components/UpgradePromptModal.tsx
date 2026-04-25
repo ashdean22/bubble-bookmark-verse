@@ -15,7 +15,7 @@ interface UpgradePromptModalProps {
 const tierBenefits: Record<string, { nextTier: string; benefits: string[]; price: string }> = {
   free: {
     nextTier: 'Bubble Basic',
-    benefits: ['25 floating bubbles', 'Enhanced animations', 'Cloud sync', 'Priority loading', 'Email support'],
+    benefits: ['50 floating bubbles', 'Enhanced animations', 'Cloud sync', 'Priority loading', 'Email support'],
     price: '$1.99/mo'
   },
   basic: {
