@@ -617,9 +617,9 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
                         marginTop: -3,
                         background: heatStyles.highlight,
                         boxShadow: `0 0 8px ${heatStyles.glow}`,
-                        ['--px' as any]: `${Math.cos(angle) * dist}px`,
-                        ['--py' as any]: `${Math.sin(angle) * dist}px`,
-                      }}
+                        '--px': `${Math.cos(angle) * dist}px`,
+                        '--py': `${Math.sin(angle) * dist}px`,
+                      } as CSSProperties}
                     />
                   );
                 })}
