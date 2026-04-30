@@ -243,7 +243,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
             const dy = data2.y - data1.y;
             const distance = Math.sqrt(dx * dx + dy * dy);
             // Add a personal-space buffer so bubbles bounce before visually touching
-            const buffer = 18;
+            const buffer = 8;
             const minDistance = (data1.baseSize + data2.baseSize) / 2 + buffer;
 
             if (distance < minDistance && distance > 0) {
