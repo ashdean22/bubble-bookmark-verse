@@ -242,29 +242,28 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
             const dx = data2.x - data1.x;
             const dy = data2.y - data1.y;
             const distance = Math.sqrt(dx * dx + dy * dy);
-            // Add a personal-space buffer so bubbles bounce before visually touching
-            const buffer = 2;
-            const minDistance = (data1.baseSize + data2.baseSize) / 2 + buffer;
+            // No personal-space buffer — bubbles bounce on actual contact
+            const minDistance = (data1.baseSize + data2.baseSize) / 2;
 
             if (distance < minDistance && distance > 0) {
               const overlap = minDistance - distance;
               const nx = dx / distance;
               const ny = dy / distance;
-              // Stronger, non-linear repulsion that ramps up as bubbles get closer
-              const proximity = overlap / minDistance; // 0..1
-              const separationForce = overlap * 0.0012 + proximity * proximity * 0.05;
 
-              data1.ax -= nx * separationForce;
-              data1.ay -= ny * separationForce;
-              data2.ax += nx * separationForce;
-              data2.ay += ny * separationForce;
+              // Positional correction so they never visibly overlap
+              const correction = overlap * 0.5;
+              data1.x -= nx * correction;
+              data1.y -= ny * correction;
+              data2.x += nx * correction;
+              data2.y += ny * correction;
 
-              // Light velocity damping on contact for a softer "bounce" feel
+              // Elastic bounce: reflect the relative velocity along the contact normal
               const vRelX = data2.vx - data1.vx;
               const vRelY = data2.vy - data1.vy;
               const vAlong = vRelX * nx + vRelY * ny;
               if (vAlong < 0) {
-                const impulse = -vAlong * 0.5;
+                const restitution = 0.92; // near-elastic, slight energy loss
+                const impulse = -vAlong * (1 + restitution) * 0.5;
                 data1.vx -= nx * impulse;
                 data1.vy -= ny * impulse;
                 data2.vx += nx * impulse;
