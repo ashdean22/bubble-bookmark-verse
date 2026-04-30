@@ -228,50 +228,77 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
           d.displayY += (d.y - d.displayY) * 0.15;
         });
 
-        // Collision detection
-        for (let i = 0; i < bubbleIds.length; i++) {
-          const id1 = bubbleIds[i];
+        // Collision detection — spatial grid keeps large saved collections from freezing on load
+        const cellSize = 110;
+        const grid = new Map<string, string[]>();
+        bubbleIds.forEach((id) => {
+          const data = bubbleDataRef.current.get(id);
+          if (!data || draggedBubble === id) return;
+          const gx = Math.floor(data.x / cellSize);
+          const gy = Math.floor(data.y / cellSize);
+          const key = `${gx},${gy}`;
+          const bucket = grid.get(key);
+          if (bucket) bucket.push(id);
+          else grid.set(key, [id]);
+        });
+
+        const testedPairs = new Set<string>();
+        bubbleIds.forEach((id1) => {
           const data1 = bubbleDataRef.current.get(id1);
-          if (!data1 || draggedBubble === id1) continue;
+          if (!data1 || draggedBubble === id1) return;
+          const gx = Math.floor(data1.x / cellSize);
+          const gy = Math.floor(data1.y / cellSize);
 
-          for (let j = i + 1; j < bubbleIds.length; j++) {
-            const id2 = bubbleIds[j];
-            const data2 = bubbleDataRef.current.get(id2);
-            if (!data2 || draggedBubble === id2) continue;
+          for (let ox = -1; ox <= 1; ox++) {
+            for (let oy = -1; oy <= 1; oy++) {
+              const neighbors = grid.get(`${gx + ox},${gy + oy}`);
+              if (!neighbors) continue;
 
-            const dx = data2.x - data1.x;
-            const dy = data2.y - data1.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            // No personal-space buffer — bubbles bounce on actual contact
-            const minDistance = (data1.baseSize + data2.baseSize) / 2;
+              neighbors.forEach((id2) => {
+                if (id1 === id2 || draggedBubble === id2) return;
+                const pairKey = id1 < id2 ? `${id1}|${id2}` : `${id2}|${id1}`;
+                if (testedPairs.has(pairKey)) return;
+                testedPairs.add(pairKey);
 
-            if (distance < minDistance && distance > 0) {
-              const overlap = minDistance - distance;
-              const nx = dx / distance;
-              const ny = dy / distance;
+                const data2 = bubbleDataRef.current.get(id2);
+                if (!data2) return;
 
-              // Positional correction so they never visibly overlap
-              const correction = overlap * 0.5;
-              data1.x -= nx * correction;
-              data1.y -= ny * correction;
-              data2.x += nx * correction;
-              data2.y += ny * correction;
+                const dx = data2.x - data1.x;
+                const dy = data2.y - data1.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                // No personal-space buffer — bubbles bounce on actual contact
+                const minDistance = (data1.baseSize + data2.baseSize) / 2;
 
-              // Elastic bounce: reflect the relative velocity along the contact normal
-              const vRelX = data2.vx - data1.vx;
-              const vRelY = data2.vy - data1.vy;
-              const vAlong = vRelX * nx + vRelY * ny;
-              if (vAlong < 0) {
-                const restitution = 0.92; // near-elastic, slight energy loss
-                const impulse = -vAlong * (1 + restitution) * 0.5;
-                data1.vx -= nx * impulse;
-                data1.vy -= ny * impulse;
-                data2.vx += nx * impulse;
-                data2.vy += ny * impulse;
-              }
+                if (distance < minDistance) {
+                  const angle = distance > 0.001 ? 0 : (data1.seed - data2.seed);
+                  const nx = distance > 0.001 ? dx / distance : Math.cos(angle);
+                  const ny = distance > 0.001 ? dy / distance : Math.sin(angle);
+                  const overlap = minDistance - distance;
+
+                  // Positional correction so they never visibly overlap
+                  const correction = overlap * 0.5;
+                  data1.x -= nx * correction;
+                  data1.y -= ny * correction;
+                  data2.x += nx * correction;
+                  data2.y += ny * correction;
+
+                  // Elastic bounce: reflect the relative velocity along the contact normal
+                  const vRelX = data2.vx - data1.vx;
+                  const vRelY = data2.vy - data1.vy;
+                  const vAlong = vRelX * nx + vRelY * ny;
+                  if (vAlong < 0) {
+                    const restitution = 0.9; // natural bounce with slight energy loss
+                    const impulse = -vAlong * (1 + restitution) * 0.5;
+                    data1.vx -= nx * impulse;
+                    data1.vy -= ny * impulse;
+                    data2.vx += nx * impulse;
+                    data2.vy += ny * impulse;
+                  }
+                }
+              });
             }
           }
-        }
+        });
 
         // Update DOM
         bubbleIds.forEach((id) => {
