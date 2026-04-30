@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
+import type { CSSProperties } from 'react';
 import { Bookmark } from '@/pages/Index';
 import { ExternalLink, Pencil, Trash2 } from 'lucide-react';
 
@@ -54,6 +55,28 @@ interface ContextMenu {
   y: number;
 }
 
+interface BubblePhysicsData {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  baseSize: number;
+  seed: number;
+  timeOffset: number;
+  wanderSpeed: number;
+  wanderStrength: number;
+  targetInterval: number;
+  targetX: number;
+  targetY: number;
+  nextTargetTime: number;
+  displayX: number;
+  displayY: number;
+  prevVx: number;
+  prevVy: number;
+  ax: number;
+  ay: number;
+}
+
 export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEditBookmark, currentSubscription }: BubbleCanvasProps) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [draggedBubble, setDraggedBubble] = useState<string | null>(null);
@@ -64,7 +87,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
   const dragOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const dragStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
   const isDraggingRef = useRef(false);
-  const bubbleDataRef = useRef<Map<string, any>>(new Map());
+  const bubbleDataRef = useRef<Map<string, BubblePhysicsData>>(new Map());
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Initialize bubble data
