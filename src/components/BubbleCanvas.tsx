@@ -59,6 +59,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
   const [draggedBubble, setDraggedBubble] = useState<string | null>(null);
   const [clickedBubble, setClickedBubble] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null);
+  const [poppingIds, setPoppingIds] = useState<Set<string>>(new Set());
   const animationRef = useRef<number>();
   const dragOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const dragStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
@@ -301,6 +302,24 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
     if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
   };
 
+  // Wrap delete with a pop animation: mark as popping → wait for keyframes → really delete
+  const popAndRemove = useCallback((bookmarkId: string) => {
+    setPoppingIds(prev => {
+      if (prev.has(bookmarkId)) return prev;
+      const next = new Set(prev);
+      next.add(bookmarkId);
+      return next;
+    });
+    setTimeout(() => {
+      onRemoveBookmark(bookmarkId);
+      setPoppingIds(prev => {
+        const next = new Set(prev);
+        next.delete(bookmarkId);
+        return next;
+      });
+    }, 450);
+  }, [onRemoveBookmark]);
+
   const handleBubbleClick = (bookmark: Bookmark) => {
     if (!isDraggingRef.current) {
       setClickedBubble(bookmark.id);
@@ -418,12 +437,13 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
       {bookmarks.map((bookmark) => {
         const heatStyles = getHeatStylesAndSize(bookmark.accessCount, maxAccessCount, isMobile, isTablet);
         const isDragging = draggedBubble === bookmark.id;
+        const isPopping = poppingIds.has(bookmark.id);
         
         return (
           <div
             key={bookmark.id}
             data-bubble-id={bookmark.id}
-            className="bubble absolute cursor-pointer group select-none"
+            className={`bubble absolute cursor-pointer group select-none${isPopping ? ' bubble-popping' : ''}`}
             style={{
               left: 0,
               top: 0,
@@ -439,7 +459,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
           >
             {/* Realistic bubble */}
             <div
-              className="w-full h-full rounded-full flex flex-col items-center justify-center relative overflow-hidden"
+              className="bubble-shell w-full h-full rounded-full flex flex-col items-center justify-center relative overflow-hidden"
               style={{
                 background: `radial-gradient(ellipse 60% 40% at 30% 25%, ${heatStyles.highlight}, transparent 50%),
                              radial-gradient(ellipse 80% 80% at 50% 50%, ${heatStyles.background}, transparent 90%),
@@ -455,6 +475,28 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
               }}
               onClick={() => handleBubbleClick(bookmark)}
             >
+              {/* #2 Iridescent rim — soap-film thin-film interference */}
+              <div
+                className="absolute inset-0 rounded-full pointer-events-none"
+                style={{
+                  padding: '1.5px',
+                  background: `conic-gradient(from 0deg,
+                    hsla(0,   90%, 70%, 0.55),
+                    hsla(45,  90%, 70%, 0.55),
+                    hsla(120, 80%, 70%, 0.55),
+                    hsla(190, 90%, 70%, 0.55),
+                    hsla(260, 85%, 75%, 0.55),
+                    hsla(320, 90%, 75%, 0.55),
+                    hsla(0,   90%, 70%, 0.55))`,
+                  WebkitMask:
+                    'linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)',
+                  WebkitMaskComposite: 'xor',
+                  maskComposite: 'exclude',
+                  animation: `iridescent-spin ${14 + (parseInt(bookmark.id.slice(-2), 36) % 10)}s linear infinite`,
+                  mixBlendMode: 'screen',
+                  opacity: 0.7,
+                }}
+              />
               {/* Light reflection highlight */}
               <div 
                 className="absolute rounded-full pointer-events-none"
@@ -491,6 +533,33 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
                 <ExternalLink className="w-3 h-3 text-white drop-shadow-lg" />
               </div>
             </div>
+            {/* #8 Pop particle spray — only rendered while popping */}
+            {isPopping && (
+              <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 40 }}>
+                {Array.from({ length: 8 }).map((_, i) => {
+                  const angle = (i / 8) * Math.PI * 2;
+                  const dist = heatStyles.size * 0.7;
+                  return (
+                    <span
+                      key={i}
+                      className="bubble-particle absolute rounded-full"
+                      style={{
+                        left: '50%',
+                        top: '50%',
+                        width: 6,
+                        height: 6,
+                        marginLeft: -3,
+                        marginTop: -3,
+                        background: heatStyles.highlight,
+                        boxShadow: `0 0 8px ${heatStyles.glow}`,
+                        ['--px' as any]: `${Math.cos(angle) * dist}px`,
+                        ['--py' as any]: `${Math.sin(angle) * dist}px`,
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            )}
           </div>
         );
       })}
@@ -560,7 +629,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
               onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
               onTouchStart={(e) => { e.currentTarget.style.background = 'hsla(0, 60%, 50%, 0.2)'; e.stopPropagation(); }}
               onTouchEnd={(e) => { e.currentTarget.style.background = 'transparent'; }}
-              onClick={() => { setContextMenu(null); onRemoveBookmark(contextBookmark.id); }}
+              onClick={() => { setContextMenu(null); popAndRemove(contextBookmark.id); }}
             >
               <Trash2 style={{ width: 16, height: 16, flexShrink: 0 }} />
               Delete bubble
