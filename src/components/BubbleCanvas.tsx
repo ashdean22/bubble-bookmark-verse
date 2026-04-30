@@ -602,7 +602,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
               onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
               onTouchStart={(e) => { e.currentTarget.style.background = 'hsla(0, 60%, 50%, 0.2)'; e.stopPropagation(); }}
               onTouchEnd={(e) => { e.currentTarget.style.background = 'transparent'; }}
-              onClick={() => { setContextMenu(null); onRemoveBookmark(contextBookmark.id); }}
+              onClick={() => { setContextMenu(null); popAndRemove(contextBookmark.id); }}
             >
               <Trash2 style={{ width: 16, height: 16, flexShrink: 0 }} />
               Delete bubble
