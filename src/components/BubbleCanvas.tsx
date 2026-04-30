@@ -533,6 +533,33 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
                 <ExternalLink className="w-3 h-3 text-white drop-shadow-lg" />
               </div>
             </div>
+            {/* #8 Pop particle spray — only rendered while popping */}
+            {isPopping && (
+              <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 40 }}>
+                {Array.from({ length: 8 }).map((_, i) => {
+                  const angle = (i / 8) * Math.PI * 2;
+                  const dist = heatStyles.size * 0.7;
+                  return (
+                    <span
+                      key={i}
+                      className="bubble-particle absolute rounded-full"
+                      style={{
+                        left: '50%',
+                        top: '50%',
+                        width: 6,
+                        height: 6,
+                        marginLeft: -3,
+                        marginTop: -3,
+                        background: heatStyles.highlight,
+                        boxShadow: `0 0 8px ${heatStyles.glow}`,
+                        ['--px' as any]: `${Math.cos(angle) * dist}px`,
+                        ['--py' as any]: `${Math.sin(angle) * dist}px`,
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            )}
           </div>
         );
       })}
