@@ -514,6 +514,10 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
           <div
             key={bookmark.id}
             data-bubble-id={bookmark.id}
+            ref={(node) => {
+              if (node) bubbleElementsRef.current.set(bookmark.id, node);
+              else bubbleElementsRef.current.delete(bookmark.id);
+            }}
             className={`bubble absolute cursor-pointer group select-none${isPopping ? ' bubble-popping' : ''}`}
             style={{
               left: 0,
