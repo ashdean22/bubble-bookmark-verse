@@ -40,6 +40,24 @@ const deduplicateBookmarks = (bms: Bookmark[]): Bookmark[] => {
   });
 };
 
+const normalizeBookmarks = (value: unknown): Bookmark[] => {
+  if (!Array.isArray(value)) return [];
+  return deduplicateBookmarks(validateStoredBookmarks(value) as Bookmark[]);
+};
+
+const readStoredBookmarks = (): Bookmark[] => {
+  try {
+    return normalizeBookmarks(JSON.parse(localStorage.getItem('bubbleBookmarks') || '[]'));
+  } catch {
+    localStorage.removeItem('bubbleBookmarks');
+    return [];
+  }
+};
+
+const normalizeBubbleCount = (value: unknown): number => {
+  return typeof value === 'number' && Number.isFinite(value) ? Math.max(0, value) : 0;
+};
+
 // Analytics panel wrapper — only rendered when toggled open, zero cost otherwise
 const AnalyticsPanel = memo(({
   bookmarks,
@@ -70,16 +88,14 @@ AnalyticsPanel.displayName = 'AnalyticsPanel';
 
 export const RefactoredIndex = () => {
   // State management using custom hooks
-  const [bookmarks, setBookmarks] = useLocalStorage<Bookmark[]>('bubbleBookmarks', []);
+  const [bookmarks, setBookmarks] = useLocalStorage<Bookmark[]>('bubbleBookmarks', [], normalizeBookmarks);
   const [currentSubscription, setCurrentSubscription] = useLocalStorage<string | null>('currentSubscription', null);
 
   // Remove any duplicate domains from stored bookmarks on mount
   // and strip any unsafe entries from localStorage (poisoned data defense)
   useEffect(() => {
-    const raw: unknown[] = JSON.parse(localStorage.getItem('bubbleBookmarks') || '[]');
-    const validated = validateStoredBookmarks(raw) as Bookmark[];
-    const deduped = deduplicateBookmarks(validated);
-    if (deduped.length !== raw.length) {
+    const deduped = readStoredBookmarks();
+    if (deduped.length !== bookmarks.length) {
       setBookmarks(deduped);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -87,14 +103,14 @@ export const RefactoredIndex = () => {
   
   // Initialize available bubbles based on existing bookmarks and subscription
   const initializeBubbles = () => {
-    const existingBookmarks = JSON.parse(localStorage.getItem('bubbleBookmarks') || '[]');
+    const existingBookmarks = readStoredBookmarks();
     const subscription = localStorage.getItem('currentSubscription');
     if (subscription && subscription !== 'null') return 999;
     const usedBubbles = existingBookmarks.length;
     return Math.max(0, 3 - usedBubbles);
   };
   
-  const [availableBubbles, setAvailableBubbles] = useLocalStorage('availableBubbles', initializeBubbles());
+  const [availableBubbles, setAvailableBubbles] = useLocalStorage('availableBubbles', initializeBubbles(), normalizeBubbleCount);
   
   // Modal states — all false on first paint (nothing heavy loaded)
   const [showAddModal, setShowAddModal] = useState(false);
