@@ -32,7 +32,6 @@ export const BubbleHeaderMinimal = ({
                   src={bubbleLinkLogoPNG}
                   alt="BubbleMark - Your Bookmarks. In a Bubble." 
                   className="w-full h-full object-contain"
-                  fetchPriority="high"
                   decoding="sync"
                   style={{
                     willChange: 'filter',

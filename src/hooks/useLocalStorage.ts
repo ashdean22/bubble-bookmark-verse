@@ -1,14 +1,23 @@
 import { useState, useEffect } from 'react';
 
-export function useLocalStorage<T>(key: string, initialValue: T) {
-  const [storedValue, setStoredValue] = useState<T>(() => {
+export function useLocalStorage<T>(
+  key: string,
+  initialValue: T,
+  normalize?: (value: unknown) => T,
+) {
+  const readValue = (): T => {
     try {
       const item = window.localStorage.getItem(key);
-      return item ? JSON.parse(item) : initialValue;
+      const parsed = item ? JSON.parse(item) : initialValue;
+      return normalize ? normalize(parsed) : parsed;
     } catch (error) {
       console.error(`Error reading localStorage key "${key}":`, error);
       return initialValue;
     }
+  };
+
+  const [storedValue, setStoredValue] = useState<T>(() => {
+    return readValue();
   });
 
   const setValue = (value: T | ((val: T) => T)) => {
@@ -26,7 +35,8 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === key && e.newValue !== null) {
         try {
-          setStoredValue(JSON.parse(e.newValue));
+          const parsed = JSON.parse(e.newValue);
+          setStoredValue(normalize ? normalize(parsed) : parsed);
         } catch (error) {
           console.error(`Error parsing localStorage change for key "${key}":`, error);
         }
@@ -35,7 +45,7 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
 
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, [key]);
+  }, [key, normalize]);
 
   return [storedValue, setValue] as const;
 }
