@@ -6,12 +6,21 @@ export function useLocalStorage<T>(
   normalize?: (value: unknown) => T,
 ) {
   const readValue = (): T => {
+    if (typeof window === 'undefined' || !window.localStorage) {
+      return initialValue;
+    }
+
     try {
       const item = window.localStorage.getItem(key);
       const parsed = item ? JSON.parse(item) : initialValue;
       return normalize ? normalize(parsed) : parsed;
     } catch (error) {
       console.error(`Error reading localStorage key "${key}":`, error);
+      try {
+        window.localStorage.removeItem(key);
+      } catch {
+        // Ignore storage cleanup failures so startup can continue.
+      }
       return initialValue;
     }
   };
@@ -21,10 +30,13 @@ export function useLocalStorage<T>(
   });
 
   const setValue = (value: T | ((val: T) => T)) => {
+    if (typeof window === 'undefined' || !window.localStorage) return;
+
     try {
       const valueToStore = value instanceof Function ? value(storedValue) : value;
-      setStoredValue(valueToStore);
-      window.localStorage.setItem(key, JSON.stringify(valueToStore));
+      const normalizedValue = normalize ? normalize(valueToStore) : valueToStore;
+      setStoredValue(normalizedValue);
+      window.localStorage.setItem(key, JSON.stringify(normalizedValue));
     } catch (error) {
       console.error(`Error setting localStorage key "${key}":`, error);
     }
