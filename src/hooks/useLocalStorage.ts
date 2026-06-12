@@ -1,23 +1,32 @@
 import { useState, useEffect } from 'react';
 
+const getStorage = (): Storage | null => {
+  try {
+    return typeof window !== 'undefined' ? window.localStorage : null;
+  } catch {
+    return null;
+  }
+};
+
 export function useLocalStorage<T>(
   key: string,
   initialValue: T,
   normalize?: (value: unknown) => T,
 ) {
   const readValue = (): T => {
-    if (typeof window === 'undefined' || !window.localStorage) {
+    const storage = getStorage();
+    if (!storage) {
       return initialValue;
     }
 
     try {
-      const item = window.localStorage.getItem(key);
+      const item = storage.getItem(key);
       const parsed = item ? JSON.parse(item) : initialValue;
       return normalize ? normalize(parsed) : parsed;
     } catch (error) {
       console.error(`Error reading localStorage key "${key}":`, error);
       try {
-        window.localStorage.removeItem(key);
+        storage.removeItem(key);
       } catch {
         // Ignore storage cleanup failures so startup can continue.
       }
@@ -30,13 +39,11 @@ export function useLocalStorage<T>(
   });
 
   const setValue = (value: T | ((val: T) => T)) => {
-    if (typeof window === 'undefined' || !window.localStorage) return;
-
     try {
       const valueToStore = value instanceof Function ? value(storedValue) : value;
       const normalizedValue = normalize ? normalize(valueToStore) : valueToStore;
       setStoredValue(normalizedValue);
-      window.localStorage.setItem(key, JSON.stringify(normalizedValue));
+      getStorage()?.setItem(key, JSON.stringify(normalizedValue));
     } catch (error) {
       console.error(`Error setting localStorage key "${key}":`, error);
     }
