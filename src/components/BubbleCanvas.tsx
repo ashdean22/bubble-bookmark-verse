@@ -77,6 +77,12 @@ interface BubblePhysicsData {
   ay: number;
 }
 
+const getMaxAccessCount = (bookmarks: Bookmark[]) =>
+  bookmarks.reduce((max, bookmark) => Math.max(max, Number.isFinite(bookmark.accessCount) ? bookmark.accessCount : 0), 1);
+
+const finiteOr = (value: number, fallback: number) =>
+  Number.isFinite(value) ? value : fallback;
+
 export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEditBookmark, currentSubscription }: BubbleCanvasProps) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const bubbleElementsRef = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -94,7 +100,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
 
   // Initialize bubble data
   useEffect(() => {
-    const maxAccessCount = Math.max(...bookmarks.map(b => b.accessCount), 1);
+    const maxAccessCount = getMaxAccessCount(bookmarks);
     const isMobile = window.innerWidth < 640;
     const isTablet = window.innerWidth >= 640 && window.innerWidth < 1024;
     const headerHeight = isMobile ? 120 : 100;
@@ -113,8 +119,8 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
         const targetInterval = 3000 + Math.random() * 6000;   // 3–9s, each bubble unique
 
         bubbleDataRef.current.set(bookmark.id, {
-          x: bookmark.x,
-          y: Math.max(bookmark.y, headerHeight + 50),
+          x: finiteOr(bookmark.x, 80),
+          y: Math.max(finiteOr(bookmark.y, headerHeight + 80), headerHeight + 50),
           vx: 0,
           vy: 0,
           baseSize: heatStyles.size,
@@ -123,11 +129,11 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
           wanderSpeed,
           wanderStrength,
           targetInterval,
-          targetX: bookmark.x,
-          targetY: Math.max(bookmark.y, headerHeight + 50),
+          targetX: finiteOr(bookmark.x, 80),
+          targetY: Math.max(finiteOr(bookmark.y, headerHeight + 80), headerHeight + 50),
           nextTargetTime: 0,
-          displayX: bookmark.x,
-          displayY: Math.max(bookmark.y, headerHeight + 50),
+          displayX: finiteOr(bookmark.x, 80),
+          displayY: Math.max(finiteOr(bookmark.y, headerHeight + 80), headerHeight + 50),
           prevVx: 0,
           prevVy: 0,
           ax: 0,
