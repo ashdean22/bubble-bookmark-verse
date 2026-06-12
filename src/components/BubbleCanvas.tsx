@@ -199,38 +199,49 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
             d.nextTargetTime = time + d.targetInterval;
           }
           
-          // Steering force — proven 0.95/0.05 split, unique strength per bubble
+          // Steering force — eased so bubbles glide toward their target
+          // instead of snapping. Distance attenuation gives them a soft
+          // "arrival" so they don't overshoot.
           const dx = d.targetX - d.x;
           const dy = d.targetY - d.y;
           const distToTarget = Math.sqrt(dx * dx + dy * dy);
-          
+
           let targetAx = 0;
           let targetAy = 0;
           if (distToTarget > 1) {
-            const forceStrength = d.wanderStrength * 0.5;
+            const arrival = Math.min(1, distToTarget / 180); // ease in last ~180px
+            const forceStrength = d.wanderStrength * 0.35 * arrival;
             targetAx = (dx / distToTarget) * forceStrength;
             targetAy = (dy / distToTarget) * forceStrength;
           }
-          
-          // Proven smoothing ratio — always accumulates force
-          d.ax = d.ax * 0.95 + targetAx * 0.05;
-          d.ay = d.ay * 0.95 + targetAy * 0.05;
-          
+
+          // Heavier acceleration smoothing → no jitter, slow direction changes
+          d.ax = d.ax * 0.97 + targetAx * 0.03;
+          d.ay = d.ay * 0.97 + targetAy * 0.03;
+
           d.vx += d.ax;
           d.vy += d.ay;
-          
-          // Perlin-like wobble — each bubble uses its own wanderSpeed and seed
-          // so frequencies and phases are unique per bubble
+
+          // Multi-octave wobble for organic, perlin-like drift.
+          // Includes a tiny curl (perpendicular) component so paths gently
+          // arc instead of moving in straight lines.
           const wobbleTime = time * d.wanderSpeed;
-          const wobbleX = Math.sin(wobbleTime * 0.7  + d.seed)       * 0.002 +
-                          Math.sin(wobbleTime * 0.3  + d.seed * 2.1) * 0.001 +
-                          Math.sin(wobbleTime * 0.13 + d.seed * 3.7) * 0.0005;
-          const wobbleY = Math.cos(wobbleTime * 0.5  + d.seed)       * 0.002 +
-                          Math.cos(wobbleTime * 0.23 + d.seed * 2.9) * 0.001 +
-                          Math.cos(wobbleTime * 0.11 + d.seed * 4.1) * 0.0005;
-          
-          d.vx += wobbleX;
-          d.vy += wobbleY;
+          const wobbleX = Math.sin(wobbleTime * 0.7  + d.seed)       * 0.0028 +
+                          Math.sin(wobbleTime * 0.3  + d.seed * 2.1) * 0.0014 +
+                          Math.sin(wobbleTime * 0.13 + d.seed * 3.7) * 0.0007;
+          const wobbleY = Math.cos(wobbleTime * 0.5  + d.seed)       * 0.0028 +
+                          Math.cos(wobbleTime * 0.23 + d.seed * 2.9) * 0.0014 +
+                          Math.cos(wobbleTime * 0.11 + d.seed * 4.1) * 0.0007;
+
+          // Curl noise: rotate a slow sine by 90° to nudge the bubble sideways
+          // relative to its current heading → arcing, swimming-like paths.
+          const curl = Math.sin(wobbleTime * 0.17 + d.seed * 1.3) * 0.0015;
+          const speedNow = Math.sqrt(d.vx * d.vx + d.vy * d.vy) || 0.0001;
+          const curlX = (-d.vy / speedNow) * curl;
+          const curlY = ( d.vx / speedNow) * curl;
+
+          d.vx += wobbleX + curlX;
+          d.vy += wobbleY + curlY;
           
           // Velocity smoothing (proven 0.7/0.3)
           const smoothVx = d.vx * 0.7 + d.prevVx * 0.3;
