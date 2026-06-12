@@ -97,6 +97,9 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
   const isDraggingRef = useRef(false);
   const bubbleDataRef = useRef<Map<string, BubblePhysicsData>>(new Map());
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prefersReducedMotionRef = useRef(
+    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+  );
 
   // Initialize bubble data
   useEffect(() => {
@@ -158,7 +161,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
   // Animation loop
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || bookmarks.length === 0) return;
+    if (!canvas || bookmarks.length === 0 || prefersReducedMotionRef.current) return;
 
     const headerHeight = window.innerWidth < 640 ? 120 : 100;
     let lastTime = 0;
@@ -171,8 +174,8 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
       if (elapsed >= frameInterval) {
         lastTime = timestamp - (elapsed % frameInterval);
         
-        const canvasWidth = canvas.clientWidth;
-        const canvasHeight = canvas.clientHeight;
+        const canvasWidth = Math.max(canvas.clientWidth, 320);
+        const canvasHeight = Math.max(canvas.clientHeight, 480);
 
         const bubbleIds = Array.from(bubbleDataRef.current.keys());
         
@@ -265,8 +268,9 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
         });
 
         frameCountRef.current += 1;
+        const shouldRunCollisions = bubbleIds.length <= 220;
         const collisionStep = bubbleIds.length > 120 ? 4 : bubbleIds.length > 70 ? 2 : 1;
-        if (frameCountRef.current % collisionStep === 0) {
+        if (shouldRunCollisions && frameCountRef.current % collisionStep === 0) {
           const cellSize = 110;
           const grid = new Map<string, string[]>();
           bubbleIds.forEach((id) => {
