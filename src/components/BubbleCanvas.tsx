@@ -243,9 +243,10 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
           d.vx += wobbleX + curlX;
           d.vy += wobbleY + curlY;
           
-          // Velocity smoothing (proven 0.7/0.3)
-          const smoothVx = d.vx * 0.7 + d.prevVx * 0.3;
-          const smoothVy = d.vy * 0.7 + d.prevVy * 0.3;
+          // Velocity smoothing — heavier blend with previous frame for a
+          // floatier, momentum-rich feel.
+          const smoothVx = d.vx * 0.6 + d.prevVx * 0.4;
+          const smoothVy = d.vy * 0.6 + d.prevVy * 0.4;
           d.prevVx = d.vx;
           d.prevVy = d.vy;
           d.vx = smoothVx;
@@ -266,10 +267,11 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
           d.x = Math.max(radius, Math.min(canvasWidth - radius, finiteOr(d.x, radius)));
           d.y = Math.max(headerHeight + radius, Math.min(canvasHeight - radius, finiteOr(d.y, headerHeight + radius)));
 
-          d.vx *= 0.985;
-          d.vy *= 0.985;
+          // Gentle damping keeps drift slow and natural
+          d.vx *= 0.99;
+          d.vy *= 0.99;
 
-          const maxV = 1.0;
+          const maxV = 0.7;
           const speed = Math.sqrt(d.vx * d.vx + d.vy * d.vy);
           if (speed > maxV) {
             const scale = maxV / speed;
@@ -277,9 +279,9 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
             d.vy *= scale;
           }
           
-          // Smooth display position
-          d.displayX += (d.x - d.displayX) * 0.15;
-          d.displayY += (d.y - d.displayY) * 0.15;
+          // Smooth display position — lower lerp = silkier rendered motion
+          d.displayX += (d.x - d.displayX) * 0.12;
+          d.displayY += (d.y - d.displayY) * 0.12;
         });
 
         frameCountRef.current += 1;
