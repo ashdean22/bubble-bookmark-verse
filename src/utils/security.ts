@@ -158,5 +158,5 @@ export const safeDomain = (url: string): string => {
 export const safeFavicon = (url: string): string => {
   const domain = safeDomain(url);
   if (!domain) return '';
-  return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=32`;
+  return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=128`;
 };
