@@ -115,11 +115,13 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
         // Each bubble gets fully unique seeds and timing so they NEVER sync
         // wanderSpeed range deliberately spread wide: 0.0002–0.0008 (vs original 0.0003–0.0005)
         // seed values are large and coprime-spaced so no two bubbles share a harmonic
+        // Each bubble gets unique seeds + timing so movement never syncs.
+        // Slower, wider-varied parameters produce a more organic, "floating" feel.
         const seed = Math.random() * 10000;
-        const timeOffset = Math.random() * 100000; // large spread: up to 100s of phase difference
-        const wanderSpeed = 0.0002 + Math.random() * 0.0006;
-        const wanderStrength = 0.008 + Math.random() * 0.006; // proven range
-        const targetInterval = 3000 + Math.random() * 6000;   // 3–9s, each bubble unique
+        const timeOffset = Math.random() * 100000;
+        const wanderSpeed = 0.00012 + Math.random() * 0.00045;   // slower, more drift-like
+        const wanderStrength = 0.005 + Math.random() * 0.007;    // varied steering force
+        const targetInterval = 5000 + Math.random() * 9000;      // 5–14s wander cadence
 
         bubbleDataRef.current.set(bookmark.id, {
           x: finiteOr(bookmark.x, 80),
