@@ -190,8 +190,10 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
           // Pick next wander target on this bubble's personal cadence
           if (time > d.nextTargetTime) {
             const padding = radius + 60;
-            d.targetX = padding + Math.random() * (canvasWidth - padding * 2);
-            d.targetY = headerHeight + padding + Math.random() * (canvasHeight - headerHeight - padding * 2);
+            const travelWidth = Math.max(1, canvasWidth - padding * 2);
+            const travelHeight = Math.max(1, canvasHeight - headerHeight - padding * 2);
+            d.targetX = padding + Math.random() * travelWidth;
+            d.targetY = headerHeight + padding + Math.random() * travelHeight;
             d.nextTargetTime = time + d.targetInterval;
           }
           
@@ -248,8 +250,8 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
           else if (d.y > canvasHeight - radius - margin) d.vy -= boundaryForce;
 
           // Hard clamp
-          d.x = Math.max(radius, Math.min(canvasWidth - radius, d.x));
-          d.y = Math.max(headerHeight + radius, Math.min(canvasHeight - radius, d.y));
+          d.x = Math.max(radius, Math.min(canvasWidth - radius, finiteOr(d.x, radius)));
+          d.y = Math.max(headerHeight + radius, Math.min(canvasHeight - radius, finiteOr(d.y, headerHeight + radius)));
 
           d.vx *= 0.985;
           d.vy *= 0.985;
@@ -507,7 +509,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
     }
   }, [draggedBubble, handleDragMove, handleDragEnd]);
 
-  const maxAccessCount = Math.max(...bookmarks.map(b => b.accessCount), 1);
+  const maxAccessCount = getMaxAccessCount(bookmarks);
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
   const isTablet = typeof window !== 'undefined' && window.innerWidth >= 640 && window.innerWidth < 1024;
 
