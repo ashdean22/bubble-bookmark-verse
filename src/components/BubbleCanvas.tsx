@@ -77,6 +77,12 @@ interface BubblePhysicsData {
   ay: number;
 }
 
+const getMaxAccessCount = (bookmarks: Bookmark[]) =>
+  bookmarks.reduce((max, bookmark) => Math.max(max, Number.isFinite(bookmark.accessCount) ? bookmark.accessCount : 0), 1);
+
+const finiteOr = (value: number, fallback: number) =>
+  Number.isFinite(value) ? value : fallback;
+
 export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEditBookmark, currentSubscription }: BubbleCanvasProps) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const bubbleElementsRef = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -91,10 +97,13 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
   const isDraggingRef = useRef(false);
   const bubbleDataRef = useRef<Map<string, BubblePhysicsData>>(new Map());
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prefersReducedMotionRef = useRef(
+    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+  );
 
   // Initialize bubble data
   useEffect(() => {
-    const maxAccessCount = Math.max(...bookmarks.map(b => b.accessCount), 1);
+    const maxAccessCount = getMaxAccessCount(bookmarks);
     const isMobile = window.innerWidth < 640;
     const isTablet = window.innerWidth >= 640 && window.innerWidth < 1024;
     const headerHeight = isMobile ? 120 : 100;
@@ -113,8 +122,8 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
         const targetInterval = 3000 + Math.random() * 6000;   // 3–9s, each bubble unique
 
         bubbleDataRef.current.set(bookmark.id, {
-          x: bookmark.x,
-          y: Math.max(bookmark.y, headerHeight + 50),
+          x: finiteOr(bookmark.x, 80),
+          y: Math.max(finiteOr(bookmark.y, headerHeight + 80), headerHeight + 50),
           vx: 0,
           vy: 0,
           baseSize: heatStyles.size,
@@ -123,11 +132,11 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
           wanderSpeed,
           wanderStrength,
           targetInterval,
-          targetX: bookmark.x,
-          targetY: Math.max(bookmark.y, headerHeight + 50),
+          targetX: finiteOr(bookmark.x, 80),
+          targetY: Math.max(finiteOr(bookmark.y, headerHeight + 80), headerHeight + 50),
           nextTargetTime: 0,
-          displayX: bookmark.x,
-          displayY: Math.max(bookmark.y, headerHeight + 50),
+          displayX: finiteOr(bookmark.x, 80),
+          displayY: Math.max(finiteOr(bookmark.y, headerHeight + 80), headerHeight + 50),
           prevVx: 0,
           prevVy: 0,
           ax: 0,
@@ -152,7 +161,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
   // Animation loop
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || bookmarks.length === 0) return;
+    if (!canvas || bookmarks.length === 0 || prefersReducedMotionRef.current) return;
 
     const headerHeight = window.innerWidth < 640 ? 120 : 100;
     let lastTime = 0;
@@ -165,8 +174,8 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
       if (elapsed >= frameInterval) {
         lastTime = timestamp - (elapsed % frameInterval);
         
-        const canvasWidth = canvas.clientWidth;
-        const canvasHeight = canvas.clientHeight;
+        const canvasWidth = Math.max(canvas.clientWidth, 320);
+        const canvasHeight = Math.max(canvas.clientHeight, 480);
 
         const bubbleIds = Array.from(bubbleDataRef.current.keys());
         
@@ -181,8 +190,10 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
           // Pick next wander target on this bubble's personal cadence
           if (time > d.nextTargetTime) {
             const padding = radius + 60;
-            d.targetX = padding + Math.random() * (canvasWidth - padding * 2);
-            d.targetY = headerHeight + padding + Math.random() * (canvasHeight - headerHeight - padding * 2);
+            const travelWidth = Math.max(1, canvasWidth - padding * 2);
+            const travelHeight = Math.max(1, canvasHeight - headerHeight - padding * 2);
+            d.targetX = padding + Math.random() * travelWidth;
+            d.targetY = headerHeight + padding + Math.random() * travelHeight;
             d.nextTargetTime = time + d.targetInterval;
           }
           
@@ -239,8 +250,8 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
           else if (d.y > canvasHeight - radius - margin) d.vy -= boundaryForce;
 
           // Hard clamp
-          d.x = Math.max(radius, Math.min(canvasWidth - radius, d.x));
-          d.y = Math.max(headerHeight + radius, Math.min(canvasHeight - radius, d.y));
+          d.x = Math.max(radius, Math.min(canvasWidth - radius, finiteOr(d.x, radius)));
+          d.y = Math.max(headerHeight + radius, Math.min(canvasHeight - radius, finiteOr(d.y, headerHeight + radius)));
 
           d.vx *= 0.985;
           d.vy *= 0.985;
@@ -259,8 +270,9 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
         });
 
         frameCountRef.current += 1;
+        const shouldRunCollisions = bubbleIds.length <= 220;
         const collisionStep = bubbleIds.length > 120 ? 4 : bubbleIds.length > 70 ? 2 : 1;
-        if (frameCountRef.current % collisionStep === 0) {
+        if (shouldRunCollisions && frameCountRef.current % collisionStep === 0) {
           const cellSize = 110;
           const grid = new Map<string, string[]>();
           bubbleIds.forEach((id) => {
@@ -497,7 +509,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
     }
   }, [draggedBubble, handleDragMove, handleDragEnd]);
 
-  const maxAccessCount = Math.max(...bookmarks.map(b => b.accessCount), 1);
+  const maxAccessCount = getMaxAccessCount(bookmarks);
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
   const isTablet = typeof window !== 'undefined' && window.innerWidth >= 640 && window.innerWidth < 1024;
 
