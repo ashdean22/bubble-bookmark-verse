@@ -626,14 +626,36 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
                   borderRadius: '50%',
                 }}
               />
-              <img
-                src={bookmark.favicon}
-                alt={bookmark.title}
-                className="w-6 h-6 rounded pointer-events-none relative z-10 drop-shadow-md"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMSA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDMgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K';
+              {/* White contrast disc behind logo for legibility against iridescent overlays */}
+              <div
+                className="absolute rounded-full pointer-events-none z-10 flex items-center justify-center"
+                style={{
+                  width: '48%',
+                  height: '48%',
+                  top: '26%',
+                  left: '26%',
+                  background: 'radial-gradient(circle at 50% 45%, hsla(0,0%,100%,0.96) 0%, hsla(0,0%,100%,0.88) 70%, hsla(0,0%,100%,0.72) 100%)',
+                  boxShadow: '0 2px 6px hsla(0,0%,0%,0.25), inset 0 0 0 1px hsla(0,0%,100%,0.6)',
                 }}
-              />
+              >
+                <img
+                  src={bookmark.favicon}
+                  alt={bookmark.title}
+                  className="pointer-events-none"
+                  style={{
+                    width: '72%',
+                    height: '72%',
+                    objectFit: 'contain',
+                    imageRendering: 'auto',
+                    filter: 'drop-shadow(0 1px 1px hsla(0,0%,0%,0.25))',
+                  }}
+                  loading="lazy"
+                  decoding="async"
+                  onError={(e) => {
+                  (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMSA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDMgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K';
+                  }}
+                />
+              </div>
               <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
                 <ExternalLink className="w-3 h-3 text-white drop-shadow-lg" />
               </div>
