@@ -310,29 +310,47 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
                   const dx = data2.x - data1.x;
                   const dy = data2.y - data1.y;
                   const distance = Math.sqrt(dx * dx + dy * dy);
-                  const minDistance = (data1.baseSize + data2.baseSize) / 2;
+                  const r1 = data1.baseSize / 2;
+                  const r2 = data2.baseSize / 2;
+                  const minDistance = r1 + r2;
 
                   if (distance < minDistance) {
                     const angle = distance > 0.001 ? 0 : (data1.seed - data2.seed);
                     const nx = distance > 0.001 ? dx / distance : Math.cos(angle);
                     const ny = distance > 0.001 ? dy / distance : Math.sin(angle);
                     const overlap = minDistance - distance;
-                    const correction = overlap * 0.5;
-                    data1.x -= nx * correction;
-                    data1.y -= ny * correction;
-                    data2.x += nx * correction;
-                    data2.y += ny * correction;
+
+                    // Mass proportional to area so larger bubbles push smaller ones more
+                    const m1 = r1 * r1;
+                    const m2 = r2 * r2;
+                    const totalMass = m1 + m2;
+                    const share1 = m2 / totalMass;
+                    const share2 = m1 / totalMass;
+
+                    // Positional correction split by mass
+                    data1.x -= nx * overlap * share1;
+                    data1.y -= ny * overlap * share1;
+                    data2.x += nx * overlap * share2;
+                    data2.y += ny * overlap * share2;
 
                     const vRelX = data2.vx - data1.vx;
                     const vRelY = data2.vy - data1.vy;
                     const vAlong = vRelX * nx + vRelY * ny;
                     if (vAlong < 0) {
-                      const restitution = 0.9;
-                      const impulse = -vAlong * (1 + restitution) * 0.5;
-                      data1.vx -= nx * impulse;
-                      data1.vy -= ny * impulse;
-                      data2.vx += nx * impulse;
-                      data2.vy += ny * impulse;
+                      // Elastic bounce with a small extra kick for a lively feel
+                      const restitution = 1.0;
+                      const j = -(1 + restitution) * vAlong / totalMass;
+                      data1.vx -= nx * j * m2;
+                      data1.vy -= ny * j * m2;
+                      data2.vx += nx * j * m1;
+                      data2.vy += ny * j * m1;
+                    } else {
+                      // Static overlap (resting contact): nudge apart so they don't stick
+                      const nudge = 0.15;
+                      data1.vx -= nx * nudge;
+                      data1.vy -= ny * nudge;
+                      data2.vx += nx * nudge;
+                      data2.vy += ny * nudge;
                     }
                   }
                 });
