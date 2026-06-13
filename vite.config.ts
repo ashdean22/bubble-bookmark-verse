@@ -25,6 +25,13 @@ export default defineConfig(({ mode }) => ({
     assetsInlineLimit: 4096,
     // Raise chunk-size warning threshold (recharts is legitimately large)
     chunkSizeWarningLimit: 600,
+    // Faster minify; CSS split per chunk for better caching
+    minify: "esbuild",
+    cssCodeSplit: true,
+    cssMinify: "esbuild",
+    sourcemap: false,
+    reportCompressedSize: false,
+    modulePreload: { polyfill: true },
     rollupOptions: {
       output: {
         // Manual chunk splitting: keeps vendor code in separate long-cached files
