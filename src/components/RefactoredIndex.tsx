@@ -45,11 +45,27 @@ const normalizeBookmarks = (value: unknown): Bookmark[] => {
   return deduplicateBookmarks(validateStoredBookmarks(value) as Bookmark[]);
 };
 
+const safeStorageGet = (key: string): string | null => {
+  try {
+    return typeof window !== 'undefined' ? window.localStorage.getItem(key) : null;
+  } catch {
+    return null;
+  }
+};
+
+const safeStorageRemove = (key: string) => {
+  try {
+    if (typeof window !== 'undefined') window.localStorage.removeItem(key);
+  } catch {
+    // Storage can be unavailable in restricted preview/private contexts.
+  }
+};
+
 const readStoredBookmarks = (): Bookmark[] => {
   try {
-    return normalizeBookmarks(JSON.parse(localStorage.getItem('bubbleBookmarks') || '[]'));
+    return normalizeBookmarks(JSON.parse(safeStorageGet('bubbleBookmarks') || '[]'));
   } catch {
-    localStorage.removeItem('bubbleBookmarks');
+    safeStorageRemove('bubbleBookmarks');
     return [];
   }
 };
@@ -104,7 +120,7 @@ export const RefactoredIndex = () => {
   // Initialize available bubbles based on existing bookmarks and subscription
   const initializeBubbles = () => {
     const existingBookmarks = readStoredBookmarks();
-    const subscription = localStorage.getItem('currentSubscription');
+    const subscription = safeStorageGet('currentSubscription');
     if (subscription && subscription !== 'null') return 999;
     const usedBubbles = existingBookmarks.length;
     return Math.max(0, 3 - usedBubbles);
