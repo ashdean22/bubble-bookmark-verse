@@ -77,6 +77,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
+    <!-- Warm up the app entry so JS starts downloading in parallel with HTML parsing -->
+    <link rel="modulepreload" href="/src/main.tsx" as="script" crossorigin />
+
     <!-- DNS prefetch for runtime favicon fetches -->
     <link rel="dns-prefetch" href="//www.google.com" />
     <link rel="dns-prefetch" href="//s2.googleusercontent.com" />
@@ -88,6 +91,7 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap"
       rel="stylesheet"
       media="print"
+      fetchpriority="low"
       onload="this.media='all'"
     />
     <noscript>
@@ -123,6 +127,6 @@
 
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <script type="module" src="/src/main.tsx" fetchpriority="high"></script>
   </body>
 </html>
