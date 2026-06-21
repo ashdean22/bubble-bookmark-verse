@@ -10,13 +10,13 @@ import { useToast } from '@/hooks/use-toast';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { Bookmark } from '@/pages/Index';
-import { ParsedBookmark } from '@/utils/bookmarkParser';
-import { validateStoredBookmarks, sanitizeText, sanitizeUrl, safeFavicon, checkRateLimit, isSafeUrl } from '@/utils/security';
+
+import { validateStoredBookmarks, sanitizeText, sanitizeUrl, safeFavicon, checkRateLimit } from '@/utils/security';
 
 // ── Lazy-load ALL heavy modals & analytics so they never block first paint ──
 const AddBookmarkModal    = lazy(() => import('@/components/AddBookmarkModal').then(m => ({ default: m.AddBookmarkModal })));
 const EditBubbleModal     = lazy(() => import('@/components/EditBubbleModal').then(m => ({ default: m.EditBubbleModal })));
-const ImportBookmarksModal = lazy(() => import('@/components/ImportBookmarksModal').then(m => ({ default: m.ImportBookmarksModal })));
+
 const PricingModal        = lazy(() => import('@/components/PricingModal').then(m => ({ default: m.PricingModal })));
 const UpgradePromptModal  = lazy(() => import('@/components/UpgradePromptModal').then(m => ({ default: m.UpgradePromptModal })));
 // AnalyticsInsights is the heaviest — recharts 223 KB — always lazy
@@ -130,7 +130,7 @@ export const RefactoredIndex = () => {
   
   // Modal states — all false on first paint (nothing heavy loaded)
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showImportModal, setShowImportModal] = useState(false);
+  
   const [showPricingModal, setShowPricingModal] = useState(false);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const [upgradePromptDismissed, setUpgradePromptDismissed] = useLocalStorage('upgradePromptDismissed', false);
@@ -315,51 +315,6 @@ export const RefactoredIndex = () => {
     toast({ title: "Bubble updated! ✏️", description: "Your bubble has been saved." });
   };
 
-  const importBookmarks = (parsedBookmarks: ParsedBookmark[]) => {
-    const colors = [
-      'rgb(147, 51, 234)', 'rgb(59, 130, 246)', 'rgb(16, 185, 129)',
-      'rgb(245, 158, 11)', 'rgb(239, 68, 68)', 'rgb(236, 72, 153)',
-    ];
-
-    const existingDomains = new Set(bookmarks.map(b => getHostname(b.url)));
-    
-    const uniqueParsed: ParsedBookmark[] = [];
-    const seenDomains = new Set<string>();
-    
-    parsedBookmarks.forEach(bookmark => {
-      if (!isSafeUrl(bookmark.url)) return;
-      const domain = getHostname(bookmark.url);
-      if (!existingDomains.has(domain) && !seenDomains.has(domain)) {
-        uniqueParsed.push({
-          url: bookmark.url,
-          title: sanitizeText(bookmark.title, 200),
-          favicon: safeFavicon(bookmark.url),
-        });
-        seenDomains.add(domain);
-      }
-    });
-
-    const newBookmarks: Bookmark[] = uniqueParsed.map((bookmark, index) => ({
-      ...bookmark,
-      id: `${Date.now()}-${index}`,
-      x: Math.random() * (window.innerWidth - 100),
-      y: Math.random() * (window.innerHeight - 100),
-      size: 60,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      accessCount: 0,
-    }));
-
-    const allBookmarks = [...bookmarks, ...newBookmarks];
-    saveBookmarks(allBookmarks);
-    setAvailableBubbles(prev => prev - newBookmarks.length);
-
-    const skipped = parsedBookmarks.length - newBookmarks.length;
-    const description = skipped > 0 
-      ? `${newBookmarks.length} bubbles imported, ${skipped} duplicates/unsafe skipped!`
-      : "Your bookmarks are now floating in the bubble universe!";
-
-    toast({ title: `Imported ${newBookmarks.length} bubbles! 🎉`, description });
-  };
 
   const onPurchaseComplete = (bubbleCount: number, tier?: string) => {
     setAvailableBubbles(availableBubbles + bubbleCount);
@@ -384,7 +339,6 @@ export const RefactoredIndex = () => {
           onCreateBubble={() => setShowAddModal(true)}
           onBuyBubbles={() => setShowPricingModal(true)}
           onShowAnalytics={() => setShowAnalytics(prev => !prev)}
-          onImportBookmarks={() => setShowImportModal(true)}
           showAnalytics={showAnalytics}
         />
 
@@ -427,15 +381,6 @@ export const RefactoredIndex = () => {
             />
           )}
 
-          {showImportModal && (
-            <ImportBookmarksModal
-              isOpen={showImportModal}
-              onClose={() => setShowImportModal(false)}
-              onImport={importBookmarks}
-              availableBubbles={availableBubbles}
-              isPremium={currentSubscription === 'premium'}
-            />
-          )}
 
           {showPricingModal && (
             <PricingModal
