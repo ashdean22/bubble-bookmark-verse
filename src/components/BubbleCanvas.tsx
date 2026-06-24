@@ -243,10 +243,10 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
           d.vx += wobbleX + curlX;
           d.vy += wobbleY + curlY;
           
-          // Velocity smoothing — heavier blend with previous frame for a
-          // floatier, momentum-rich feel.
-          const smoothVx = d.vx * 0.6 + d.prevVx * 0.4;
-          const smoothVy = d.vy * 0.6 + d.prevVy * 0.4;
+          // Velocity smoothing — light blend so collision impulses stay
+          // visible (natural bounce) instead of being averaged away.
+          const smoothVx = d.vx * 0.85 + d.prevVx * 0.15;
+          const smoothVy = d.vy * 0.85 + d.prevVy * 0.15;
           d.prevVx = d.vx;
           d.prevVy = d.vy;
           d.vx = smoothVx;
@@ -267,11 +267,12 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
           d.x = Math.max(radius, Math.min(canvasWidth - radius, finiteOr(d.x, radius)));
           d.y = Math.max(headerHeight + radius, Math.min(canvasHeight - radius, finiteOr(d.y, headerHeight + radius)));
 
-          // Gentle damping keeps drift slow and natural
-          d.vx *= 0.99;
-          d.vy *= 0.99;
+          // Light damping → bounces decay naturally instead of dying instantly,
+          // giving the cryptobubbles-style springy settle.
+          d.vx *= 0.992;
+          d.vy *= 0.992;
 
-          const maxV = 0.7;
+          const maxV = 2.2;
           const speed = Math.sqrt(d.vx * d.vx + d.vy * d.vy);
           if (speed > maxV) {
             const scale = maxV / speed;
@@ -279,9 +280,9 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
             d.vy *= scale;
           }
           
-          // Smooth display position — lower lerp = silkier rendered motion
-          d.displayX += (d.x - d.displayX) * 0.12;
-          d.displayY += (d.y - d.displayY) * 0.12;
+          // Snappier display lerp so bounces read crisply on screen.
+          d.displayX += (d.x - d.displayX) * 0.35;
+          d.displayY += (d.y - d.displayY) * 0.35;
         });
 
         frameCountRef.current += 1;
@@ -352,8 +353,9 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
                     const vRelY = data2.vy - data1.vy;
                     const vAlong = vRelX * nx + vRelY * ny;
                     if (vAlong < 0) {
-                      // Elastic bounce with a small extra kick for a lively feel
-                      const restitution = 1.0;
+                      // Slightly damped elastic bounce — feels springy and
+                      // natural rather than perfectly rigid.
+                      const restitution = 0.88;
                       const j = -(1 + restitution) * vAlong / totalMass;
                       data1.vx -= nx * j * m2;
                       data1.vy -= ny * j * m2;
@@ -361,7 +363,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
                       data2.vy += ny * j * m1;
                     } else {
                       // Static overlap (resting contact): nudge apart so they don't stick
-                      const nudge = 0.15;
+                      const nudge = 0.08;
                       data1.vx -= nx * nudge;
                       data1.vy -= ny * nudge;
                       data2.vx += nx * nudge;
