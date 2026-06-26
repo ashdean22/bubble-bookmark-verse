@@ -2,22 +2,15 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Check, Sparkles, Infinity as InfinityIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
-
-type Plan = 'lifetime' | 'annual';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface PricingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelectPlan: (plan: Plan) => void;
-  isPro?: boolean;
 }
-
-const PRICING: Record<Plan, { amount: number; cadence: string; note: string }> = {
-  lifetime: { amount: 29, cadence: 'once', note: 'Pay once. Yours forever.' },
-  annual: { amount: 12, cadence: '/ year', note: 'Billed yearly. Cancel anytime.' },
-};
 
 const freeFeatures = [
   'Unlimited favorites',
@@ -34,18 +27,38 @@ const proFeatures = [
   'Heat insights on your bubbles',
 ];
 
-export const PricingModal = ({ isOpen, onClose, onSelectPlan, isPro = false }: PricingModalProps) => {
-  const [plan, setPlan] = useState<Plan>('lifetime');
-  const price = PRICING[plan];
+export const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
+  const { toast } = useToast();
+  const [showEmail, setShowEmail] = useState(false);
+  const [email, setEmail] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [joined, setJoined] = useState(false);
+
+  const joinWaitlist = async () => {
+    const clean = email.trim().toLowerCase();
+    if (!clean || !clean.includes('@')) {
+      toast({ title: 'Enter a valid email', variant: 'destructive' });
+      return;
+    }
+    setSubmitting(true);
+    const { error } = await supabase.from('waitlist').insert({ email: clean, plan_interest: 'lifetime' });
+    setSubmitting(false);
+    if (error && error.code !== '23505') {
+      toast({ title: 'Something went wrong', description: error.message, variant: 'destructive' });
+      return;
+    }
+    setJoined(true);
+    toast({ title: 'You are on the list', description: 'We will email you when Pro launches.' });
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="sm:max-w-3xl p-0 overflow-hidden bg-background border-border">
         <div className="p-6 sm:p-8">
           <DialogHeader className="text-center space-y-2 mb-6">
-            <DialogTitle className="text-2xl font-heading">Float above the limits</DialogTitle>
+            <DialogTitle className="text-2xl font-heading">Take your favorites everywhere</DialogTitle>
             <DialogDescription className="text-muted-foreground">
-              Keep your favorites free on this device, or go Pro to carry them everywhere.
+              BubbleMark is free on this device. Pro will sync your bubbles across all of them.
             </DialogDescription>
           </DialogHeader>
 
@@ -55,10 +68,10 @@ export const PricingModal = ({ isOpen, onClose, onSelectPlan, isPro = false }: P
                 <h3 className="font-heading text-lg">Free</h3>
                 <InfinityIcon className="w-5 h-5 text-muted-foreground" />
               </div>
-              <div className="mt-4 mb-6">
+              <div className="mt-4 mb-1">
                 <span className="text-3xl font-bold">$0</span>
-                <span className="text-muted-foreground text-sm"> forever</span>
               </div>
+              <p className="text-sm text-muted-foreground mb-5">Free for one device.</p>
               <ul className="space-y-3 flex-1">
                 {freeFeatures.map((f) => (
                   <li key={f} className="flex items-start gap-2 text-sm">
@@ -74,35 +87,18 @@ export const PricingModal = ({ isOpen, onClose, onSelectPlan, isPro = false }: P
 
             <div className="relative rounded-2xl border border-primary/40 bg-card p-6 flex flex-col overflow-hidden">
               <div aria-hidden className="pointer-events-none absolute -top-10 -right-10 w-40 h-40 rounded-full bg-gradient-to-br from-purple-500/30 to-blue-500/20 blur-2xl motion-safe:animate-pulse" />
-              <div aria-hidden className="pointer-events-none absolute top-8 right-6 w-10 h-10 rounded-full bg-gradient-to-br from-pink-500/30 to-purple-500/20 blur-md" />
 
               <div className="relative flex items-center justify-between">
                 <h3 className="font-heading text-lg flex items-center gap-2">
                   Pro <Sparkles className="w-4 h-4 text-primary" />
                 </h3>
-                <Badge className="bg-primary/15 text-primary border-0">Best value</Badge>
-              </div>
-
-              <div className="relative mt-4 inline-flex rounded-full border border-border p-1 bg-background/60 w-full">
-                {(['lifetime', 'annual'] as Plan[]).map((p) => (
-                  <button
-                    key={p}
-                    onClick={() => setPlan(p)}
-                    className={cn(
-                      'flex-1 rounded-full px-3 py-1.5 text-sm capitalize transition-colors',
-                      plan === p ? 'bg-primary text-primary-foreground' : 'text-muted-foreground',
-                    )}
-                  >
-                    {p}
-                  </button>
-                ))}
+                <Badge className="bg-primary/15 text-primary border-0">Coming soon</Badge>
               </div>
 
               <div className="relative mt-4 mb-1">
-                <span className="text-3xl font-bold">${price.amount}</span>
-                <span className="text-muted-foreground text-sm"> {price.cadence}</span>
+                <span className="text-3xl font-bold">$29</span>
               </div>
-              <p className="relative text-xs text-muted-foreground mb-5">{price.note}</p>
+              <p className="relative text-sm text-muted-foreground mb-5">One payment. Yours for life.</p>
 
               <ul className="relative space-y-3 flex-1">
                 {proFeatures.map((f) => (
@@ -113,15 +109,27 @@ export const PricingModal = ({ isOpen, onClose, onSelectPlan, isPro = false }: P
                 ))}
               </ul>
 
-              <Button className="relative mt-6 w-full" disabled={isPro} onClick={() => onSelectPlan(plan)}>
-                {isPro ? 'You are Pro' : plan === 'lifetime' ? 'Get Pro, one time' : 'Get Pro, yearly'}
-              </Button>
+              {joined ? (
+                <p className="relative mt-6 text-sm text-center text-primary">You are on the list.</p>
+              ) : showEmail ? (
+                <div className="relative mt-6 space-y-2">
+                  <Input
+                    type="email"
+                    placeholder="you@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                  <Button className="w-full" disabled={submitting} onClick={joinWaitlist}>
+                    Join the waitlist
+                  </Button>
+                </div>
+              ) : (
+                <Button className="relative mt-6 w-full" onClick={() => setShowEmail(true)}>
+                  Notify me when Pro launches
+                </Button>
+              )}
             </div>
           </div>
-
-          <p className="text-center text-xs text-muted-foreground mt-6">
-            Secure checkout by Paddle. No charge until you confirm.
-          </p>
         </div>
       </DialogContent>
     </Dialog>
