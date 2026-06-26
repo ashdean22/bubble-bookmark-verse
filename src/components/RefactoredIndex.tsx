@@ -386,7 +386,11 @@ export const RefactoredIndex = () => {
             <PricingModal
               isOpen={showPricingModal}
               onClose={() => setShowPricingModal(false)}
-              onPurchaseComplete={onPurchaseComplete}
+              onSelectPlan={(plan) => {
+                setShowPricingModal(false);
+                toast({ title: 'Almost there', description: 'Pro checkout turns on in the next step.' });
+              }}
+              isPro={false}
             />
           )}
 
