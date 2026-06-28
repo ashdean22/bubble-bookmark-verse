@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
+import { DiagnosticsButton } from "@/components/DiagnosticsButton";
 
 // Keep the home route eager so the app never shows a blank screen while booting.
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -41,6 +42,7 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
+          <DiagnosticsButton />
         </BrowserRouter>
       </ErrorBoundary>
     </TooltipProvider>
