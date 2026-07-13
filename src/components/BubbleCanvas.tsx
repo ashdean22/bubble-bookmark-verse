@@ -443,7 +443,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
       setClickedBubble(bookmark.id);
       onBubbleClick(bookmark.id);
       setTimeout(() => setClickedBubble(null), 150);
-      window.open(bookmark.url, '_blank');
+      window.open(bookmark.url, '_blank', 'noopener,noreferrer');
     }
   };
 
