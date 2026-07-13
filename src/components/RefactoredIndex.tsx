@@ -118,13 +118,7 @@ export const RefactoredIndex = () => {
   }, []);
   
   // Initialize available bubbles based on existing bookmarks and subscription
-  const initializeBubbles = () => {
-    const existingBookmarks = readStoredBookmarks();
-    const subscription = safeStorageGet('currentSubscription');
-    if (subscription && subscription !== 'null') return 999;
-    const usedBubbles = existingBookmarks.length;
-    return Math.max(0, 3 - usedBubbles);
-  };
+  const initializeBubbles = () => 999;
   
   const [availableBubbles, setAvailableBubbles] = useLocalStorage('availableBubbles', initializeBubbles(), normalizeBubbleCount);
   
@@ -173,14 +167,7 @@ export const RefactoredIndex = () => {
   });
 
   // Calculate max bubbles based on subscription
-  const getMaxBubbles = () => {
-    switch (currentSubscription) {
-      case 'premium': return 999;
-      case 'popular': return 75;
-      case 'basic': return 50;
-      default: return 3;
-    }
-  };
+  const getMaxBubbles = () => 999;
 
   const maxBubbles = getMaxBubbles();
   const usedBubbles = bookmarks.length;
@@ -214,16 +201,6 @@ export const RefactoredIndex = () => {
   };
 
   const addBookmark = (bookmark: Omit<Bookmark, 'id' | 'x' | 'y' | 'size' | 'color' | 'accessCount'>) => {
-    if (availableBubbles <= 0) {
-      toast({
-        title: "Free bubble limit reached! 🫧",
-        description: "You've used all 3 free bubbles. Upgrade to create unlimited bubbles!",
-        variant: "destructive",
-      });
-      setShowPricingModal(true);
-      return;
-    }
-
     if (!checkRateLimit('add_bookmark_main', 20, 60_000)) {
       toast({ title: "Too many requests", description: "Please slow down.", variant: "destructive" });
       return;
