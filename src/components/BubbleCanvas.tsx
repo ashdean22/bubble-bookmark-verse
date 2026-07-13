@@ -583,17 +583,23 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
             <div
               className="bubble-shell w-full h-full rounded-full flex flex-col items-center justify-center relative overflow-hidden"
               style={{
-                background: `radial-gradient(ellipse 60% 40% at 30% 25%, ${heatStyles.highlight}, transparent 50%),
-                             radial-gradient(ellipse 80% 80% at 50% 50%, ${heatStyles.background}, transparent 90%),
-                             radial-gradient(ellipse 100% 100% at 50% 60%, ${heatStyles.innerShadow}, transparent 70%)`,
-                border: `1.5px solid ${heatStyles.border}`,
-                boxShadow: `
-                  0 8px 32px hsla(${heatStyles.hue}, ${heatStyles.saturation}%, 30%, 0.25),
-                  0 0 20px ${heatStyles.glow},
-                  inset 0 -8px 20px ${heatStyles.innerShadow},
-                  inset 0 4px 12px hsla(0, 0%, 100%, 0.15)
+                // Soap-bubble glass: mostly transparent film with faint prismatic tint,
+                // heat-map hue kept as a very subtle wash so frequency is still legible.
+                background: `
+                  radial-gradient(ellipse 55% 40% at 30% 22%, hsla(0,0%,100%,0.55), transparent 55%),
+                  radial-gradient(circle at 70% 78%, hsla(${heatStyles.hue}, 90%, 75%, 0.18), transparent 60%),
+                  radial-gradient(circle at 50% 50%, hsla(${heatStyles.hue}, ${heatStyles.saturation}%, 70%, 0.08), hsla(0,0%,100%,0.04) 70%, transparent 100%)
                 `,
-                backdropFilter: 'blur(2px)',
+                border: `1px solid hsla(0, 0%, 100%, 0.35)`,
+                boxShadow: `
+                  0 10px 28px hsla(${heatStyles.hue}, 40%, 20%, 0.28),
+                  0 0 18px ${heatStyles.glow},
+                  inset 0 -14px 28px hsla(${heatStyles.hue}, 60%, 40%, 0.18),
+                  inset 0 6px 18px hsla(0, 0%, 100%, 0.35),
+                  inset 0 0 0 1px hsla(0, 0%, 100%, 0.12)
+                `,
+                backdropFilter: 'blur(3px) saturate(1.3)',
+                WebkitBackdropFilter: 'blur(3px) saturate(1.3)',
               }}
               onClick={() => handleBubbleClick(bookmark)}
             >
@@ -601,58 +607,76 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
               <div
                 className="absolute inset-0 rounded-full pointer-events-none"
                 style={{
-                  padding: '1.5px',
+                  padding: '2px',
                   background: `conic-gradient(from 0deg,
-                    hsla(0,   90%, 70%, 0.55),
-                    hsla(45,  90%, 70%, 0.55),
-                    hsla(120, 80%, 70%, 0.55),
-                    hsla(190, 90%, 70%, 0.55),
-                    hsla(260, 85%, 75%, 0.55),
-                    hsla(320, 90%, 75%, 0.55),
-                    hsla(0,   90%, 70%, 0.55))`,
+                    hsla(0,   95%, 75%, 0.9),
+                    hsla(45,  95%, 75%, 0.9),
+                    hsla(120, 85%, 75%, 0.9),
+                    hsla(190, 95%, 75%, 0.9),
+                    hsla(260, 90%, 80%, 0.9),
+                    hsla(320, 95%, 80%, 0.9),
+                    hsla(0,   95%, 75%, 0.9))`,
                   WebkitMask:
                     'linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)',
                   WebkitMaskComposite: 'xor',
                   maskComposite: 'exclude',
                   animation: `iridescent-spin ${14 + (parseInt(bookmark.id.slice(-2), 36) % 10)}s linear infinite`,
                   mixBlendMode: 'screen',
-                  opacity: 0.7,
+                  opacity: 1,
+                }}
+              />
+              {/* Broad prismatic sheen sweeping across the film */}
+              <div
+                className="absolute inset-0 rounded-full pointer-events-none"
+                style={{
+                  background: `conic-gradient(from 210deg at 40% 40%,
+                    hsla(300, 90%, 80%, 0.25),
+                    hsla(200, 90%, 80%, 0.25),
+                    hsla(150, 90%, 80%, 0.2),
+                    hsla(50,  90%, 80%, 0.25),
+                    hsla(340, 90%, 80%, 0.25),
+                    hsla(300, 90%, 80%, 0.25))`,
+                  mixBlendMode: 'screen',
+                  opacity: 0.55,
                 }}
               />
               {/* Light reflection highlight */}
               <div 
                 className="absolute rounded-full pointer-events-none"
                 style={{
-                  width: '40%',
-                  height: '25%',
-                  top: '12%',
-                  left: '18%',
-                  background: 'linear-gradient(180deg, hsla(0, 0%, 100%, 0.6) 0%, hsla(0, 0%, 100%, 0) 100%)',
+                  width: '45%',
+                  height: '28%',
+                  top: '10%',
+                  left: '16%',
+                  background: 'linear-gradient(180deg, hsla(0, 0%, 100%, 0.9) 0%, hsla(0, 0%, 100%, 0) 100%)',
                   borderRadius: '50%',
-                  transform: 'rotate(-15deg)',
+                  transform: 'rotate(-18deg)',
+                  filter: 'blur(1px)',
                 }}
               />
               <div 
                 className="absolute rounded-full pointer-events-none"
                 style={{
-                  width: '15%',
+                  width: '14%',
                   height: '10%',
-                  top: '22%',
-                  left: '55%',
-                  background: 'hsla(0, 0%, 100%, 0.4)',
+                  top: '68%',
+                  left: '58%',
+                  background: 'hsla(0, 0%, 100%, 0.75)',
                   borderRadius: '50%',
+                  filter: 'blur(0.5px)',
                 }}
               />
               {/* White contrast disc behind logo for legibility against iridescent overlays */}
               <div
                 className="absolute rounded-full pointer-events-none z-10 flex items-center justify-center"
                 style={{
-                  width: '48%',
-                  height: '48%',
-                  top: '26%',
-                  left: '26%',
-                  background: 'radial-gradient(circle at 50% 45%, hsla(0,0%,100%,0.96) 0%, hsla(0,0%,100%,0.88) 70%, hsla(0,0%,100%,0.72) 100%)',
-                  boxShadow: '0 2px 6px hsla(0,0%,0%,0.25), inset 0 0 0 1px hsla(0,0%,100%,0.6)',
+                  width: '46%',
+                  height: '46%',
+                  top: '27%',
+                  left: '27%',
+                  background: 'radial-gradient(circle at 50% 45%, hsla(0,0%,100%,0.85) 0%, hsla(0,0%,100%,0.65) 70%, hsla(0,0%,100%,0.35) 100%)',
+                  boxShadow: '0 2px 6px hsla(0,0%,0%,0.2), inset 0 0 0 1px hsla(0,0%,100%,0.45)',
+                  backdropFilter: 'blur(2px)',
                 }}
               >
                 <img
