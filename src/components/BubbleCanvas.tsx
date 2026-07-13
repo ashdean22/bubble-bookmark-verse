@@ -586,20 +586,20 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
                 // Soap-bubble glass: mostly transparent film with faint prismatic tint,
                 // heat-map hue kept as a very subtle wash so frequency is still legible.
                 background: `
-                  radial-gradient(ellipse 55% 40% at 30% 22%, hsla(0,0%,100%,0.55), transparent 55%),
-                  radial-gradient(circle at 70% 78%, hsla(${heatStyles.hue}, 90%, 75%, 0.18), transparent 60%),
-                  radial-gradient(circle at 50% 50%, hsla(${heatStyles.hue}, ${heatStyles.saturation}%, 70%, 0.08), hsla(0,0%,100%,0.04) 70%, transparent 100%)
-                `,
-                border: `1px solid hsla(0, 0%, 100%, 0.35)`,
-                boxShadow: `
-                  0 10px 28px hsla(${heatStyles.hue}, 40%, 20%, 0.28),
-                  0 0 18px ${heatStyles.glow},
-                  inset 0 -14px 28px hsla(${heatStyles.hue}, 60%, 40%, 0.18),
-                  inset 0 6px 18px hsla(0, 0%, 100%, 0.35),
-                  inset 0 0 0 1px hsla(0, 0%, 100%, 0.12)
-                `,
-                backdropFilter: 'blur(3px) saturate(1.3)',
-                WebkitBackdropFilter: 'blur(3px) saturate(1.3)',
+                   radial-gradient(ellipse 50% 38% at 32% 22%, hsla(0,0%,100%,0.45), transparent 60%),
+                   radial-gradient(circle at 68% 80%, hsla(${heatStyles.hue}, 95%, 45%, 0.55), transparent 65%),
+                   radial-gradient(circle at 50% 55%, hsla(${heatStyles.hue}, ${heatStyles.saturation}%, 50%, 0.45), hsla(${heatStyles.hue}, ${heatStyles.saturation}%, 35%, 0.35) 70%, hsla(${heatStyles.hue}, 70%, 25%, 0.4) 100%)
+                 `,
+                 border: `1px solid hsla(${heatStyles.hue}, 60%, 85%, 0.4)`,
+                 boxShadow: `
+                   0 14px 34px hsla(${heatStyles.hue}, 60%, 12%, 0.5),
+                   0 0 24px ${heatStyles.glow},
+                   inset 0 -18px 34px hsla(${heatStyles.hue}, 80%, 25%, 0.55),
+                   inset 0 8px 20px hsla(0, 0%, 100%, 0.28),
+                   inset 0 0 0 1px hsla(0, 0%, 100%, 0.14)
+                 `,
+                 backdropFilter: 'blur(2px) saturate(1.5)',
+                 WebkitBackdropFilter: 'blur(2px) saturate(1.5)',
               }}
               onClick={() => handleBubbleClick(bookmark)}
             >
@@ -620,9 +620,9 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
                     'linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)',
                   WebkitMaskComposite: 'xor',
                   maskComposite: 'exclude',
-                  animation: `iridescent-spin ${14 + (parseInt(bookmark.id.slice(-2), 36) % 10)}s linear infinite`,
-                  mixBlendMode: 'screen',
-                  opacity: 1,
+                   animation: `iridescent-spin ${14 + (parseInt(bookmark.id.slice(-2), 36) % 10)}s linear infinite`,
+                   mixBlendMode: 'overlay',
+                   opacity: 0.7,
                 }}
               />
               {/* Broad prismatic sheen sweeping across the film */}
@@ -636,8 +636,8 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
                     hsla(50,  90%, 80%, 0.25),
                     hsla(340, 90%, 80%, 0.25),
                     hsla(300, 90%, 80%, 0.25))`,
-                  mixBlendMode: 'screen',
-                  opacity: 0.55,
+                   mixBlendMode: 'overlay',
+                   opacity: 0.35,
                 }}
               />
               {/* Light reflection highlight */}
