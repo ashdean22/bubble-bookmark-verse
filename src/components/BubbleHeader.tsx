@@ -63,7 +63,7 @@ export const BubbleHeader = ({
     <header 
       className="relative z-20 p-4 md:p-6"
       role="banner"
-      aria-label="BubbleLink navigation"
+      aria-label="BubbleMark navigation"
     >
       <div className="max-w-7xl mx-auto">
         {/* Top row with enhanced logo and bubble count */}

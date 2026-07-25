@@ -12,7 +12,7 @@ export const Footer = () => {
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
               <Circle className="w-6 h-6 text-purple-400" />
-              <span className="text-white font-brand font-semibold text-lg">BubbleLink</span>
+              <span className="text-white font-brand font-semibold text-lg">BubbleMark</span>
             </div>
             <p className="text-purple-300 text-sm">
               Transform your bookmarks into beautiful floating bubbles. 
@@ -25,7 +25,7 @@ export const Footer = () => {
         {/* Bottom */}
         <div className="mt-8 pt-8 border-t border-purple-500/20 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
           <div className="text-purple-300 text-sm">
-            © {new Date().getFullYear()} BubbleLink. All rights reserved.
+            © {new Date().getFullYear()} BubbleMark. All rights reserved.
           </div>
           <div className="flex items-center space-x-1 text-purple-300 text-sm">
             <span>Made with</span>
