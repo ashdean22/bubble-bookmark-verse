@@ -18,7 +18,7 @@ export const WelcomeMessage = ({ onCreateBubble }: WelcomeMessageProps) => {
         </div>
         
         <h2 className="text-3xl font-brand font-bold text-foreground mb-4">
-          Welcome to BubbleLink
+          Welcome to BubbleMark
         </h2>
         
         <p className="text-white/80 mb-6 font-body">

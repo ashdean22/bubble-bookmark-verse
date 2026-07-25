@@ -17,7 +17,7 @@ export const BubbleHeaderMinimal = ({
     <header 
       className="relative z-20 p-2 md:p-3"
       role="banner"
-      aria-label="BubbleLink navigation"
+      aria-label="BubbleMark navigation"
     >
       <div className="max-w-7xl mx-auto">
         <div className="flex items-start justify-between">
