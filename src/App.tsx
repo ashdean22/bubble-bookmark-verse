@@ -2,14 +2,16 @@ import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
-import { DiagnosticsButton } from "@/components/DiagnosticsButton";
 
 // Keep the home route eager so the app never shows a blank screen while booting.
 const NotFound = lazy(() => import("./pages/NotFound"));
+// Diagnostics is a debug affordance — never block first paint on it.
+const DiagnosticsButton = lazy(() =>
+  import("@/components/DiagnosticsButton").then((m) => ({ default: m.DiagnosticsButton })),
+);
 
 const RouteFallback = () => (
   <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
@@ -17,19 +19,8 @@ const RouteFallback = () => (
   </div>
 );
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      // Don't refetch on window focus – this is a local-storage app
-      refetchOnWindowFocus: false,
-      staleTime: Infinity,
-    },
-  },
-});
-
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
+  <TooltipProvider>
       <Toaster />
       <Sonner />
       <ErrorBoundary>
@@ -42,11 +33,12 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
-          <DiagnosticsButton />
+          <Suspense fallback={null}>
+            <DiagnosticsButton />
+          </Suspense>
         </BrowserRouter>
       </ErrorBoundary>
-    </TooltipProvider>
-  </QueryClientProvider>
+  </TooltipProvider>
 );
 
 export default App;

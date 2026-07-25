@@ -1,22 +1,16 @@
 /**
  * security.ts — BubbleLink Security Utilities
  *
- * Centralises all input sanitization, URL validation, schema definitions,
- * and rate-limiting helpers so every entry point uses the same rules.
+ * Dependency-free (no DOMPurify / zod) so it stays off the critical
+ * load path. Centralises input sanitization, URL validation, lightweight
+ * schema validation and rate limiting.
  */
-
-import DOMPurify from 'dompurify';
-import { z } from 'zod';
 
 // ─────────────────────────────────────────────
 // 1. ALLOWED URL PROTOCOLS
 // ─────────────────────────────────────────────
 const ALLOWED_PROTOCOLS = ['https:', 'http:'];
 
-/**
- * Returns true only for safe http/https URLs.
- * Blocks javascript:, data:, vbscript:, blob:, file:, etc.
- */
 export const isSafeUrl = (raw: string): boolean => {
   try {
     const normalized = raw.startsWith('http') ? raw : `https://${raw}`;
@@ -27,10 +21,6 @@ export const isSafeUrl = (raw: string): boolean => {
   }
 };
 
-/**
- * Normalise + sanitize a URL string.
- * Throws if the protocol is not http/https.
- */
 export const sanitizeUrl = (raw: string): string => {
   const trimmed = raw.trim().slice(0, 2048); // hard cap
   const normalized = trimmed.startsWith('http') ? trimmed : `https://${trimmed}`;
@@ -41,76 +31,69 @@ export const sanitizeUrl = (raw: string): string => {
 };
 
 // ─────────────────────────────────────────────
-// 2. TEXT SANITIZATION
+// 2. TEXT SANITIZATION (plain text only — no HTML is ever rendered)
 // ─────────────────────────────────────────────
-/**
- * Strip ALL HTML/script tags from a plain-text string.
- * Used for title / label fields.
- */
 export const sanitizeText = (raw: string, maxLength = 200): string => {
-  const stripped = DOMPurify.sanitize(raw, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
+  const stripped = String(raw ?? '')
+    .replace(/<[^>]*>/g, '')       // drop any tag-like markup
+    .replace(/[<>]/g, '')          // drop stray angle brackets
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\u0000-\u001F\u007F]/g, ''); // drop control characters
   return stripped.trim().slice(0, maxLength);
 };
 
-/**
- * Sanitize HTML content (bookmark import files) — keep structure,
- * strip scripts/events.
- */
-export const sanitizeHtml = (html: string): string => {
-  return DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: ['html', 'head', 'body', 'dl', 'dt', 'dd', 'p', 'h1', 'h3', 'a', 'hr'],
-    ALLOWED_ATTR: ['href', 'add_date', 'last_modified', 'icon'],
-    FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'style'],
-  });
+// ─────────────────────────────────────────────
+// 3. INPUT VALIDATION (zod-shaped API, zero dependencies)
+// ─────────────────────────────────────────────
+export interface BookmarkInput {
+  url: string;
+  title: string;
+}
+
+type ParseResult =
+  | { success: true; data: BookmarkInput; error?: undefined }
+  | { success: false; data?: undefined; error: { errors: { message: string }[] } };
+
+export const BookmarkInputSchema = {
+  safeParse(value: unknown): ParseResult {
+    const input = (value ?? {}) as { url?: unknown; title?: unknown };
+    const url = typeof input.url === 'string' ? input.url.trim() : '';
+    const title = typeof input.title === 'string' ? input.title.trim() : '';
+
+    const fail = (message: string): ParseResult => ({ success: false, error: { errors: [{ message }] } });
+
+    if (!url) return fail('URL is required');
+    if (url.length > 2048) return fail('URL is too long');
+    if (!isSafeUrl(url)) return fail('Only http:// and https:// URLs are allowed');
+    if (title.length > 200) return fail('Title must be under 200 characters');
+
+    return { success: true, data: { url, title } };
+  },
 };
 
 // ─────────────────────────────────────────────
-// 3. ZOD SCHEMAS
+// 4. LOCALSTORAGE DATA VALIDATION
 // ─────────────────────────────────────────────
-export const BookmarkInputSchema = z.object({
-  url: z
-    .string()
-    .trim()
-    .min(1, 'URL is required')
-    .max(2048, 'URL is too long')
-    .refine(isSafeUrl, 'Only http:// and https:// URLs are allowed'),
-  title: z
-    .string()
-    .trim()
-    .max(200, 'Title must be under 200 characters')
-    .optional()
-    .default(''),
-});
+const isNumber = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+const isString = (v: unknown): v is string => typeof v === 'string';
 
-export type BookmarkInput = z.infer<typeof BookmarkInputSchema>;
-
-// ─────────────────────────────────────────────
-// 4. LOCALHOST DATA VALIDATION
-// ─────────────────────────────────────────────
-const StoredBookmarkSchema = z.object({
-  id: z.string(),
-  url: z.string().refine(isSafeUrl, 'Blocked unsafe stored URL'),
-  title: z.string().max(500),
-  favicon: z.string().max(2048),
-  x: z.number(),
-  y: z.number(),
-  size: z.number(),
-  color: z.string(),
-  accessCount: z.number().min(0),
-  lastAccessed: z.number().optional(),
-  accessHistory: z.array(z.number()).optional(),
-});
-
-/**
- * Validate and filter localStorage bookmark data.
- * Any entry that fails validation is silently dropped (safe default).
- */
-export const validateStoredBookmarks = (raw: unknown[]): unknown[] => {
-  return raw.filter((item) => {
-    const result = StoredBookmarkSchema.safeParse(item);
-    return result.success;
-  });
+const isValidStoredBookmark = (item: unknown): boolean => {
+  if (!item || typeof item !== 'object') return false;
+  const b = item as Record<string, unknown>;
+  return (
+    isString(b.id) &&
+    isString(b.url) && isSafeUrl(b.url) &&
+    isString(b.title) && b.title.length <= 500 &&
+    isString(b.favicon) && b.favicon.length <= 2048 &&
+    isNumber(b.x) && isNumber(b.y) && isNumber(b.size) &&
+    isString(b.color) &&
+    isNumber(b.accessCount) && b.accessCount >= 0 &&
+    (b.lastAccessed === undefined || isNumber(b.lastAccessed)) &&
+    (b.accessHistory === undefined || (Array.isArray(b.accessHistory) && b.accessHistory.every(isNumber)))
+  );
 };
+
+export const validateStoredBookmarks = (raw: unknown[]): unknown[] => raw.filter(isValidStoredBookmark);
 
 // ─────────────────────────────────────────────
 // 5. RATE LIMITER (in-memory, per action key)
@@ -122,12 +105,6 @@ interface RateLimitEntry {
 
 const rateLimitStore = new Map<string, RateLimitEntry>();
 
-/**
- * Returns true if the action is allowed, false if rate-limited.
- * @param key    - Unique key per action (e.g. 'add_bookmark')
- * @param limit  - Max calls allowed within windowMs
- * @param windowMs - Time window in milliseconds (default 60 s)
- */
 export const checkRateLimit = (key: string, limit: number, windowMs = 60_000): boolean => {
   const now = Date.now();
   const entry = rateLimitStore.get(key);
