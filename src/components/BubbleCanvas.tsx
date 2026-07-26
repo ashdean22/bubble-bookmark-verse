@@ -2,6 +2,43 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import type { CSSProperties } from 'react';
 import { Bookmark } from '@/pages/Index';
 import { ExternalLink, Pencil, Trash2 } from 'lucide-react';
+import { useFaviconPreload } from '@/hooks/useFaviconCache';
+
+const FALLBACK_ICON = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMSA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDMgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K';
+
+/** Bubble favicon — reads from the persistent cache so it paints instantly. */
+const BubbleFavicon = ({ url, alt }: { url: string; alt: string }) => {
+  return (
+    <img
+      src={url}
+      alt={alt}
+      className="pointer-events-none"
+      style={{
+        width: '72%',
+        height: '72%',
+        objectFit: 'contain',
+        imageRendering: 'auto',
+        filter: 'drop-shadow(0 1px 1px hsla(0,0%,0%,0.25))',
+      }}
+      loading="eager"
+      decoding="async"
+      // @ts-expect-error fetchpriority is a valid HTML attribute
+      fetchpriority="high"
+      onError={(e) => { (e.target as HTMLImageElement).src = FALLBACK_ICON; }}
+    />
+  );
+};
+
+const MenuFavicon = ({ url }: { url: string }) => {
+  return (
+    <img
+      src={url}
+      alt=""
+      style={{ width: 18, height: 18, borderRadius: 4, flexShrink: 0 }}
+      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+    />
+  );
+};
 
 interface BubbleCanvasProps {
   bookmarks: Bookmark[];
@@ -544,6 +581,8 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
     }
   }, [draggedBubble, handleDragMove, handleDragEnd]);
 
+  useFaviconPreload(bookmarks.map((b) => b.favicon));
+
   const maxAccessCount = getMaxAccessCount(bookmarks);
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
   const isTablet = typeof window !== 'undefined' && window.innerWidth >= 640 && window.innerWidth < 1024;
@@ -679,23 +718,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
                   backdropFilter: 'blur(2px)',
                 }}
               >
-                <img
-                  src={bookmark.favicon}
-                  alt={bookmark.title}
-                  className="pointer-events-none"
-                  style={{
-                    width: '72%',
-                    height: '72%',
-                    objectFit: 'contain',
-                    imageRendering: 'auto',
-                    filter: 'drop-shadow(0 1px 1px hsla(0,0%,0%,0.25))',
-                  }}
-                  loading="lazy"
-                  decoding="async"
-                  onError={(e) => {
-                  (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMSA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDMgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K';
-                  }}
-                />
+                <BubbleFavicon url={bookmark.favicon} alt={bookmark.title} />
               </div>
               <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
                 <ExternalLink className="w-3 h-3 text-white drop-shadow-lg" />
@@ -762,12 +785,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                <img
-                  src={contextBookmark.favicon}
-                  alt=""
-                  style={{ width: 18, height: 18, borderRadius: 4, flexShrink: 0 }}
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                />
+                <MenuFavicon url={contextBookmark.favicon} />
                 <span style={{ color: 'hsla(210, 80%, 90%, 1)', fontSize: 14, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {contextBookmark.title}
                 </span>

@@ -12,6 +12,7 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { Bookmark } from '@/pages/Index';
 
 import { validateStoredBookmarks, sanitizeText, sanitizeUrl, safeFavicon, checkRateLimit } from '@/utils/security';
+import { cacheFavicon } from '@/utils/faviconCache';
 
 // ── Lazy-load ALL heavy modals & analytics so they never block first paint ──
 const AddBookmarkModal    = lazy(() => import('@/components/AddBookmarkModal').then(m => ({ default: m.AddBookmarkModal })));
@@ -247,6 +248,7 @@ export const RefactoredIndex = () => {
 
     const newBookmarks = [...bookmarks, newBookmark];
     saveBookmarks(newBookmarks);
+    void cacheFavicon(newBookmark.favicon);
     setAvailableBubbles(availableBubbles - 1);
     
     const remainingBubbles = availableBubbles - 1;

@@ -2,6 +2,11 @@ import './polyfills.ts'
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
+import { initFaviconCache } from './utils/faviconCache'
+
+// Warm favicons from previous visits before React mounts so bubble icons
+// are already cached/decoded on first paint.
+initFaviconCache();
 
 const clearBootScreen = () => {
   const w = (window as unknown as { __bootWatchdog?: number }).__bootWatchdog;
