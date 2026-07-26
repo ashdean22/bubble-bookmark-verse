@@ -6,20 +6,24 @@ type IdleCallbackDeadline = {
 type IdleCallback = (deadline: IdleCallbackDeadline) => void;
 
 if (typeof window !== 'undefined') {
-  window.requestIdleCallback ??= (callback) => {
-    const start = Date.now();
+  if (typeof window.requestIdleCallback !== 'function') {
+    window.requestIdleCallback = (callback) => {
+      const start = Date.now();
 
-    return window.setTimeout(() => {
-      callback({
-        didTimeout: false,
-        timeRemaining: () => Math.max(0, 50 - (Date.now() - start)),
-      });
-    }, 1);
-  };
+      return window.setTimeout(() => {
+        callback({
+          didTimeout: false,
+          timeRemaining: () => Math.max(0, 50 - (Date.now() - start)),
+        });
+      }, 1);
+    };
+  }
 
-  window.cancelIdleCallback ??= (handle) => {
-    window.clearTimeout(handle);
-  };
+  if (typeof window.cancelIdleCallback !== 'function') {
+    window.cancelIdleCallback = (handle) => {
+      window.clearTimeout(handle);
+    };
+  }
 }
 
 export {};

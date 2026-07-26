@@ -5,6 +5,9 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  esbuild: {
+    target: "es2018",
+  },
   server: {
     host: "::",
     port: 8080,
@@ -19,8 +22,8 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    // Modern targets — smaller output, no legacy polyfills
-    target: "esnext",
+    // Keep output compatible with older Safari/WebViews so the app boots consistently.
+    target: "es2018",
     // Inline small assets as data URIs to save round-trips
     assetsInlineLimit: 4096,
     // Raise chunk-size warning threshold (recharts is legitimately large)
