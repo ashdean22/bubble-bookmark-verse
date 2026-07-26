@@ -317,9 +317,9 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
             d.vy *= scale;
           }
           
-          // Snappier display lerp so bounces read crisply on screen.
-          d.displayX += (d.x - d.displayX) * 0.22;
-          d.displayY += (d.y - d.displayY) * 0.22;
+          // Slightly eased display lerp: contact reads as a cushioned squeeze.
+          d.displayX += (d.x - d.displayX) * 0.17;
+          d.displayY += (d.y - d.displayY) * 0.17;
         });
 
         frameCountRef.current += 1;
@@ -383,7 +383,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
                     // Positional correction split by mass — applied softly
                     // (partial resolve per frame) so contact eases apart
                     // instead of snapping.
-                    const resolve = overlap * 0.45;
+                    const resolve = overlap * 0.3;
                     data1.x -= nx * resolve * share1;
                     data1.y -= ny * resolve * share1;
                     data2.x += nx * resolve * share2;
@@ -391,7 +391,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
 
                     // Cushion: a soft spring push that grows with overlap, so
                     // bubbles gently decelerate on contact before rebounding.
-                    const cushion = Math.min(overlap / minDistance, 1) * 0.06;
+                    const cushion = Math.min(overlap / minDistance, 1) * 0.11;
                     data1.vx -= nx * cushion * share1;
                     data1.vy -= ny * cushion * share1;
                     data2.vx += nx * cushion * share2;
@@ -403,15 +403,22 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
                     if (vAlong < 0) {
                       // Soft bounce: most of the impact energy is absorbed, so
                       // bubbles kiss and drift apart rather than ricochet.
-                      const restitution = 0.35;
+                      const restitution = 0.18;
                       const j = -(1 + restitution) * vAlong / totalMass;
                       data1.vx -= nx * j * m2;
                       data1.vy -= ny * j * m2;
                       data2.vx += nx * j * m1;
                       data2.vy += ny * j * m1;
+
+                      // Absorb a little extra energy right after contact so the
+                      // rebound is a soft drift, never a ricochet.
+                      data1.vx *= 0.94;
+                      data1.vy *= 0.94;
+                      data2.vx *= 0.94;
+                      data2.vy *= 0.94;
                     } else {
                       // Static overlap (resting contact): nudge apart so they don't stick
-                      const nudge = 0.03;
+                      const nudge = 0.02;
                       data1.vx -= nx * nudge;
                       data1.vy -= ny * nudge;
                       data2.vx += nx * nudge;
