@@ -368,9 +368,6 @@ export const RefactoredIndex = () => {
               isOpen={showUpgradePrompt}
               onClose={handleUpgradePromptClose}
               onUpgrade={handleUpgradeFromPrompt}
-              currentTier={currentSubscription || 'free'}
-              usedBubbles={usedBubbles}
-              maxBubbles={maxBubbles}
             />
           )}
         </Suspense>
