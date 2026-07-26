@@ -20,8 +20,8 @@ export default {
 		},
 		extend: {
 			fontFamily: {
-				'brand': ['Poppins', 'sans-serif'],
-				'body': ['Inter', 'sans-serif'],
+				'brand': ['Poppins', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
+				'body': ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
 			},
 			colors: {
 				border: 'hsl(var(--border))',
