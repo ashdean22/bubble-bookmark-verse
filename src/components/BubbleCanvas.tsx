@@ -2,16 +2,15 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import type { CSSProperties } from 'react';
 import { Bookmark } from '@/pages/Index';
 import { ExternalLink, Pencil, Trash2 } from 'lucide-react';
-import { useFaviconPreload, useFaviconSrc } from '@/hooks/useFaviconCache';
+import { useFaviconPreload } from '@/hooks/useFaviconCache';
 
 const FALLBACK_ICON = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMSA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDMgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K';
 
 /** Bubble favicon — reads from the persistent cache so it paints instantly. */
 const BubbleFavicon = ({ url, alt }: { url: string; alt: string }) => {
-  const src = useFaviconSrc(url);
   return (
     <img
-      src={src}
+      src={url}
       alt={alt}
       className="pointer-events-none"
       style={{
@@ -31,10 +30,9 @@ const BubbleFavicon = ({ url, alt }: { url: string; alt: string }) => {
 };
 
 const MenuFavicon = ({ url }: { url: string }) => {
-  const src = useFaviconSrc(url);
   return (
     <img
-      src={src}
+      src={url}
       alt=""
       style={{ width: 18, height: 18, borderRadius: 4, flexShrink: 0 }}
       onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
