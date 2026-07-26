@@ -380,19 +380,30 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
                     const share1 = m2 / totalMass;
                     const share2 = m1 / totalMass;
 
-                    // Positional correction split by mass
-                    data1.x -= nx * overlap * share1;
-                    data1.y -= ny * overlap * share1;
-                    data2.x += nx * overlap * share2;
-                    data2.y += ny * overlap * share2;
+                    // Positional correction split by mass — applied softly
+                    // (partial resolve per frame) so contact eases apart
+                    // instead of snapping.
+                    const resolve = overlap * 0.45;
+                    data1.x -= nx * resolve * share1;
+                    data1.y -= ny * resolve * share1;
+                    data2.x += nx * resolve * share2;
+                    data2.y += ny * resolve * share2;
+
+                    // Cushion: a soft spring push that grows with overlap, so
+                    // bubbles gently decelerate on contact before rebounding.
+                    const cushion = Math.min(overlap / minDistance, 1) * 0.06;
+                    data1.vx -= nx * cushion * share1;
+                    data1.vy -= ny * cushion * share1;
+                    data2.vx += nx * cushion * share2;
+                    data2.vy += ny * cushion * share2;
 
                     const vRelX = data2.vx - data1.vx;
                     const vRelY = data2.vy - data1.vy;
                     const vAlong = vRelX * nx + vRelY * ny;
                     if (vAlong < 0) {
-                      // Slightly damped elastic bounce — feels springy and
-                      // natural rather than perfectly rigid.
-                      const restitution = 0.88;
+                      // Soft bounce: most of the impact energy is absorbed, so
+                      // bubbles kiss and drift apart rather than ricochet.
+                      const restitution = 0.35;
                       const j = -(1 + restitution) * vAlong / totalMass;
                       data1.vx -= nx * j * m2;
                       data1.vy -= ny * j * m2;
@@ -400,7 +411,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
                       data2.vy += ny * j * m1;
                     } else {
                       // Static overlap (resting contact): nudge apart so they don't stick
-                      const nudge = 0.08;
+                      const nudge = 0.03;
                       data1.vx -= nx * nudge;
                       data1.vy -= ny * nudge;
                       data2.vx += nx * nudge;
