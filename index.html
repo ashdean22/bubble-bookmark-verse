@@ -6,8 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     
     <!-- Primary Meta Tags -->
-    <title>BubbleLink - Transform Your Bookmarks Into Beautiful Floating Bubbles</title>
-    <meta name="title" content="BubbleLink - Transform Your Bookmarks Into Beautiful Floating Bubbles" />
+    <title>BubbleMark - Your Bookmarks, In a Bubble</title>
+    <meta name="title" content="BubbleMark - Your Bookmarks, In a Bubble" />
     <meta name="description" content="Save and organize your favorite websites as stunning floating bubbles in space. Click any bubble to instantly visit your bookmarked sites. Beautiful, intuitive, and magical bookmark management." />
     <meta name="keywords" content="bookmarks, bookmark manager, visual bookmarks, floating bubbles, website organizer, browser bookmarks, productivity tool, visual bookmarking" />
     <meta name="author" content="BubbleLink" />
@@ -66,16 +66,34 @@
     <style>
       *,*::before,*::after{box-sizing:border-box}
       html{-webkit-text-size-adjust:100%;text-size-adjust:100%;scroll-behavior:smooth}
-      body{margin:0;background-color:hsl(210,40%,98%);color:hsl(215,25%,20%);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
-      #root{min-height:100dvh;contain:layout style}
+      body{margin:0;background-color:#080b1a;color:#e6ecff;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+      #root{min-height:100dvh}
+      #boot{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:#080b1a;font-family:system-ui,-apple-system,sans-serif;z-index:9999}
+      #boot .ring{width:46px;height:46px;border-radius:50%;border:3px solid rgba(255,255,255,.14);border-top-color:#8b5cf6;animation:bootspin .8s linear infinite}
+      #boot .msg{font-size:13px;opacity:.7}
+      #boot button{display:none;padding:10px 18px;border-radius:999px;border:0;background:#8b5cf6;color:#fff;font-size:14px;font-weight:600;cursor:pointer}
+      @keyframes bootspin{to{transform:rotate(360deg)}}
+      html.app-ready #boot{display:none}
     </style>
+    <script>
+      // Boot watchdog: guarantees the user never sits on a blank screen.
+      // If React has not mounted within 9s, surface a retry control instead of nothing.
+      window.__bootWatchdog = setTimeout(function () {
+        var b = document.getElementById('boot');
+        if (!b || document.documentElement.classList.contains('app-ready')) return;
+        var m = b.querySelector('.msg');
+        if (m) m.textContent = 'Taking longer than usual to start.';
+        var btn = b.querySelector('button');
+        if (btn) btn.style.display = 'inline-block';
+      }, 9000);
+    </script>
 
     <!-- JSON-LD Structured Data -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "WebApplication",
-      "name": "BubbleLink",
+      "name": "BubbleMark",
       "description": "Transform your bookmarks into beautiful floating bubbles in space",
       "url": "https://bubblelink.app",
       "applicationCategory": "ProductivityApplication",
@@ -91,6 +109,11 @@
 
   <body>
     <div id="root"></div>
+    <div id="boot">
+      <div class="ring"></div>
+      <div class="msg">Loading BubbleMark…</div>
+      <button type="button" onclick="location.reload()">Reload</button>
+    </div>
     <script type="module" src="/src/main.tsx" fetchpriority="high"></script>
   </body>
 </html>
