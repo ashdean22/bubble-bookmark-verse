@@ -86,14 +86,14 @@
         var btn = b.querySelector('button');
         if (btn) btn.style.display = 'inline-block';
       }, 9000);
-    </style>
+    </script>
 
     <!-- JSON-LD Structured Data -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "WebApplication",
-      "name": "BubbleLink",
+      "name": "BubbleMark",
       "description": "Transform your bookmarks into beautiful floating bubbles in space",
       "url": "https://bubblelink.app",
       "applicationCategory": "ProductivityApplication",
@@ -109,6 +109,11 @@
 
   <body>
     <div id="root"></div>
+    <div id="boot">
+      <div class="ring"></div>
+      <div class="msg">Loading BubbleMark…</div>
+      <button type="button" onclick="location.reload()">Reload</button>
+    </div>
     <script type="module" src="/src/main.tsx" fetchpriority="high"></script>
   </body>
 </html>
