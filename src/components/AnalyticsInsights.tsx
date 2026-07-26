@@ -402,7 +402,7 @@ const LockedContent = ({ onUpgradeClick }: { onUpgradeClick: () => void }) => (
     </p>
     <div className="border rounded-lg p-6 mb-6 max-w-md mx-auto"
       style={{ background: 'hsla(270,30%,14%,0.7)', borderColor: 'hsla(270,50%,50%,0.25)' }}>
-      <h4 className="font-semibold mb-3" style={{ color: 'hsl(var(--foreground))' }}>Premium Analytics Include:</h4>
+      <h4 className="font-semibold mb-3" style={{ color: 'hsl(var(--foreground))' }}>Pro Analytics Include:</h4>
       <ul className="text-sm space-y-2 text-left" style={{ color: 'hsla(270,60%,75%,0.9)' }}>
         {([
           [<Clock className="w-4 h-4" style={{ color: 'hsla(40,90%,60%,1)' }} />, 'Last accessed timestamps'],
@@ -419,7 +419,7 @@ const LockedContent = ({ onUpgradeClick }: { onUpgradeClick: () => void }) => (
       className="text-white border-0 font-medium shadow-lg hover:shadow-xl transition-all min-h-[48px] px-6"
       style={{ background: 'linear-gradient(135deg, hsla(270,70%,55%,1), hsla(320,70%,55%,1))' }}>
       <Crown className="w-4 h-4 mr-2" />
-      Upgrade to Premium
+      Upgrade to Pro
     </Button>
   </div>
 );
