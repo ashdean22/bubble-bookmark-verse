@@ -306,10 +306,10 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
 
           // Light damping → bounces decay naturally instead of dying instantly,
           // giving the cryptobubbles-style springy settle.
-          d.vx *= 0.992;
-          d.vy *= 0.992;
+          d.vx *= 0.988;
+          d.vy *= 0.988;
 
-          const maxV = 2.2;
+          const maxV = 1.7;
           const speed = Math.sqrt(d.vx * d.vx + d.vy * d.vy);
           if (speed > maxV) {
             const scale = maxV / speed;
@@ -318,8 +318,8 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
           }
           
           // Snappier display lerp so bounces read crisply on screen.
-          d.displayX += (d.x - d.displayX) * 0.35;
-          d.displayY += (d.y - d.displayY) * 0.35;
+          d.displayX += (d.x - d.displayX) * 0.22;
+          d.displayY += (d.y - d.displayY) * 0.22;
         });
 
         frameCountRef.current += 1;
