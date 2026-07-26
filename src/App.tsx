@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -19,6 +19,22 @@ const RouteFallback = () => (
   </div>
 );
 
+// Mount diagnostics only once the browser is idle so its chunk never competes
+// with the first paint.
+const DeferredDiagnostics = () => {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const id = window.setTimeout(() => setReady(true), 2500);
+    return () => window.clearTimeout(id);
+  }, []);
+  if (!ready) return null;
+  return (
+    <Suspense fallback={null}>
+      <DiagnosticsButton />
+    </Suspense>
+  );
+};
+
 const App = () => (
   <TooltipProvider>
       <Toaster />
@@ -33,9 +49,7 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
-          <Suspense fallback={null}>
-            <DiagnosticsButton />
-          </Suspense>
+          <DeferredDiagnostics />
         </BrowserRouter>
       </ErrorBoundary>
   </TooltipProvider>
