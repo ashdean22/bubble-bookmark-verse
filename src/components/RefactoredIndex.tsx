@@ -45,31 +45,6 @@ const normalizeBookmarks = (value: unknown): Bookmark[] => {
   return deduplicateBookmarks(validateStoredBookmarks(value) as Bookmark[]);
 };
 
-const safeStorageGet = (key: string): string | null => {
-  try {
-    return typeof window !== 'undefined' ? window.localStorage.getItem(key) : null;
-  } catch {
-    return null;
-  }
-};
-
-const safeStorageRemove = (key: string) => {
-  try {
-    if (typeof window !== 'undefined') window.localStorage.removeItem(key);
-  } catch {
-    // Storage can be unavailable in restricted preview/private contexts.
-  }
-};
-
-const readStoredBookmarks = (): Bookmark[] => {
-  try {
-    return normalizeBookmarks(JSON.parse(safeStorageGet('bubbleBookmarks') || '[]'));
-  } catch {
-    safeStorageRemove('bubbleBookmarks');
-    return [];
-  }
-};
-
 const normalizeBubbleCount = (value: unknown): number => {
   return typeof value === 'number' && Number.isFinite(value) ? Math.max(0, value) : 0;
 };
@@ -107,17 +82,7 @@ export const RefactoredIndex = () => {
   const [bookmarks, setBookmarks] = useLocalStorage<Bookmark[]>('bubbleBookmarks', [], normalizeBookmarks);
   const [currentSubscription, setCurrentSubscription] = useLocalStorage<string | null>('currentSubscription', null);
 
-  // Remove any duplicate domains from stored bookmarks on mount
-  // and strip any unsafe entries from localStorage (poisoned data defense)
-  useEffect(() => {
-    const deduped = readStoredBookmarks();
-    if (deduped.length !== bookmarks.length) {
-      setBookmarks(deduped);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  
-  // Initialize available bubbles based on existing bookmarks and subscription
+  // Kept only for older saved sessions; the free tier is unlimited now.
   const initializeBubbles = () => 999;
   
   const [availableBubbles, setAvailableBubbles] = useLocalStorage('availableBubbles', initializeBubbles(), normalizeBubbleCount);
@@ -166,16 +131,17 @@ export const RefactoredIndex = () => {
     }),
   });
 
-  // Calculate max bubbles based on subscription
-  const getMaxBubbles = () => 999;
+  // Free tier is unlimited for local bubbles.
+  const getMaxBubbles = () => Number.POSITIVE_INFINITY;
 
   const maxBubbles = getMaxBubbles();
   const usedBubbles = bookmarks.length;
-  const usagePercent = (usedBubbles / maxBubbles) * 100;
+  const usagePercent = Number.isFinite(maxBubbles) ? (usedBubbles / maxBubbles) * 100 : 0;
 
   // Show upgrade prompt at 80% capacity (only for non-premium users)
   useEffect(() => {
     if (
+      Number.isFinite(maxBubbles) &&
       usagePercent >= 80 && 
       currentSubscription !== 'premium' && 
       !upgradePromptDismissed &&
@@ -249,17 +215,10 @@ export const RefactoredIndex = () => {
     saveBookmarks(newBookmarks);
     setAvailableBubbles(availableBubbles - 1);
     
-    const remainingBubbles = availableBubbles - 1;
-    let description = `Your new bubble is floating in the bubble universe ✨`;
-    if (remainingBubbles <= 0) {
-      description += ` You've reached your free limit!`;
-    } else if (remainingBubbles <= 2) {
-      description += ` (${remainingBubbles} free bubbles remaining - almost at your limit!)`;
-    } else {
-      description += ` (${remainingBubbles} free bubbles remaining)`;
-    }
-    
-    toast({ title: "Bubble created! 🫧", description });
+    toast({
+      title: "Bubble created! 🫧",
+      description: "Your new bubble is floating in the bubble universe ✨",
+    });
   };
 
   const removeBookmark = (id: string) => {
