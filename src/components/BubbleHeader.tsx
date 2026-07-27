@@ -25,6 +25,7 @@ export const BubbleHeader = ({
   showAnalytics 
 }: BubbleHeaderProps) => {
   const { toast } = useToast();
+  const isUnlimited = !Number.isFinite(maxBubbles) || maxBubbles === 999;
 
   const handleKeyboardShortcut = (e: KeyboardEvent) => {
     if (e.ctrlKey || e.metaKey) {
@@ -82,19 +83,19 @@ export const BubbleHeader = ({
           <div 
             className="glass-card px-3 py-2 md:px-4 md:py-3 rounded-xl min-w-[160px] md:min-w-[200px]"
             role="status"
-            aria-label={`Bubbles used: ${usedBubbles} of ${maxBubbles === 999 ? 'unlimited' : maxBubbles}`}
+            aria-label={`Bubbles used: ${usedBubbles} of ${isUnlimited ? 'unlimited' : maxBubbles}`}
           >
             <div className="flex items-center justify-between mb-1">
               <span className="text-foreground/80 text-xs font-body">Bubble Capacity</span>
               <span className="text-foreground font-semibold text-sm font-body">
-                {usedBubbles}/{maxBubbles === 999 ? '∞' : maxBubbles}
+                {usedBubbles}/{isUnlimited ? '∞' : maxBubbles}
               </span>
             </div>
             <Progress 
-              value={maxBubbles === 999 ? 0 : (usedBubbles / maxBubbles) * 100} 
+              value={isUnlimited ? 0 : (usedBubbles / maxBubbles) * 100} 
               className="h-2 bg-white/20"
             />
-            {maxBubbles !== 999 && usedBubbles >= maxBubbles * 0.8 && (
+            {!isUnlimited && usedBubbles >= maxBubbles * 0.8 && (
               <p className="text-amber-400 text-xs mt-1 font-body">
                 {usedBubbles >= maxBubbles ? 'Limit reached!' : 'Almost full!'}
               </p>

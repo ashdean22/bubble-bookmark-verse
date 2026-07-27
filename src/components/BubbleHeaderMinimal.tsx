@@ -11,7 +11,8 @@ export const BubbleHeaderMinimal = ({
   usedBubbles,
   maxBubbles,
 }: BubbleHeaderMinimalProps) => {
-  const usagePercent = maxBubbles === 999 ? 0 : (usedBubbles / maxBubbles) * 100;
+  const isUnlimited = !Number.isFinite(maxBubbles) || maxBubbles === 999;
+  const usagePercent = isUnlimited ? 0 : (usedBubbles / maxBubbles) * 100;
 
   return (
     <header 
@@ -81,19 +82,19 @@ export const BubbleHeaderMinimal = ({
           <div 
             className="glass-card px-3 py-2 rounded-xl min-w-[140px]"
             role="status"
-            aria-label={`Bubbles used: ${usedBubbles} of ${maxBubbles === 999 ? 'unlimited' : maxBubbles}`}
+            aria-label={`Bubbles used: ${usedBubbles} of ${isUnlimited ? 'unlimited' : maxBubbles}`}
           >
             <div className="flex items-center justify-between mb-1">
               <span className="text-foreground/80 text-xs font-body">Bubbles</span>
               <span className="text-foreground font-semibold text-sm font-body">
-                {usedBubbles}/{maxBubbles === 999 ? '∞' : maxBubbles}
+                {usedBubbles}/{isUnlimited ? '∞' : maxBubbles}
               </span>
             </div>
             <Progress 
               value={usagePercent} 
               className="h-1.5 bg-white/20"
             />
-            {maxBubbles !== 999 && usedBubbles >= maxBubbles * 0.8 && (
+            {!isUnlimited && usedBubbles >= maxBubbles * 0.8 && (
               <p className="text-amber-400 text-xs mt-1 font-body text-right">
                 {usedBubbles >= maxBubbles ? 'Full!' : 'Almost full'}
               </p>
