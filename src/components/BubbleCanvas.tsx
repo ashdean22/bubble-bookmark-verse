@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import type { CSSProperties } from 'react';
 import { Bookmark } from '@/pages/Index';
 import { ExternalLink, Pencil, Trash2 } from 'lucide-react';
@@ -190,7 +190,10 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
     };
   }, [bookmarks.length]);
 
-  const activeBookmarks = bookmarks.length > visibleCount ? bookmarks.slice(0, visibleCount) : bookmarks;
+  const activeBookmarks = useMemo(
+    () => (bookmarks.length > visibleCount ? bookmarks.slice(0, visibleCount) : bookmarks),
+    [bookmarks, visibleCount],
+  );
 
   // Initialize bubble data
   useEffect(() => {
