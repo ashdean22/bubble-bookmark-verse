@@ -45,31 +45,6 @@ const normalizeBookmarks = (value: unknown): Bookmark[] => {
   return deduplicateBookmarks(validateStoredBookmarks(value) as Bookmark[]);
 };
 
-const safeStorageGet = (key: string): string | null => {
-  try {
-    return typeof window !== 'undefined' ? window.localStorage.getItem(key) : null;
-  } catch {
-    return null;
-  }
-};
-
-const safeStorageRemove = (key: string) => {
-  try {
-    if (typeof window !== 'undefined') window.localStorage.removeItem(key);
-  } catch {
-    // Storage can be unavailable in restricted preview/private contexts.
-  }
-};
-
-const readStoredBookmarks = (): Bookmark[] => {
-  try {
-    return normalizeBookmarks(JSON.parse(safeStorageGet('bubbleBookmarks') || '[]'));
-  } catch {
-    safeStorageRemove('bubbleBookmarks');
-    return [];
-  }
-};
-
 const normalizeBubbleCount = (value: unknown): number => {
   return typeof value === 'number' && Number.isFinite(value) ? Math.max(0, value) : 0;
 };
@@ -107,16 +82,6 @@ export const RefactoredIndex = () => {
   const [bookmarks, setBookmarks] = useLocalStorage<Bookmark[]>('bubbleBookmarks', [], normalizeBookmarks);
   const [currentSubscription, setCurrentSubscription] = useLocalStorage<string | null>('currentSubscription', null);
 
-  // Remove any duplicate domains from stored bookmarks on mount
-  // and strip any unsafe entries from localStorage (poisoned data defense)
-  useEffect(() => {
-    const deduped = readStoredBookmarks();
-    if (deduped.length !== bookmarks.length) {
-      setBookmarks(deduped);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  
   // Initialize available bubbles based on existing bookmarks and subscription
   const initializeBubbles = () => 999;
   
