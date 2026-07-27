@@ -5,7 +5,10 @@ import { ExternalLink, Pencil, Trash2 } from 'lucide-react';
 
 const FALLBACK_ICON = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMSA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDMgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K';
 
-/** Bubble favicon — reads from the persistent cache so it paints instantly. */
+const INITIAL_BUBBLE_RENDER_LIMIT = 80;
+const BUBBLE_RENDER_CHUNK = 60;
+
+/** Bubble favicon — paints eagerly and falls back safely if the remote icon fails. */
 const BubbleFavicon = ({ url, alt }: { url: string; alt: string }) => {
   return (
     <img
@@ -126,6 +129,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
   const [clickedBubble, setClickedBubble] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null);
   const [poppingIds, setPoppingIds] = useState<Set<string>>(new Set());
+  const [visibleCount, setVisibleCount] = useState(() => Math.min(bookmarks.length, INITIAL_BUBBLE_RENDER_LIMIT));
   const animationRef = useRef<number>();
   const frameCountRef = useRef(0);
   const dragOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -137,6 +141,57 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
     typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches,
   );
 
+  useEffect(() => {
+    setVisibleCount((current) => {
+      if (bookmarks.length <= INITIAL_BUBBLE_RENDER_LIMIT) return bookmarks.length;
+      return Math.min(Math.max(current, INITIAL_BUBBLE_RENDER_LIMIT), bookmarks.length);
+    });
+
+    if (bookmarks.length <= INITIAL_BUBBLE_RENDER_LIMIT) return;
+
+    let cancelled = false;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    let idleId: number | undefined;
+
+    const cancelPending = () => {
+      if (idleId !== undefined && typeof window.cancelIdleCallback === 'function') {
+        window.cancelIdleCallback(idleId);
+      }
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+      idleId = undefined;
+      timeoutId = undefined;
+    };
+
+    const scheduleNext = () => {
+      cancelPending();
+      if (typeof window.requestIdleCallback === 'function') {
+        idleId = window.requestIdleCallback(revealNext, { timeout: 900 });
+      } else {
+        timeoutId = window.setTimeout(revealNext, 120);
+      }
+    };
+
+    const revealNext = () => {
+      if (cancelled) return;
+      let hasMore = false;
+      setVisibleCount((current) => {
+        const next = Math.min(bookmarks.length, current + BUBBLE_RENDER_CHUNK);
+        hasMore = next < bookmarks.length;
+        return next;
+      });
+      if (hasMore) scheduleNext();
+    };
+
+    scheduleNext();
+
+    return () => {
+      cancelled = true;
+      cancelPending();
+    };
+  }, [bookmarks.length]);
+
+  const activeBookmarks = bookmarks.length > visibleCount ? bookmarks.slice(0, visibleCount) : bookmarks;
+
   // Initialize bubble data
   useEffect(() => {
     const maxAccessCount = getMaxAccessCount(bookmarks);
@@ -144,7 +199,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
     const isTablet = window.innerWidth >= 640 && window.innerWidth < 1024;
     const headerHeight = isMobile ? 120 : 100;
 
-    bookmarks.forEach((bookmark) => {
+    activeBookmarks.forEach((bookmark) => {
       if (!bubbleDataRef.current.has(bookmark.id)) {
         const heatStyles = getHeatStylesAndSize(bookmark.accessCount, maxAccessCount, isMobile, isTablet);
 
@@ -183,7 +238,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
       }
     });
 
-    const currentIds = new Set(bookmarks.map(b => b.id));
+    const currentIds = new Set(activeBookmarks.map(b => b.id));
     bubbleDataRef.current.forEach((_, id) => {
       if (!currentIds.has(id)) {
         bubbleDataRef.current.delete(id);
@@ -194,12 +249,12 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
         bubbleElementsRef.current.delete(id);
       }
     });
-  }, [bookmarks]);
+  }, [activeBookmarks, bookmarks]);
 
   // Animation loop
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || bookmarks.length === 0 || prefersReducedMotionRef.current) return;
+    if (!canvas || activeBookmarks.length === 0 || prefersReducedMotionRef.current) return;
 
     const headerHeight = window.innerWidth < 640 ? 120 : 100;
     let lastTime = 0;
@@ -454,7 +509,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [bookmarks, draggedBubble]);
+  }, [activeBookmarks.length, draggedBubble]);
 
   // Close context menu on outside click or after 3s
   useEffect(() => {
@@ -602,11 +657,11 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
   const isTablet = typeof window !== 'undefined' && window.innerWidth >= 640 && window.innerWidth < 1024;
 
-  const contextBookmark = contextMenu ? bookmarks.find(b => b.id === contextMenu.bookmarkId) : null;
+  const contextBookmark = contextMenu ? activeBookmarks.find(b => b.id === contextMenu.bookmarkId) : null;
 
   return (
     <div ref={canvasRef} className="absolute inset-0 overflow-hidden">
-      {bookmarks.map((bookmark) => {
+      {activeBookmarks.map((bookmark) => {
         const heatStyles = getHeatStylesAndSize(bookmark.accessCount, maxAccessCount, isMobile, isTablet);
         const isDragging = draggedBubble === bookmark.id;
         const isPopping = poppingIds.has(bookmark.id);

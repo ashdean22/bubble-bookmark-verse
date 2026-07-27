@@ -29,8 +29,7 @@ export function useLocalStorage<T>(
       const item = storage.getItem(key);
       const parsed = item ? JSON.parse(item) : initialValueRef.current;
       return normalizeRef.current ? normalizeRef.current(parsed) : parsed;
-    } catch (error) {
-      console.error(`Error reading localStorage key "${key}":`, error);
+    } catch {
       try {
         storage.removeItem(key);
       } catch {
@@ -89,8 +88,8 @@ export function useLocalStorage<T>(
         try {
           const parsed = JSON.parse(e.newValue);
           setStoredValue(normalizeRef.current ? normalizeRef.current(parsed) : parsed);
-        } catch (error) {
-          console.error(`Error parsing localStorage change for key "${key}":`, error);
+        } catch {
+          setStoredValue(initialValueRef.current);
         }
       }
     };
