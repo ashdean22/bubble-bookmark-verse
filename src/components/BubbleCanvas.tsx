@@ -8,11 +8,11 @@ const FALLBACK_ICON = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0
 const INITIAL_BUBBLE_RENDER_LIMIT = 80;
 const BUBBLE_RENDER_CHUNK = 60;
 
-/** Bubble favicon — paints eagerly and falls back safely if the remote icon fails. */
-const BubbleFavicon = ({ url, alt }: { url: string; alt: string }) => {
+/** Bubble favicon — prioritizes only the first visible icons and falls back safely. */
+const BubbleFavicon = ({ url, alt, priority }: { url: string; alt: string; priority: boolean }) => {
   return (
     <img
-      src={url}
+      src={url || FALLBACK_ICON}
       alt={alt}
       className="pointer-events-none"
       style={{
@@ -22,11 +22,10 @@ const BubbleFavicon = ({ url, alt }: { url: string; alt: string }) => {
         imageRendering: 'auto',
         filter: 'drop-shadow(0 1px 1px hsla(0,0%,0%,0.25))',
       }}
-      loading="eager"
+      loading={priority ? 'eager' : 'lazy'}
       decoding="async"
-      // @ts-expect-error fetchpriority is a valid HTML attribute
-      fetchpriority="high"
-      onError={(e) => { (e.target as HTMLImageElement).src = FALLBACK_ICON; }}
+      fetchPriority={priority ? 'high' : 'low'}
+      onError={(e) => { e.currentTarget.src = FALLBACK_ICON; }}
     />
   );
 };
@@ -34,10 +33,12 @@ const BubbleFavicon = ({ url, alt }: { url: string; alt: string }) => {
 const MenuFavicon = ({ url }: { url: string }) => {
   return (
     <img
-      src={url}
+      src={url || FALLBACK_ICON}
       alt=""
       style={{ width: 18, height: 18, borderRadius: 4, flexShrink: 0 }}
-      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+      loading="lazy"
+      decoding="async"
+      onError={(e) => { e.currentTarget.style.display = 'none'; }}
     />
   );
 };
@@ -664,7 +665,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
 
   return (
     <div ref={canvasRef} className="absolute inset-0 overflow-hidden">
-      {activeBookmarks.map((bookmark) => {
+      {activeBookmarks.map((bookmark, index) => {
         const heatStyles = getHeatStylesAndSize(bookmark.accessCount, maxAccessCount, isMobile, isTablet);
         const isDragging = draggedBubble === bookmark.id;
         const isPopping = poppingIds.has(bookmark.id);
@@ -791,7 +792,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
                   backdropFilter: 'blur(2px)',
                 }}
               >
-                <BubbleFavicon url={bookmark.favicon} alt={bookmark.title} />
+                <BubbleFavicon url={bookmark.favicon} alt={bookmark.title} priority={index < 12} />
               </div>
               <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
                 <ExternalLink className="w-3 h-3 text-white drop-shadow-lg" />

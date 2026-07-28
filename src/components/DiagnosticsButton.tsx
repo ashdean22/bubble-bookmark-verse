@@ -3,89 +3,14 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Bug, RefreshCw, Copy, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-
-type DiagEntry = {
-  t: number;
-  kind: 'console.error' | 'console.warn' | 'window.error' | 'unhandledrejection' | 'fetch.error' | 'fetch.status';
-  message: string;
-  detail?: string;
-};
-
-const STORAGE_KEY = 'bm_diagnostics_log_v1';
-const MAX_ENTRIES = 100;
-
-const safeStringify = (v: unknown): string => {
-  if (v instanceof Error) return `${v.name}: ${v.message}${v.stack ? `\n${v.stack}` : ''}`;
-  if (typeof v === 'string') return v;
-  try { return JSON.stringify(v); } catch { return String(v); }
-};
-
-const readLog = (): DiagEntry[] => {
-  try {
-    const raw = sessionStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as DiagEntry[]) : [];
-  } catch { return []; }
-};
-
-const writeLog = (entries: DiagEntry[]) => {
-  try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(entries.slice(-MAX_ENTRIES))); } catch { /* ignore */ }
-};
-
-const push = (entry: Omit<DiagEntry, 't'>) => {
-  const next = [...readLog(), { ...entry, t: Date.now() }];
-  writeLog(next);
-  window.dispatchEvent(new CustomEvent('bm-diag-updated'));
-};
-
-let installed = false;
-const installCapture = () => {
-  if (installed || typeof window === 'undefined') return;
-  installed = true;
-
-  const origError = console.error.bind(console);
-  const origWarn = console.warn.bind(console);
-  console.error = (...args: unknown[]) => {
-    push({ kind: 'console.error', message: args.map(safeStringify).join(' ') });
-    origError(...args);
-  };
-  console.warn = (...args: unknown[]) => {
-    push({ kind: 'console.warn', message: args.map(safeStringify).join(' ') });
-    origWarn(...args);
-  };
-
-  window.addEventListener('error', (e) => {
-    push({
-      kind: 'window.error',
-      message: e.message || 'Uncaught error',
-      detail: `${e.filename || ''}:${e.lineno || 0}:${e.colno || 0}${e.error?.stack ? `\n${e.error.stack}` : ''}`,
-    });
-  });
-
-  window.addEventListener('unhandledrejection', (e) => {
-    push({ kind: 'unhandledrejection', message: safeStringify(e.reason) });
-  });
-
-  const origFetch = window.fetch.bind(window);
-  window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-    const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
-    try {
-      const res = await origFetch(input, init);
-      if (!res.ok) push({ kind: 'fetch.status', message: `${res.status} ${res.statusText} — ${url}` });
-      return res;
-    } catch (err) {
-      push({ kind: 'fetch.error', message: `${url} — ${safeStringify(err)}` });
-      throw err;
-    }
-  };
-};
+import { DIAGNOSTICS_REOPEN_KEY, readDiagnosticsLog, writeDiagnosticsLog, type DiagEntry } from '@/utils/diagnosticsCapture';
 
 export const DiagnosticsButton = () => {
   const [open, setOpen] = useState(false);
   const [entries, setEntries] = useState<DiagEntry[]>([]);
 
   useEffect(() => {
-    installCapture();
-    const sync = () => setEntries(readLog());
+    const sync = () => setEntries(readDiagnosticsLog());
     sync();
     window.addEventListener('bm-diag-updated', sync);
     return () => window.removeEventListener('bm-diag-updated', sync);
@@ -112,7 +37,7 @@ export const DiagnosticsButton = () => {
   };
 
   const clear = () => {
-    writeLog([]);
+    writeDiagnosticsLog([]);
     setEntries([]);
     toast('Diagnostics cleared');
   };
@@ -120,14 +45,14 @@ export const DiagnosticsButton = () => {
   const reloadAndShare = async () => {
     try { await navigator.clipboard.writeText(formatted()); } catch { /* ignore */ }
     // Mark so we re-open the dialog after reload.
-    try { sessionStorage.setItem('bm_diag_reopen', '1'); } catch { /* ignore */ }
+    try { sessionStorage.setItem(DIAGNOSTICS_REOPEN_KEY, '1'); } catch { /* ignore */ }
     location.reload();
   };
 
   useEffect(() => {
     try {
-      if (sessionStorage.getItem('bm_diag_reopen') === '1') {
-        sessionStorage.removeItem('bm_diag_reopen');
+      if (sessionStorage.getItem(DIAGNOSTICS_REOPEN_KEY) === '1') {
+        sessionStorage.removeItem(DIAGNOSTICS_REOPEN_KEY);
         setOpen(true);
       }
     } catch { /* ignore */ }
