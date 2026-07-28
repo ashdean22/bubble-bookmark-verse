@@ -24,7 +24,6 @@ const BubbleFavicon = ({ url, alt, priority }: { url: string; alt: string; prior
       }}
       loading={priority ? 'eager' : 'lazy'}
       decoding="async"
-      fetchPriority={priority ? 'high' : 'low'}
       onError={(e) => { e.currentTarget.src = FALLBACK_ICON; }}
     />
   );
