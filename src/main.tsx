@@ -1,7 +1,10 @@
 import './polyfills.ts'
+import { installDiagnosticsCapture } from './utils/diagnosticsCapture.ts'
 import { createElement } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import './index.css'
+
+installDiagnosticsCapture();
 
 const clearBootScreen = () => {
   const w = (window as unknown as { __bootWatchdog?: number }).__bootWatchdog;

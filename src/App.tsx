@@ -1,14 +1,9 @@
 import { lazy, Suspense, useEffect, useState } from "react";
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
 
-// Keep the home route eager so the app never shows a blank screen while booting.
-const NotFound = lazy(() => import("./pages/NotFound"));
-// Diagnostics is a debug affordance — never block first paint on it.
+const Toaster = lazy(() => import("@/components/ui/toaster").then((m) => ({ default: m.Toaster })));
+const Sonner = lazy(() => import("@/components/ui/sonner").then((m) => ({ default: m.Toaster })));
 const DiagnosticsButton = lazy(() =>
   import("@/components/DiagnosticsButton").then((m) => ({ default: m.DiagnosticsButton })),
 );
@@ -19,9 +14,16 @@ const RouteFallback = () => (
   </div>
 );
 
-// Mount diagnostics only once the browser is idle so its chunk never competes
-// with the first paint.
-const DeferredDiagnostics = () => {
+const InlineNotFound = () => (
+  <main className="min-h-screen bg-background text-foreground flex items-center justify-center px-6 text-center">
+    <div>
+      <h1 className="text-3xl font-bold mb-2">Page not found</h1>
+      <a className="text-primary hover:underline" href="/">Return to BubbleMark</a>
+    </div>
+  </main>
+);
+
+const DeferredUtilities = () => {
   const [ready, setReady] = useState(false);
   useEffect(() => {
     const id = window.setTimeout(() => setReady(true), 2500);
@@ -30,29 +32,25 @@ const DeferredDiagnostics = () => {
   if (!ready) return null;
   return (
     <Suspense fallback={null}>
+      <Toaster />
+      <Sonner />
       <DiagnosticsButton />
     </Suspense>
   );
 };
 
-const App = () => (
-  <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <ErrorBoundary>
-        <BrowserRouter>
-          <Suspense fallback={<RouteFallback />}>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/index" element={<Index />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-          <DeferredDiagnostics />
-        </BrowserRouter>
-      </ErrorBoundary>
-  </TooltipProvider>
-);
+const App = () => {
+  const path = typeof window !== "undefined" ? window.location.pathname : "/";
+  const isHome = path === "/" || path === "/index";
+
+  return (
+    <ErrorBoundary>
+      <Suspense fallback={<RouteFallback />}>
+        {isHome ? <Index /> : <InlineNotFound />}
+      </Suspense>
+      <DeferredUtilities />
+    </ErrorBoundary>
+  );
+};
 
 export default App;
