@@ -1,8 +1,9 @@
 import './polyfills.ts'
 import { installDiagnosticsCapture } from './utils/diagnosticsCapture.ts'
 import { createElement } from 'react'
-import { createRoot, type Root } from 'react-dom/client'
+import { createRoot } from 'react-dom/client'
 import './index.css'
+import App from './App.tsx'
 
 installDiagnosticsCapture();
 
@@ -13,25 +14,6 @@ const clearBootScreen = () => {
   const boot = document.getElementById('boot');
   if (boot) boot.remove();
 };
-
-const startupShell = (message = 'Loading BubbleMark…') =>
-  createElement(
-    'div',
-    {
-      className:
-        'min-h-screen bg-background text-foreground flex items-center justify-center px-6 font-body',
-      role: 'status',
-      'aria-live': 'polite',
-    },
-    createElement(
-      'div',
-      { className: 'flex flex-col items-center gap-3 text-center' },
-      createElement('div', {
-        className: 'h-10 w-10 rounded-full border-2 border-primary/30 border-t-primary animate-spin',
-      }),
-      createElement('div', { className: 'text-sm text-muted-foreground' }, message),
-    ),
-  );
 
 const renderStartupError = (container: HTMLElement, error: unknown) => {
   console.error('[BubbleMark] startup failed', error);
@@ -44,23 +26,6 @@ const renderStartupError = (container: HTMLElement, error: unknown) => {
   clearBootScreen();
 };
 
-const loadApp = async (root: Root, container: HTMLElement) => {
-  const timeoutId = window.setTimeout(() => {
-    root.render(startupShell('Still loading BubbleMark…'));
-    clearBootScreen();
-  }, 2500);
-
-  try {
-    const { default: App } = await import('./App.tsx');
-    window.clearTimeout(timeoutId);
-    root.render(createElement(App));
-    window.requestAnimationFrame(clearBootScreen);
-  } catch (error) {
-    window.clearTimeout(timeoutId);
-    renderStartupError(container, error);
-  }
-};
-
 const mount = () => {
   const container = document.getElementById('root');
   if (!container) {
@@ -70,9 +35,8 @@ const mount = () => {
 
   try {
     const root = createRoot(container);
-    root.render(startupShell());
+    root.render(createElement(App));
     window.requestAnimationFrame(clearBootScreen);
-    void loadApp(root, container);
   } catch (err) {
     renderStartupError(container, err);
   }
