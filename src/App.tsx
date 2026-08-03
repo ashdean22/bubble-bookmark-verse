@@ -43,6 +43,13 @@ const App = () => {
   const path = typeof window !== "undefined" ? window.location.pathname : "/";
   const isHome = path === "/" || path === "/index";
 
+  useEffect(() => {
+    const watchdog = (window as unknown as { __bootWatchdog?: number }).__bootWatchdog;
+    if (watchdog !== undefined) window.clearTimeout(watchdog);
+    document.documentElement.classList.add("app-ready");
+    document.getElementById("boot")?.remove();
+  }, []);
+
   return (
     <ErrorBoundary>
       <Suspense fallback={<RouteFallback />}>

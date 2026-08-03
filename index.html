@@ -76,8 +76,7 @@
       html.app-ready #boot{display:none}
     </style>
     <script>
-      // Boot watchdog: guarantees the user never sits on a blank screen.
-      // If React has not mounted within 9s, surface a retry control instead of nothing.
+      // Boot watchdog: keep recovery visible until React has actually committed.
       window.__bootWatchdog = setTimeout(function () {
         var b = document.getElementById('boot');
         if (!b || document.documentElement.classList.contains('app-ready')) return;
@@ -85,7 +84,7 @@
         if (m) m.textContent = 'Taking longer than usual to start.';
         var btn = b.querySelector('button');
         if (btn) btn.style.display = 'inline-block';
-      }, 9000);
+      }, 6000);
     </script>
 
     <!-- JSON-LD Structured Data -->
