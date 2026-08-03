@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
+import { TearFilter } from "@/components/bubble/Bubble";
 
 const Toaster = lazy(() => import("@/components/ui/toaster").then((m) => ({ default: m.Toaster })));
 const Sonner = lazy(() => import("@/components/ui/sonner").then((m) => ({ default: m.Toaster })));
@@ -52,6 +53,7 @@ const App = () => {
 
   return (
     <ErrorBoundary>
+      <TearFilter />
       <Suspense fallback={<RouteFallback />}>
         {isHome ? <Index /> : <InlineNotFound />}
       </Suspense>
