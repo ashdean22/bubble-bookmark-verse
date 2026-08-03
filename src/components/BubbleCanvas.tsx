@@ -461,7 +461,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
                     if (vAlong < 0) {
                       // Soft bounce: most of the impact energy is absorbed, so
                       // bubbles kiss and drift apart rather than ricochet.
-                      const restitution = 0.8;
+                      const restitution = 0.95;
                       const j = -(1 + restitution) * vAlong / totalMass;
                       data1.vx -= nx * j * m2;
                       data1.vy -= ny * j * m2;
