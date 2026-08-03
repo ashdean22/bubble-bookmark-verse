@@ -540,14 +540,16 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
       next.add(bookmarkId);
       return next;
     });
-    setTimeout(() => {
-      onRemoveBookmark(bookmarkId);
-      setPoppingIds(prev => {
-        const next = new Set(prev);
-        next.delete(bookmarkId);
-        return next;
-      });
-    }, 450);
+  }, []);
+
+  const finishPop = useCallback((bookmarkId: string) => {
+    onRemoveBookmark(bookmarkId);
+    setPoppingIds(prev => {
+      if (!prev.has(bookmarkId)) return prev;
+      const next = new Set(prev);
+      next.delete(bookmarkId);
+      return next;
+    });
   }, [onRemoveBookmark]);
 
   const handleBubbleClick = (bookmark: Bookmark) => {
