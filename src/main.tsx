@@ -36,7 +36,6 @@ const mount = () => {
   try {
     const root = createRoot(container);
     root.render(createElement(App));
-    window.requestAnimationFrame(clearBootScreen);
   } catch (err) {
     renderStartupError(container, err);
   }
