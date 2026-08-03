@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import type { CSSProperties } from 'react';
 import { Bookmark } from '@/pages/Index';
 import { ExternalLink, Pencil, Trash2 } from 'lucide-react';
+import { Bubble } from '@/components/bubble/Bubble';
 
 const FALLBACK_ICON = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMSA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDMgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K';
 
@@ -540,14 +541,16 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
       next.add(bookmarkId);
       return next;
     });
-    setTimeout(() => {
-      onRemoveBookmark(bookmarkId);
-      setPoppingIds(prev => {
-        const next = new Set(prev);
-        next.delete(bookmarkId);
-        return next;
-      });
-    }, 450);
+  }, []);
+
+  const finishPop = useCallback((bookmarkId: string) => {
+    onRemoveBookmark(bookmarkId);
+    setPoppingIds(prev => {
+      if (!prev.has(bookmarkId)) return prev;
+      const next = new Set(prev);
+      next.delete(bookmarkId);
+      return next;
+    });
   }, [onRemoveBookmark]);
 
   const handleBubbleClick = (bookmark: Bookmark) => {
@@ -663,7 +666,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
   const contextBookmark = contextMenu ? activeBookmarks.find(b => b.id === contextMenu.bookmarkId) : null;
 
   return (
-    <div ref={canvasRef} className="absolute inset-0 overflow-hidden">
+    <div ref={canvasRef} className="bm-board absolute inset-0 overflow-hidden">
       {activeBookmarks.map((bookmark, index) => {
         const heatStyles = getHeatStylesAndSize(bookmark.accessCount, maxAccessCount, isMobile, isTablet);
         const isDragging = draggedBubble === bookmark.id;
@@ -691,139 +694,32 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
             onTouchStart={(e) => handleDragStart(e, bookmark.id)}
             onContextMenu={(e) => handleContextMenu(e, bookmark.id)}
           >
-            {/* Realistic bubble */}
-            <div
-              className="bubble-shell w-full h-full rounded-full flex flex-col items-center justify-center relative overflow-hidden"
-              style={{
-                // Soap-bubble glass: mostly transparent film with faint prismatic tint,
-                // heat-map hue kept as a very subtle wash so frequency is still legible.
-                background: `
-                   radial-gradient(ellipse 50% 38% at 32% 22%, hsla(0,0%,100%,0.45), transparent 60%),
-                   radial-gradient(circle at 68% 80%, hsla(${heatStyles.hue}, 95%, 45%, 0.55), transparent 65%),
-                   radial-gradient(circle at 50% 55%, hsla(${heatStyles.hue}, ${heatStyles.saturation}%, 50%, 0.45), hsla(${heatStyles.hue}, ${heatStyles.saturation}%, 35%, 0.35) 70%, hsla(${heatStyles.hue}, 70%, 25%, 0.4) 100%)
-                 `,
-                 border: `1px solid hsla(${heatStyles.hue}, 60%, 85%, 0.4)`,
-                 boxShadow: `
-                   0 14px 34px hsla(${heatStyles.hue}, 60%, 12%, 0.5),
-                   0 0 24px ${heatStyles.glow},
-                   inset 0 -18px 34px hsla(${heatStyles.hue}, 80%, 25%, 0.55),
-                   inset 0 8px 20px hsla(0, 0%, 100%, 0.28),
-                   inset 0 0 0 1px hsla(0, 0%, 100%, 0.14)
-                 `,
-                 backdropFilter: 'blur(2px) saturate(1.5)',
-                 WebkitBackdropFilter: 'blur(2px) saturate(1.5)',
-              }}
-              onClick={() => handleBubbleClick(bookmark)}
-            >
-              {/* #2 Iridescent rim — soap-film thin-film interference */}
-              <div
-                className="absolute inset-0 rounded-full pointer-events-none"
-                style={{
-                  padding: '2px',
-                  background: `conic-gradient(from 0deg,
-                    hsla(0,   95%, 75%, 0.9),
-                    hsla(45,  95%, 75%, 0.9),
-                    hsla(120, 85%, 75%, 0.9),
-                    hsla(190, 95%, 75%, 0.9),
-                    hsla(260, 90%, 80%, 0.9),
-                    hsla(320, 95%, 80%, 0.9),
-                    hsla(0,   95%, 75%, 0.9))`,
-                  WebkitMask:
-                    'linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)',
-                  WebkitMaskComposite: 'xor',
-                  maskComposite: 'exclude',
-                   animation: `iridescent-spin ${14 + (parseInt(bookmark.id.slice(-2), 36) % 10)}s linear infinite`,
-                   mixBlendMode: 'overlay',
-                   opacity: 0.7,
-                }}
-              />
-              {/* Broad prismatic sheen sweeping across the film */}
-              <div
-                className="absolute inset-0 rounded-full pointer-events-none"
-                style={{
-                  background: `conic-gradient(from 210deg at 40% 40%,
-                    hsla(300, 90%, 80%, 0.25),
-                    hsla(200, 90%, 80%, 0.25),
-                    hsla(150, 90%, 80%, 0.2),
-                    hsla(50,  90%, 80%, 0.25),
-                    hsla(340, 90%, 80%, 0.25),
-                    hsla(300, 90%, 80%, 0.25))`,
-                   mixBlendMode: 'overlay',
-                   opacity: 0.35,
-                }}
-              />
-              {/* Light reflection highlight */}
-              <div 
-                className="absolute rounded-full pointer-events-none"
-                style={{
-                  width: '45%',
-                  height: '28%',
-                  top: '10%',
-                  left: '16%',
-                  background: 'linear-gradient(180deg, hsla(0, 0%, 100%, 0.9) 0%, hsla(0, 0%, 100%, 0) 100%)',
-                  borderRadius: '50%',
-                  transform: 'rotate(-18deg)',
-                  filter: 'blur(1px)',
-                }}
-              />
-              <div 
-                className="absolute rounded-full pointer-events-none"
-                style={{
-                  width: '14%',
-                  height: '10%',
-                  top: '68%',
-                  left: '58%',
-                  background: 'hsla(0, 0%, 100%, 0.75)',
-                  borderRadius: '50%',
-                  filter: 'blur(0.5px)',
-                }}
-              />
-              {/* White contrast disc behind logo for legibility against iridescent overlays */}
-              <div
-                className="absolute rounded-full pointer-events-none z-10 flex items-center justify-center"
-                style={{
-                  width: '46%',
-                  height: '46%',
-                  top: '27%',
-                  left: '27%',
-                  background: 'radial-gradient(circle at 50% 45%, hsla(0,0%,100%,0.85) 0%, hsla(0,0%,100%,0.65) 70%, hsla(0,0%,100%,0.35) 100%)',
-                  boxShadow: '0 2px 6px hsla(0,0%,0%,0.2), inset 0 0 0 1px hsla(0,0%,100%,0.45)',
-                  backdropFilter: 'blur(2px)',
-                }}
-              >
-                <BubbleFavicon url={bookmark.favicon} alt={bookmark.title} priority={index < 12} />
-              </div>
-              <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                <ExternalLink className="w-3 h-3 text-white drop-shadow-lg" />
-              </div>
+            <Bubble
+              size={heatStyles.size}
+              seed={index}
+              sparkle
+              refract={activeBookmarks.length <= 40 || heatStyles.size >= 80}
+              label={bookmark.title}
+              popping={isPopping}
+              onPopped={() => finishPop(bookmark.id)}
+              onActivate={() => handleBubbleClick(bookmark)}
+              glyph={
+                <span
+                  className="relative flex items-center justify-center rounded-full"
+                  style={{
+                    width: '46%',
+                    height: '46%',
+                    background: 'radial-gradient(circle at 50% 45%, hsla(0,0%,100%,0.9) 0%, hsla(0,0%,100%,0.7) 70%, hsla(0,0%,100%,0.4) 100%)',
+                    boxShadow: '0 2px 6px hsla(0,0%,0%,0.2), inset 0 0 0 1px hsla(0,0%,100%,0.45)',
+                  }}
+                >
+                  <BubbleFavicon url={bookmark.favicon} alt={bookmark.title} priority={index < 12} />
+                </span>
+              }
+            />
+            <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+              <ExternalLink className="w-3 h-3 text-white drop-shadow-lg" />
             </div>
-            {/* #8 Pop particle spray — only rendered while popping */}
-            {isPopping && (
-              <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 40 }}>
-                {Array.from({ length: 8 }).map((_, i) => {
-                  const angle = (i / 8) * Math.PI * 2;
-                  const dist = heatStyles.size * 0.7;
-                  return (
-                    <span
-                      key={i}
-                      className="bubble-particle absolute rounded-full"
-                      style={{
-                        left: '50%',
-                        top: '50%',
-                        width: 6,
-                        height: 6,
-                        marginLeft: -3,
-                        marginTop: -3,
-                        background: heatStyles.highlight,
-                        boxShadow: `0 0 8px ${heatStyles.glow}`,
-                        '--px': `${Math.cos(angle) * dist}px`,
-                        '--py': `${Math.sin(angle) * dist}px`,
-                      } as CSSProperties}
-                    />
-                  );
-                })}
-              </div>
-            )}
           </div>
         );
       })}

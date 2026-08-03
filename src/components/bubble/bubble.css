@@ -1,0 +1,281 @@
+/* ── BubbleMark: clear glass sphere with pastel thin-film iridescence ── */
+
+.bm-board {
+  background:
+    radial-gradient(60% 45% at 8% 4%, rgba(190, 110, 255, 0.35), transparent 70%),
+    radial-gradient(55% 40% at 94% 6%, rgba(150, 90, 255, 0.3), transparent 70%),
+    radial-gradient(120% 90% at 50% 118%, #2ea6f5 0%, #1352d6 26%, #10229c 52%, #2a1470 76%, #5b1f8f 100%);
+}
+
+.bm-bubble {
+  position: relative;
+  display: block;
+  width: var(--bm-size);
+  height: var(--bm-size);
+  border-radius: 50%;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  animation: bm-float 6.5s ease-in-out infinite;
+  will-change: transform;
+}
+
+.bm-bubble:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.9);
+  outline-offset: 6px;
+  border-radius: 50%;
+}
+
+/* Every film layer shares the eaten mask during a pop */
+.bm-bubble .bm-layer {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.bm-bubble[data-popping='true'] .bm-maskable {
+  -webkit-mask-image: radial-gradient(
+    circle at 76% 64%,
+    transparent var(--bm-eat, 0%),
+    #000 calc(var(--bm-eat, 0%) + 1.5%)
+  );
+  mask-image: radial-gradient(
+    circle at 76% 64%,
+    transparent var(--bm-eat, 0%),
+    #000 calc(var(--bm-eat, 0%) + 1.5%)
+  );
+}
+
+/* Glass core — never a filled disc */
+.bm-core {
+  background: radial-gradient(
+    circle at 50% 52%,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0) 24%,
+    rgba(255, 255, 255, 0.05) 62%,
+    rgba(255, 255, 255, 0.12) 88%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
+  box-shadow: 0 18px 40px rgba(6, 10, 60, 0.45);
+  animation: bm-wobble 7s ease-in-out infinite;
+}
+
+.bm-refract {
+  backdrop-filter: blur(2.5px) saturate(1.15);
+  -webkit-backdrop-filter: blur(2.5px) saturate(1.15);
+}
+
+/* Pastel thin-film sweep */
+.bm-film {
+  background: conic-gradient(
+    from 0deg,
+    #ffb3e6,
+    #cbb6ff,
+    #a9e8ff,
+    #b6ffe0,
+    #fff2b8,
+    #ffc4e4,
+    #ffb3e6
+  );
+  filter: blur(6px);
+  opacity: 0.62;
+  mix-blend-mode: screen;
+  animation: bm-hue 22s linear infinite;
+}
+
+/* Rainbow smear across the belly */
+.bm-band {
+  background: linear-gradient(
+    112deg,
+    transparent 12%,
+    rgba(255, 170, 225, 0.55) 26%,
+    rgba(200, 175, 255, 0.5) 40%,
+    rgba(160, 230, 255, 0.55) 54%,
+    rgba(180, 255, 220, 0.45) 68%,
+    rgba(255, 244, 180, 0.4) 80%,
+    transparent 94%
+  );
+  filter: blur(6px);
+  mix-blend-mode: screen;
+  opacity: 0.75;
+  animation: bm-smear 11s ease-in-out infinite;
+}
+
+/* The single detail that sells glass */
+.bm-rim {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.55);
+}
+
+.bm-spec,
+.bm-spec2,
+.bm-glint {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.bm-spec {
+  width: 47%;
+  height: 24%;
+  top: 13%;
+  left: 12%;
+  transform: rotate(-32deg);
+  filter: blur(3px);
+  opacity: 0.85;
+}
+
+.bm-spec2 {
+  width: 20%;
+  height: 9%;
+  top: 30%;
+  left: 14%;
+  transform: rotate(-28deg);
+  filter: blur(2.5px);
+  opacity: 0.5;
+}
+
+.bm-glint {
+  width: 8%;
+  height: 8%;
+  top: 18%;
+  left: 26%;
+  opacity: 0.95;
+}
+
+.bm-sparkle {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  pointer-events: none;
+  animation: bm-twinkle 4.5s ease-in-out infinite;
+}
+.bm-sparkle::before,
+.bm-sparkle::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: #fff;
+}
+.bm-sparkle::before {
+  clip-path: polygon(50% 0%, 56% 44%, 100% 50%, 56% 56%, 50% 100%, 44% 56%, 0% 50%, 44% 44%);
+}
+.bm-sparkle::after {
+  transform: rotate(45deg) scale(0.55);
+  clip-path: polygon(50% 0%, 56% 44%, 100% 50%, 56% 56%, 50% 100%, 44% 56%, 0% 50%, 44% 44%);
+  opacity: 0.7;
+}
+
+.bm-content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.bm-label {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  max-width: 130%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+/* Torn film lip drawn exactly at the mask front */
+.bm-tear {
+  position: absolute;
+  inset: -6%;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at 76% 64%,
+    transparent calc(var(--bm-eat, 0%) - 2.5%),
+    rgba(255, 255, 255, 0.95) calc(var(--bm-eat, 0%) - 0.6%),
+    rgba(170, 240, 255, 0.85) calc(var(--bm-eat, 0%) + 1.2%),
+    transparent calc(var(--bm-eat, 0%) + 3.4%)
+  );
+  filter: url(#bm-tear-filter);
+  mix-blend-mode: screen;
+}
+
+.bm-droplet {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.95), rgba(180, 230, 255, 0.35) 70%, transparent);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+  animation: bm-spray var(--bm-dur, 800ms) cubic-bezier(0.18, 0.7, 0.4, 1) var(--bm-delay, 0ms) forwards;
+  opacity: 0;
+}
+
+@keyframes bm-spray {
+  0% { transform: translate(-50%, -50%) scale(0.4); opacity: 0; }
+  12% { opacity: 1; }
+  100% {
+    transform: translate(calc(-50% + var(--bm-dx)), calc(-50% + var(--bm-dy))) scale(1);
+    opacity: 0;
+  }
+}
+
+@keyframes bm-hue {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes bm-smear {
+  0%, 100% { transform: translate3d(-4%, 2%, 0) rotate(-2deg); }
+  50% { transform: translate3d(5%, -3%, 0) rotate(3deg); }
+}
+
+@keyframes bm-float {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -5px, 0); }
+}
+
+@keyframes bm-wobble {
+  0%, 100% { border-radius: 50% 50% 50% 50% / 50% 50% 50% 50%; }
+  50% { border-radius: 52% 48% 47% 53% / 49% 52% 48% 51%; }
+}
+
+@keyframes bm-twinkle {
+  0%, 100% { opacity: 0.15; transform: scale(0.7) rotate(0deg); }
+  50% { opacity: 0.95; transform: scale(1) rotate(15deg); }
+}
+
+@keyframes bm-fadepop {
+  to { opacity: 0; transform: scale(0.96); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bm-bubble,
+  .bm-core,
+  .bm-film,
+  .bm-band,
+  .bm-sparkle {
+    animation: none !important;
+  }
+  .bm-droplet,
+  .bm-tear {
+    display: none !important;
+  }
+  .bm-bubble[data-popping='true'] {
+    animation: bm-fadepop 180ms ease-out forwards !important;
+  }
+  .bm-bubble[data-popping='true'] .bm-maskable {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+}
