@@ -39,35 +39,10 @@ export function useLocalStorage<T>(
     }
   };
 
-  const [storedValue, setStoredValue] = useState<T>(() => initialValueRef.current);
-
-  useEffect(() => {
-    let cancelled = false;
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
-    let idleId: number | undefined;
-    const writeVersionAtStart = writeVersionRef.current;
-
-    const hydrate = () => {
-      if (cancelled || writeVersionRef.current !== writeVersionAtStart) return;
-      setStoredValue(readValue());
-    };
-
-    if (typeof window.requestIdleCallback === 'function') {
-      idleId = window.requestIdleCallback(hydrate, { timeout: 700 });
-    } else {
-      timeoutId = window.setTimeout(hydrate, 0);
-    }
-
-    return () => {
-      cancelled = true;
-      if (idleId !== undefined && typeof window.cancelIdleCallback === 'function') {
-        window.cancelIdleCallback(idleId);
-      }
-      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
-    };
-  // Hydrate once per storage key after the browser has had a chance to paint.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key]);
+  // Local bookmark payloads are small and localStorage is synchronous. Reading
+  // during the lazy initializer avoids an empty first render followed by an
+  // idle-callback delay, so saved bubbles are present on the first paint.
+  const [storedValue, setStoredValue] = useState<T>(readValue);
 
   const setValue = (value: T | ((val: T) => T)) => {
     try {
