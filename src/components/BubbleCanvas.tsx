@@ -214,9 +214,9 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
         // Slower, wider-varied parameters produce a more organic, "floating" feel.
         const seed = Math.random() * 10000;
         const timeOffset = Math.random() * 100000;
-        const wanderSpeed = 0.00012 + Math.random() * 0.00045;   // slower, more drift-like
-        const wanderStrength = 0.005 + Math.random() * 0.007;    // varied steering force
-        const targetInterval = 5000 + Math.random() * 9000;      // 5–14s wander cadence
+        const wanderSpeed = 0.00025 + Math.random() * 0.0008;   // slower, more drift-like
+        const wanderStrength = 0.011 + Math.random() * 0.014;    // varied steering force
+        const targetInterval = 2600 + Math.random() * 5000;      // 5–14s wander cadence
 
         bubbleDataRef.current.set(bookmark.id, {
           x: finiteOr(bookmark.x, 80),
@@ -305,14 +305,14 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
           let targetAy = 0;
           if (distToTarget > 1) {
             const arrival = Math.min(1, distToTarget / 180); // ease in last ~180px
-            const forceStrength = d.wanderStrength * 0.35 * arrival;
+            const forceStrength = d.wanderStrength * 0.6 * arrival;
             targetAx = (dx / distToTarget) * forceStrength;
             targetAy = (dy / distToTarget) * forceStrength;
           }
 
           // Heavier acceleration smoothing → no jitter, slow direction changes
-          d.ax = d.ax * 0.97 + targetAx * 0.03;
-          d.ay = d.ay * 0.97 + targetAy * 0.03;
+          d.ax = d.ax * 0.94 + targetAx * 0.06;
+          d.ay = d.ay * 0.94 + targetAy * 0.06;
 
           d.vx += d.ax;
           d.vy += d.ay;
@@ -321,16 +321,16 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
           // Includes a tiny curl (perpendicular) component so paths gently
           // arc instead of moving in straight lines.
           const wobbleTime = time * d.wanderSpeed;
-          const wobbleX = Math.sin(wobbleTime * 0.7  + d.seed)       * 0.0028 +
-                          Math.sin(wobbleTime * 0.3  + d.seed * 2.1) * 0.0014 +
-                          Math.sin(wobbleTime * 0.13 + d.seed * 3.7) * 0.0007;
-          const wobbleY = Math.cos(wobbleTime * 0.5  + d.seed)       * 0.0028 +
-                          Math.cos(wobbleTime * 0.23 + d.seed * 2.9) * 0.0014 +
-                          Math.cos(wobbleTime * 0.11 + d.seed * 4.1) * 0.0007;
+          const wobbleX = Math.sin(wobbleTime * 0.7  + d.seed)       * 0.006 +
+                          Math.sin(wobbleTime * 0.3  + d.seed * 2.1) * 0.003 +
+                          Math.sin(wobbleTime * 0.13 + d.seed * 3.7) * 0.0015;
+          const wobbleY = Math.cos(wobbleTime * 0.5  + d.seed)       * 0.006 +
+                          Math.cos(wobbleTime * 0.23 + d.seed * 2.9) * 0.003 +
+                          Math.cos(wobbleTime * 0.11 + d.seed * 4.1) * 0.0015;
 
           // Curl noise: rotate a slow sine by 90° to nudge the bubble sideways
           // relative to its current heading → arcing, swimming-like paths.
-          const curl = Math.sin(wobbleTime * 0.17 + d.seed * 1.3) * 0.0015;
+          const curl = Math.sin(wobbleTime * 0.17 + d.seed * 1.3) * 0.0032;
           const speedNow = Math.sqrt(d.vx * d.vx + d.vy * d.vy) || 0.0001;
           const curlX = (-d.vy / speedNow) * curl;
           const curlY = ( d.vx / speedNow) * curl;
@@ -364,10 +364,10 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
 
           // Light damping → bounces decay naturally instead of dying instantly,
           // giving the cryptobubbles-style springy settle.
-          d.vx *= 0.988;
-          d.vy *= 0.988;
+          d.vx *= 0.993;
+          d.vy *= 0.993;
 
-          const maxV = 1.7;
+          const maxV = 2.8;
           const speed = Math.sqrt(d.vx * d.vx + d.vy * d.vy);
           if (speed > maxV) {
             const scale = maxV / speed;
@@ -376,8 +376,8 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
           }
           
           // Slightly eased display lerp: contact reads as a cushioned squeeze.
-          d.displayX += (d.x - d.displayX) * 0.17;
-          d.displayY += (d.y - d.displayY) * 0.17;
+          d.displayX += (d.x - d.displayX) * 0.22;
+          d.displayY += (d.y - d.displayY) * 0.22;
         });
 
         frameCountRef.current += 1;
