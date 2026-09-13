@@ -6,8 +6,11 @@
 - [x] Verify references and production build.
 
 ## Loading reliability
-- [ ] Harden startup against older browsers and failed optional chunks.
-- [ ] Verify empty, corrupted, legacy, and large saved sessions load.
+- [x] Harden startup against older browsers and failed optional chunks.
+- [x] Verify empty, corrupted, legacy, and large saved sessions load after the latest fix.
+
+## Background visibility
+- [x] Brighten the bubble board while preserving its blue-violet space character.
 
 ## Pricing model update
 - [ ] Free tier limited to 15 bubbles, one device, local only, basic themes.

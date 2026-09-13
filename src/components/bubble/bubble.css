@@ -1,10 +1,7 @@
 /* ── BubbleMark: clear glass sphere with pastel thin-film iridescence ── */
 
 .bm-board {
-  background:
-    radial-gradient(60% 45% at 8% 4%, rgba(190, 110, 255, 0.35), transparent 70%),
-    radial-gradient(55% 40% at 94% 6%, rgba(150, 90, 255, 0.3), transparent 70%),
-    radial-gradient(120% 90% at 50% 118%, #2ea6f5 0%, #1352d6 26%, #10229c 52%, #2a1470 76%, #5b1f8f 100%);
+  background: var(--gradient-board);
 }
 
 .bm-bubble {
