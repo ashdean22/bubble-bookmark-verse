@@ -1,11 +1,18 @@
-# BubbleMark loading reliability fix
+# BubbleMark Cosmetic Refinement
 
 ## Scope
-- Preserve the current design, bubble physics, pricing, features, saved bookmarks, and startup recovery.
-- Fix only startup and loading failure paths.
+Apply the selected Iridescent Glass Canvas direction without changing pricing, bookmark logic, bubble physics, storage, loading recovery, backend behavior, or publishing.
 
 ## Changes
-1. Guard optional browser APIs used during the first render so older Safari/WebViews cannot crash before BubbleMark appears.
-2. Isolate delayed utilities from the main app so a missing or failed optional chunk cannot replace the bookmark screen.
-3. Make startup failure recovery remain available even when rendering fails asynchronously.
-4. Test empty, corrupted, legacy, and large saved bookmark sessions in a real browser, then confirm the build is healthy.
+- Refine bubble shells to clearer glass with softer thin-film colors, stronger rim iridescence, subtle refraction, softer highlights, and seed-based visual variation.
+- Keep favicons crisp and centered; replace failed favicons with a polished neutral globe mark.
+- Enable clean, readable, truncated labels beneath bubbles using DM Sans.
+- Refine the BubbleMark header presentation using Space Grotesk while preserving its existing placement and capacity indicator.
+- Replace the bright board treatment with the locked Twilight Glass palette and restrained layered ambient depth.
+- Preserve reduced-motion behavior and reduce costly optical effects for dense boards and smaller screens.
+
+## Technical details
+- Define all new visual colors, gradients, and shadows as semantic CSS tokens.
+- Pass seed-derived CSS variables into the existing bubble component to vary film rotation and highlight placement without changing motion physics.
+- Update only presentation files and the font declaration in the document head.
+- Validate the production build, browser console, desktop canvas, mobile canvas, favicon fallback, labels, and existing add/edit/delete interactions.
