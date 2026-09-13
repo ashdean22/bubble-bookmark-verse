@@ -45,7 +45,7 @@
     --gradient-bubble: linear-gradient(160deg, hsla(200, 80%, 60%, 0.25), hsla(180, 65%, 55%, 0.15));
     --gradient-hero: linear-gradient(180deg, hsl(210 40% 98%), hsl(210 35% 95%), hsl(210 30% 92%));
     --gradient-glow: radial-gradient(ellipse at center, hsla(200, 85%, 55%, 0.2), hsla(180, 60%, 50%, 0.1), transparent 70%);
-    --gradient-board: radial-gradient(60% 45% at 8% 4%, hsl(285 90% 72% / 0.48), transparent 70%), radial-gradient(55% 40% at 94% 6%, hsl(255 90% 72% / 0.42), transparent 70%), radial-gradient(120% 90% at 50% 118%, hsl(195 88% 66%) 0%, hsl(212 82% 59%) 28%, hsl(228 66% 51%) 56%, hsl(258 55% 46%) 80%, hsl(275 52% 52%) 100%);
+    --gradient-board: radial-gradient(60% 45% at 8% 4%, hsl(200 90% 94% / 0.9), transparent 70%), radial-gradient(55% 40% at 94% 6%, hsl(199 85% 92% / 0.8), transparent 70%), linear-gradient(180deg, hsl(202 90% 95%) 0%, hsl(204 80% 89%) 55%, hsl(208 70% 84%) 100%);
     
     /* Light shadows */
     --shadow-glow: 0 0 40px hsla(200, 85%, 50%, 0.25), 0 0 80px hsla(180, 60%, 45%, 0.15);
