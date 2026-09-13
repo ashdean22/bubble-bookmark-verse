@@ -77,12 +77,16 @@ const AnalyticsPanel = memo(({
 ));
 AnalyticsPanel.displayName = 'AnalyticsPanel';
 
+const FREE_BUBBLE_LIMIT = 15;
+const LOW_BUBBLE_WARNING_AT = 12;
+const PAID_TIERS = ['pro', 'pro_yearly', 'lifetime', 'premium'];
+
 export const RefactoredIndex = () => {
   // State management using custom hooks
   const [bookmarks, setBookmarks] = useLocalStorage<Bookmark[]>('bubbleBookmarks', [], normalizeBookmarks);
   const [currentSubscription, setCurrentSubscription] = useLocalStorage<string | null>('currentSubscription', null);
 
-  // Kept only for older saved sessions; the free tier is unlimited now.
+  // Kept only for older saved sessions.
   const initializeBubbles = () => 999;
   
   const [availableBubbles, setAvailableBubbles] = useLocalStorage('availableBubbles', initializeBubbles(), normalizeBubbleCount);
@@ -92,8 +96,8 @@ export const RefactoredIndex = () => {
   
   const [showPricingModal, setShowPricingModal] = useState(false);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
-  const [upgradePromptDismissed, setUpgradePromptDismissed] = useLocalStorage('upgradePromptDismissed', false);
   const [showAnalytics, setShowAnalytics] = useState(false);
+
   const [editingBookmark, setEditingBookmark] = useState<Bookmark | null>(null);
 
   // Preload heavy chunks after the main thread is idle — improves perceived perf
