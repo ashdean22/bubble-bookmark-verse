@@ -9,7 +9,7 @@ import {
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell
 } from 'recharts';
-import { Bookmark } from '@/pages/Index';
+import type { Bookmark } from '@/pages/Index';
 
 interface AnalyticsInsightsProps {
   bookmarks: Bookmark[];
