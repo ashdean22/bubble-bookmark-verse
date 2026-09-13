@@ -1,15 +1,11 @@
-import './polyfills.ts'
-import { installDiagnosticsCapture } from './utils/diagnosticsCapture.ts'
-import { createElement } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.tsx'
-
-installDiagnosticsCapture();
-
 const clearBootScreen = () => {
   const w = (window as unknown as { __bootWatchdog?: number }).__bootWatchdog;
   if (w) clearTimeout(w);
+  try {
+    window.sessionStorage.removeItem('bm_entry_retry_v1');
+  } catch {
+    // Startup recovery must also work when browser storage is unavailable.
+  }
   document.documentElement.classList.add('app-ready');
   const boot = document.getElementById('boot');
   if (boot) boot.remove();
@@ -26,19 +22,36 @@ const renderStartupError = (container: HTMLElement, error: unknown) => {
   clearBootScreen();
 };
 
-const mount = () => {
+const mount = async () => {
   const container = document.getElementById('root');
   if (!container) {
     clearBootScreen();
     return;
   }
 
+  // The entry point must always dismiss the static watchdog, even when the
+  // larger application graph is slow or a cached module fails to download.
+  clearBootScreen();
+  container.innerHTML =
+    '<div aria-label="Loading BubbleMark" style="min-height:100dvh;background:#080b1a"></div>';
+
   try {
+    // Keep this entry module dependency-free. It can dismiss the watchdog
+    // before React, styles, or any other application chunk finishes loading.
+    const [, diagnostics, react, reactDom, appModule] = await Promise.all([
+      import('./polyfills.ts'),
+      import('./utils/diagnosticsCapture.ts'),
+      import('react'),
+      import('react-dom/client'),
+      import('./App.tsx'),
+      import('./index.css'),
+    ]);
+    diagnostics.installDiagnosticsCapture();
+    const { createElement } = react;
+    const { createRoot } = reactDom;
+    const { default: App } = appModule;
     const root = createRoot(container);
     root.render(createElement(App));
-    // Safety net: on browsers where effects are delayed or an optional
-    // feature throws, the loading overlay must never stay on screen.
-    window.setTimeout(clearBootScreen, 1500);
   } catch (err) {
     renderStartupError(container, err);
   }
@@ -54,4 +67,4 @@ window.addEventListener('unhandledrejection', () => {
   clearBootScreen();
 });
 
-mount();
+void mount();
