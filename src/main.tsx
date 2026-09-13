@@ -29,33 +29,29 @@ const mount = async () => {
     return;
   }
 
-  // The entry point must always dismiss the static watchdog, even when the
-  // larger application graph is slow or a cached module fails to download.
-  container.innerHTML =
   try {
-    // Install browser fallbacks before evaluating the application graph. Running
-    // this import in parallel with App allowed older WebViews to evaluate App first.
+    // 1. Ensure polyfills are applied before any other module is even evaluated.
+    // This prevents race conditions where Safari hits requestIdleCallback before it's polyfilled.
     await import('./polyfills.ts');
 
-    // Diagnostics are optional and must never hold up or prevent the main screen.
-    const diagnosticsPromise = import('./utils/diagnosticsCapture.ts').catch(() => null);
+    // 2. Install diagnostics before loading the main application graph.
+    const diagnostics = await import('./utils/diagnosticsCapture.ts');
+    diagnostics.installDiagnosticsCapture();
 
+    // 3. Load the core application dependencies in parallel.
+    // We keep the boot screen visible until the React tree is ready to mount.
     const [react, reactDom, appModule] = await Promise.all([
       import('react'),
       import('react-dom/client'),
       import('./App.tsx'),
+      import('./index.css'),
     ]);
-
-    // A stylesheet delivery failure should not make the whole application blank.
-    void import('./index.css').catch((error) => console.warn('[BubbleMark] styles failed to load', error));
 
     const { createElement } = react;
     const { createRoot } = reactDom;
     const { default: App } = appModule;
     const root = createRoot(container);
     root.render(createElement(App));
-
-    void diagnosticsPromise.then((diagnostics) => diagnostics?.installDiagnosticsCapture());
   } catch (err) {
     renderStartupError(container, err);
   }
