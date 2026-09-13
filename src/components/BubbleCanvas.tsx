@@ -705,8 +705,8 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
                   style={{
                     width: '46%',
                     height: '46%',
-                    background: 'radial-gradient(circle at 50% 45%, hsla(0,0%,100%,0.9) 0%, hsla(0,0%,100%,0.7) 70%, hsla(0,0%,100%,0.4) 100%)',
-                    boxShadow: '0 2px 6px hsla(0,0%,0%,0.2), inset 0 0 0 1px hsla(0,0%,100%,0.45)',
+                    background: 'radial-gradient(circle at 50% 40%, hsla(0,0%,100%,0.42) 0%, hsla(0,0%,100%,0.18) 68%, hsla(0,0%,100%,0.06) 100%)',
+                    boxShadow: '0 1px 4px hsla(210,60%,35%,0.14), inset 0 0 0 1px hsla(0,0%,100%,0.35)',
                   }}
                 >
                   <BubbleFavicon url={bookmark.favicon} alt={bookmark.title} priority={index < 12} />

@@ -27,7 +27,9 @@ const InlineNotFound = () => (
 const DeferredUtilities = () => {
   const [ready, setReady] = useState(false);
   useEffect(() => {
-    const id = window.setTimeout(() => setReady(true), 2500);
+    // Mount just after the first paint so notifications work immediately
+    // without competing with the initial render.
+    const id = window.setTimeout(() => setReady(true), 400);
     return () => window.clearTimeout(id);
   }, []);
   if (!ready) return null;

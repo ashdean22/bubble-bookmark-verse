@@ -36,9 +36,22 @@ const mount = () => {
   try {
     const root = createRoot(container);
     root.render(createElement(App));
+    // Safety net: on browsers where effects are delayed or an optional
+    // feature throws, the loading overlay must never stay on screen.
+    window.setTimeout(clearBootScreen, 1500);
   } catch (err) {
     renderStartupError(container, err);
   }
 };
+
+window.addEventListener('error', (e) => {
+  if (!document.documentElement.classList.contains('app-ready')) {
+    console.error('[BubbleMark] early error', e.message);
+  }
+});
+window.addEventListener('unhandledrejection', () => {
+  // A rejected optional import must not leave the app stuck on the loader.
+  clearBootScreen();
+});
 
 mount();
