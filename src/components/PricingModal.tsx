@@ -33,7 +33,7 @@ const proFeatures = [
 export const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
   const { toast } = useToast();
   const [selected, setSelected] = useState<PlanInterest | null>(null);
-  const [selected, setSelected] = useState<PlanInterest | null>(null);
+
   const [email, setEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [joined, setJoined] = useState<PlanInterest | null>(null);
