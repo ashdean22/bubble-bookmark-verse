@@ -85,7 +85,7 @@ export const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
           <DialogHeader className="text-center space-y-2 mb-6">
             <DialogTitle className="text-2xl font-heading">Simple pricing for BubbleMark</DialogTitle>
             <DialogDescription className="text-muted-foreground">
-              Free forever on this device. Go Pro to sync your bubbles everywhere.
+              Free includes 15 bubbles on one device. Go Pro for unlimited bubbles everywhere.
             </DialogDescription>
           </DialogHeader>
 
@@ -94,10 +94,9 @@ export const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
             <div className="rounded-2xl border border-border bg-card/40 p-6 flex flex-col">
               <div className="flex items-center justify-between">
                 <h3 className="font-heading text-lg">Free</h3>
-                <InfinityIcon className="w-5 h-5 text-muted-foreground" />
               </div>
               <div className="mt-4 mb-1"><span className="text-3xl font-bold">$0</span></div>
-              <p className="text-sm text-muted-foreground mb-5">Unlimited bubbles, one device.</p>
+              <p className="text-sm text-muted-foreground mb-5">15 bubbles, one device.</p>
               <ul className="space-y-3 flex-1">
                 {freeFeatures.map((f) => (
                   <li key={f} className="flex items-start gap-2 text-sm">
@@ -123,29 +122,13 @@ export const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
               </div>
 
               <div className="relative mt-4 mb-1 flex items-end gap-1">
-                <span className="text-3xl font-bold">{billing === 'yearly' ? '$14.99' : '$1.99'}</span>
-                <span className="text-sm text-muted-foreground mb-1">/{billing === 'yearly' ? 'year' : 'month'}</span>
+                <span className="text-3xl font-bold">$14.99</span>
+                <span className="text-sm text-muted-foreground mb-1">/year</span>
               </div>
-              <p className="relative text-sm text-muted-foreground mb-4">Cancel anytime.</p>
-
-              <div className="relative grid grid-cols-2 gap-2 mb-5">
-                <button
-                  type="button"
-                  onClick={() => { setBilling('yearly'); setSelected(null); }}
-                  className={`rounded-xl border px-3 py-2 text-xs min-h-[44px] transition-colors ${billing === 'yearly' ? 'border-primary bg-primary/10 text-foreground' : 'border-border text-muted-foreground'}`}
-                >
-                  Yearly · $14.99
-                  <span className="block text-[10px] text-primary font-semibold">Save 37%</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setBilling('monthly'); setSelected(null); }}
-                  className={`rounded-xl border px-3 py-2 text-xs min-h-[44px] transition-colors ${billing === 'monthly' ? 'border-primary bg-primary/10 text-foreground' : 'border-border text-muted-foreground'}`}
-                >
-                  Monthly · $1.99
-                  <span className="block text-[10px] text-muted-foreground">billed monthly</span>
-                </button>
-              </div>
+              <p className="relative text-sm text-muted-foreground mb-5">
+                <InfinityIcon className="inline w-4 h-4 mr-1 align-text-bottom text-primary" />
+                Unlimited bubbles. Cancel anytime.
+              </p>
 
               <ul className="relative space-y-3 flex-1">
                 {proFeatures.map((f) => (
@@ -156,20 +139,18 @@ export const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
                 ))}
               </ul>
 
-              {(() => {
-                const plan: PlanInterest = billing === 'yearly' ? 'pro_yearly' : 'pro_monthly';
-                return joined === plan || selected === plan ? (
-                  <WaitlistForm plan={plan} />
-                ) : (
-                  <Button
-                    className="relative mt-6 w-full min-h-[44px] bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0"
-                    onClick={() => setSelected(plan)}
-                  >
-                    Notify me when Pro launches
-                  </Button>
-                );
-              })()}
+              {joined === 'pro_yearly' || selected === 'pro_yearly' ? (
+                <WaitlistForm plan="pro_yearly" />
+              ) : (
+                <Button
+                  className="relative mt-6 w-full min-h-[44px] bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0"
+                  onClick={() => setSelected('pro_yearly')}
+                >
+                  Notify me when Pro launches
+                </Button>
+              )}
             </div>
+
 
             {/* LIFETIME */}
             <div className="rounded-2xl border border-amber-500/40 bg-card/40 p-6 flex flex-col">
