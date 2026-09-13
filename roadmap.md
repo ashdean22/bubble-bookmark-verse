@@ -26,3 +26,9 @@
 - [x] Gentle warning near 12 bubbles; upgrade prompt at the limit.
 - [x] Remove monthly pricing and outdated free-tier wording everywhere.
 - [x] Verify add/edit/delete still work and build passes.
+
+## Cosmetic refinement
+- [ ] Refine bubbles with clearer glass, softer film color, stronger rims, and natural variation.
+- [ ] Improve BubbleMark branding, favicon fallback, and readable truncated labels.
+- [ ] Add calm layered Twilight Glass background depth without changing canvas behavior.
+- [ ] Verify desktop/mobile presentation, existing interactions, and production build.

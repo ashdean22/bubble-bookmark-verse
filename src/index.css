@@ -45,7 +45,21 @@
     --gradient-bubble: linear-gradient(160deg, hsla(200, 80%, 60%, 0.25), hsla(180, 65%, 55%, 0.15));
     --gradient-hero: linear-gradient(180deg, hsl(210 40% 98%), hsl(210 35% 95%), hsl(210 30% 92%));
     --gradient-glow: radial-gradient(ellipse at center, hsla(200, 85%, 55%, 0.2), hsla(180, 60%, 50%, 0.1), transparent 70%);
-    --gradient-board: radial-gradient(60% 45% at 8% 4%, hsl(285 90% 72% / 0.48), transparent 70%), radial-gradient(55% 40% at 94% 6%, hsl(255 90% 72% / 0.42), transparent 70%), radial-gradient(120% 90% at 50% 118%, hsl(195 88% 66%) 0%, hsl(212 82% 59%) 28%, hsl(228 66% 51%) 56%, hsl(258 55% 46%) 80%, hsl(275 52% 52%) 100%);
+    --canvas-base: 229 55% 10%;
+    --canvas-depth: 228 47% 26%;
+    --canvas-violet: 274 31% 58%;
+    --canvas-cyan: 188 42% 63%;
+    --canvas-foreground: 220 40% 96%;
+    --canvas-muted: 217 25% 78%;
+    --gradient-board: radial-gradient(100% 80% at 8% -8%, hsl(var(--canvas-depth) / 0.72), transparent 64%), radial-gradient(80% 75% at 100% 18%, hsl(var(--canvas-violet) / 0.18), transparent 68%), radial-gradient(95% 70% at 55% 108%, hsl(var(--canvas-cyan) / 0.12), transparent 72%), linear-gradient(155deg, hsl(var(--canvas-base)) 0%, hsl(232 52% 12%) 48%, hsl(247 45% 15%) 100%);
+    --gradient-board-depth: linear-gradient(118deg, transparent 8%, hsl(var(--canvas-cyan) / 0.035) 42%, transparent 70%), radial-gradient(ellipse 70% 45% at 50% 45%, hsl(var(--canvas-depth) / 0.18), transparent 76%);
+    --bubble-rim-cyan: 188 55% 76%;
+    --bubble-rim-violet: 274 40% 73%;
+    --bubble-rim-rose: 326 42% 78%;
+    --bubble-rim-gold: 44 48% 79%;
+    --bubble-glass: 220 45% 96%;
+    --bubble-shadow: 232 70% 4%;
+    --shadow-canvas-glass: 0 12px 34px hsl(var(--bubble-shadow) / 0.28), inset 0 1px 0 hsl(var(--bubble-glass) / 0.16);
     
     /* Light shadows */
     --shadow-glow: 0 0 40px hsla(200, 85%, 50%, 0.25), 0 0 80px hsla(180, 60%, 45%, 0.15);
@@ -109,7 +123,21 @@
     --gradient-bubble: linear-gradient(160deg, hsla(200, 85%, 70%, 0.35), hsla(180, 75%, 60%, 0.2));
     --gradient-hero: linear-gradient(180deg, hsl(220 55% 6%), hsl(215 50% 10%), hsl(210 45% 14%));
     --gradient-glow: radial-gradient(ellipse at center, hsla(200, 95%, 60%, 0.35), hsla(180, 80%, 50%, 0.2), transparent 70%);
-    --gradient-board: radial-gradient(60% 45% at 8% 4%, hsl(285 90% 72% / 0.48), transparent 70%), radial-gradient(55% 40% at 94% 6%, hsl(255 90% 72% / 0.42), transparent 70%), radial-gradient(120% 90% at 50% 118%, hsl(195 88% 66%) 0%, hsl(212 82% 59%) 28%, hsl(228 66% 51%) 56%, hsl(258 55% 46%) 80%, hsl(275 52% 52%) 100%);
+    --canvas-base: 229 55% 10%;
+    --canvas-depth: 228 47% 26%;
+    --canvas-violet: 274 31% 58%;
+    --canvas-cyan: 188 42% 63%;
+    --canvas-foreground: 220 40% 96%;
+    --canvas-muted: 217 25% 78%;
+    --gradient-board: radial-gradient(100% 80% at 8% -8%, hsl(var(--canvas-depth) / 0.72), transparent 64%), radial-gradient(80% 75% at 100% 18%, hsl(var(--canvas-violet) / 0.18), transparent 68%), radial-gradient(95% 70% at 55% 108%, hsl(var(--canvas-cyan) / 0.12), transparent 72%), linear-gradient(155deg, hsl(var(--canvas-base)) 0%, hsl(232 52% 12%) 48%, hsl(247 45% 15%) 100%);
+    --gradient-board-depth: linear-gradient(118deg, transparent 8%, hsl(var(--canvas-cyan) / 0.035) 42%, transparent 70%), radial-gradient(ellipse 70% 45% at 50% 45%, hsl(var(--canvas-depth) / 0.18), transparent 76%);
+    --bubble-rim-cyan: 188 55% 76%;
+    --bubble-rim-violet: 274 40% 73%;
+    --bubble-rim-rose: 326 42% 78%;
+    --bubble-rim-gold: 44 48% 79%;
+    --bubble-glass: 220 45% 96%;
+    --bubble-shadow: 232 70% 4%;
+    --shadow-canvas-glass: 0 12px 34px hsl(var(--bubble-shadow) / 0.28), inset 0 1px 0 hsl(var(--bubble-glass) / 0.16);
     
     --shadow-glow: 0 0 50px hsla(200, 95%, 55%, 0.4), 0 0 100px hsla(180, 80%, 50%, 0.25);
     --shadow-glow-accent: 0 0 50px hsla(35, 100%, 58%, 0.45);
