@@ -72,6 +72,7 @@
       @keyframes bootspin{to{transform:rotate(360deg)}}
       html.app-ready #boot{display:none}
     </style>
+    <noscript><style>#boot{display:none}</style></noscript>
     <script>
       // Boot watchdog: keep recovery visible until React has actually committed.
       window.__bootWatchdog = setTimeout(function () {
