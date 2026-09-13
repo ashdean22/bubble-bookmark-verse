@@ -28,7 +28,7 @@
 - [x] Verify add/edit/delete still work and build passes.
 
 ## Cosmetic refinement
-- [ ] Refine bubbles with clearer glass, softer film color, stronger rims, and natural variation.
-- [ ] Improve BubbleMark branding, favicon fallback, and readable truncated labels.
-- [ ] Add calm layered Twilight Glass background depth without changing canvas behavior.
-- [ ] Verify desktop/mobile presentation, existing interactions, and production build.
+- [x] Refine bubbles with clearer glass, softer film color, stronger rims, and natural variation.
+- [x] Improve BubbleMark branding, favicon fallback, and readable truncated labels.
+- [x] Add calm layered Twilight Glass background depth without changing canvas behavior.
+- [x] Verify desktop/mobile presentation, existing interactions, and production build.
