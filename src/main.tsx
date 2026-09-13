@@ -33,25 +33,32 @@ const mount = async () => {
   // larger application graph is slow or a cached module fails to download.
   clearBootScreen();
   container.innerHTML =
-    '<div aria-label="Loading BubbleMark" style="min-height:100dvh;background:#080b1a"></div>';
+    '<div aria-label="Opening BubbleMark" style="min-height:100dvh;display:flex;align-items:center;justify-content:center;background:#080b1a;color:#e6ecff;font:600 14px system-ui,-apple-system,sans-serif">Opening BubbleMark…</div>';
 
   try {
-    // Keep this entry module dependency-free. It can dismiss the watchdog
-    // before React, styles, or any other application chunk finishes loading.
-    const [, diagnostics, react, reactDom, appModule] = await Promise.all([
-      import('./polyfills.ts'),
-      import('./utils/diagnosticsCapture.ts'),
+    // Install browser fallbacks before evaluating the application graph. Running
+    // this import in parallel with App allowed older WebViews to evaluate App first.
+    await import('./polyfills.ts');
+
+    // Diagnostics are optional and must never hold up or prevent the main screen.
+    const diagnosticsPromise = import('./utils/diagnosticsCapture.ts').catch(() => null);
+
+    const [react, reactDom, appModule] = await Promise.all([
       import('react'),
       import('react-dom/client'),
       import('./App.tsx'),
-      import('./index.css'),
     ]);
-    diagnostics.installDiagnosticsCapture();
+
+    // A stylesheet delivery failure should not make the whole application blank.
+    void import('./index.css').catch((error) => console.warn('[BubbleMark] styles failed to load', error));
+
     const { createElement } = react;
     const { createRoot } = reactDom;
     const { default: App } = appModule;
     const root = createRoot(container);
     root.render(createElement(App));
+
+    void diagnosticsPromise.then((diagnostics) => diagnostics?.installDiagnosticsCapture());
   } catch (err) {
     renderStartupError(container, err);
   }
