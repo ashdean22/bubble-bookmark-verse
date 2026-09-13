@@ -135,30 +135,15 @@ export const RefactoredIndex = () => {
     }),
   });
 
-  // Free tier is unlimited for local bubbles.
-  const getMaxBubbles = () => Number.POSITIVE_INFINITY;
-
-  const maxBubbles = getMaxBubbles();
+  // Free includes 15 bubbles; paid plans are unlimited.
+  const isPaidPlan = !!currentSubscription && PAID_TIERS.includes(currentSubscription);
+  const maxBubbles = isPaidPlan ? Number.POSITIVE_INFINITY : FREE_BUBBLE_LIMIT;
   const usedBubbles = bookmarks.length;
-  const usagePercent = Number.isFinite(maxBubbles) ? (usedBubbles / maxBubbles) * 100 : 0;
-
-  // Show upgrade prompt at 80% capacity (only for non-premium users)
-  useEffect(() => {
-    if (
-      Number.isFinite(maxBubbles) &&
-      usagePercent >= 80 && 
-      currentSubscription !== 'premium' && 
-      !upgradePromptDismissed &&
-      !showPricingModal
-    ) {
-      setShowUpgradePrompt(true);
-    }
-  }, [usedBubbles, maxBubbles, currentSubscription, upgradePromptDismissed, showPricingModal]);
 
   const handleUpgradePromptClose = () => {
     setShowUpgradePrompt(false);
-    setUpgradePromptDismissed(true);
   };
+
 
   const handleUpgradeFromPrompt = () => {
     setShowUpgradePrompt(false);
