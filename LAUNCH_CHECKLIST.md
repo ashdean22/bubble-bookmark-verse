@@ -1,4 +1,4 @@
-# 🚀 BubbleLink App Launch Checklist
+# 🚀 BubbleMark App Launch Checklist
 
 ## 📋 Pre-Launch Essentials
 
@@ -23,7 +23,7 @@
 - [ ] Footer with legal links
 - [ ] Contact information
 - [ ] DMCA policy (if applicable)
-- [ ] Trademark registration for "Bubble Link" name
+- [ ] Trademark registration for "BubbleMark" name
 - [ ] Copyright registration for code and content
 - [ ] Domain name protection (register similar domains)
 
@@ -119,7 +119,7 @@
 
 ## 🎉 Ready to Launch!
 
-Once all items are checked off, your BubbleLink app will be ready for a successful launch. Remember to monitor closely in the first few days and be ready to iterate based on user feedback.
+Once all items are checked off, your BubbleMark app will be ready for a successful launch. Remember to monitor closely in the first few days and be ready to iterate based on user feedback.
 
 **Launch Success Metrics to Track:**
 - User sign-ups

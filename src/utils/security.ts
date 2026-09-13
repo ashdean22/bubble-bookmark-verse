@@ -1,5 +1,5 @@
 /**
- * security.ts — BubbleLink Security Utilities
+ * security.ts — BubbleMark Security Utilities
  *
  * Dependency-free (no DOMPurify / zod) so it stays off the critical
  * load path. Centralises input sanitization, URL validation, lightweight
