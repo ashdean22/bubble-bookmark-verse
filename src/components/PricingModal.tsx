@@ -165,8 +165,9 @@ export const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
                 <span className="text-sm text-muted-foreground mb-1">once</span>
               </div>
               <p className="text-sm text-muted-foreground mb-5">
-                Launch price — increases after launch.
+                Everything in Pro. Launch price — increases after launch.
               </p>
+
               <ul className="space-y-3 flex-1">
                 {proFeatures.map((f) => (
                   <li key={f} className="flex items-start gap-2 text-sm">
