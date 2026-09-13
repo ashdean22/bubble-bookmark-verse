@@ -104,7 +104,7 @@ export const RefactoredIndex = () => {
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
-    onCreateBubble: () => setShowAddModal(true),
+    onCreateBubble: openAddBubble,
     onBuyBubbles: () => setShowPricingModal(true),
     onShowAnalytics: () => setShowAnalytics(prev => !prev),
     onShowHelp: () => toast({
@@ -117,6 +117,14 @@ export const RefactoredIndex = () => {
   const isPaidPlan = !!currentSubscription && PAID_TIERS.includes(currentSubscription);
   const maxBubbles = isPaidPlan ? Number.POSITIVE_INFINITY : FREE_BUBBLE_LIMIT;
   const usedBubbles = bookmarks.length;
+
+  const openAddBubble = () => {
+    if (!isPaidPlan && bookmarks.length >= FREE_BUBBLE_LIMIT) {
+      setShowUpgradePrompt(true);
+      return;
+    }
+    setShowAddModal(true);
+  };
 
   const handleUpgradePromptClose = () => {
     setShowUpgradePrompt(false);
@@ -253,7 +261,7 @@ export const RefactoredIndex = () => {
         />
 
         <FloatingActionButton
-          onCreateBubble={() => setShowAddModal(true)}
+          onCreateBubble={openAddBubble}
           onBuyBubbles={() => setShowPricingModal(true)}
           onShowAnalytics={() => setShowAnalytics(prev => !prev)}
           showAnalytics={showAnalytics}
@@ -276,7 +284,7 @@ export const RefactoredIndex = () => {
         />
 
         {bookmarks.length === 0 && (
-          <WelcomeMessage onCreateBubble={() => setShowAddModal(true)} />
+          <WelcomeMessage onCreateBubble={openAddBubble} />
         )}
 
         {/* Modals — only rendered (and their JS loaded) when actually opened */}
