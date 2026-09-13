@@ -1,4 +1,4 @@
-# 🚨 CRITICAL Pre-Launch Todo List - BubbleLink
+# 🚨 CRITICAL Pre-Launch Todo List - BubbleMark
 
 ## ⚠️ BLOCKERS - Must Complete Before Launch
 
@@ -67,10 +67,10 @@
 
 ## 📱 Important Note: Web App vs App Store
 
-**BubbleLink is a web application**, not a native mobile app. This means:
+**BubbleMark is a web application**, not a native mobile app. This means:
 
 ✅ **You will deploy to:**
-- Your own domain (bubblelink.app)
+- Your future production domain
 - Web hosting platforms (Netlify, Vercel, etc.)
 - Progressive Web App (PWA) - can be "installed" on mobile devices
 

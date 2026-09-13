@@ -15,8 +15,5 @@ Allow: /
 Disallow: /api/
 Disallow: /admin/
 
-# Sitemap
-Sitemap: https://bubblelink.app/sitemap.xml
-
 # Crawl-delay for respectful crawling
 Crawl-delay: 1
