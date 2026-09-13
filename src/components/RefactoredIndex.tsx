@@ -102,17 +102,6 @@ export const RefactoredIndex = () => {
 
   const { toast } = useToast();
 
-  // Keyboard shortcuts
-  useKeyboardShortcuts({
-    onCreateBubble: openAddBubble,
-    onBuyBubbles: () => setShowPricingModal(true),
-    onShowAnalytics: () => setShowAnalytics(prev => !prev),
-    onShowHelp: () => toast({
-      title: "Keyboard Shortcuts 🚀",
-      description: "Ctrl/Cmd + N: Create bubble | Ctrl/Cmd + B: Buy bubbles | Ctrl/Cmd + A: Analytics | ?: Help",
-    }),
-  });
-
   // Free includes 15 bubbles; paid plans are unlimited.
   const isPaidPlan = !!currentSubscription && PAID_TIERS.includes(currentSubscription);
   const maxBubbles = isPaidPlan ? Number.POSITIVE_INFINITY : FREE_BUBBLE_LIMIT;
@@ -125,6 +114,17 @@ export const RefactoredIndex = () => {
     }
     setShowAddModal(true);
   };
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    onCreateBubble: openAddBubble,
+    onBuyBubbles: () => setShowPricingModal(true),
+    onShowAnalytics: () => setShowAnalytics(prev => !prev),
+    onShowHelp: () => toast({
+      title: "Keyboard Shortcuts 🚀",
+      description: "Ctrl/Cmd + N: Create bubble | Ctrl/Cmd + B: Buy bubbles | Ctrl/Cmd + A: Analytics | ?: Help",
+    }),
+  });
 
   const handleUpgradePromptClose = () => {
     setShowUpgradePrompt(false);
