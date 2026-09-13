@@ -82,8 +82,8 @@
     #ff9ad1,
     #ff86c8
   );
-  filter: blur(7px) saturate(1.45);
-  opacity: 0.5;
+  filter: blur(6px) saturate(1.7);
+  opacity: 0.72;
   mix-blend-mode: multiply;
   -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent 55%, #000 82%, rgba(0, 0, 0, 0.35) 100%);
   mask-image: radial-gradient(circle at 50% 50%, transparent 55%, #000 82%, rgba(0, 0, 0, 0.35) 100%);
