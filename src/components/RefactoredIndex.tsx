@@ -1,4 +1,4 @@
-import React, { useState, useEffect, lazy, Suspense, memo } from 'react';
+import React, { useState, lazy, Suspense, memo } from 'react';
 import { BubbleCanvas } from '@/components/BubbleCanvas';
 import { BubbleHeaderMinimal } from '@/components/BubbleHeaderMinimal';
 import { FloatingActionButton } from '@/components/FloatingActionButton';
@@ -9,7 +9,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useToast } from '@/hooks/use-toast';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
-import { Bookmark } from '@/pages/Index';
+import type { Bookmark } from '@/pages/Index';
 
 import { validateStoredBookmarks, sanitizeText, sanitizeUrl, safeFavicon, checkRateLimit } from '@/utils/security';
 
@@ -100,28 +100,6 @@ export const RefactoredIndex = () => {
 
   const [editingBookmark, setEditingBookmark] = useState<Bookmark | null>(null);
 
-  // Preload heavy chunks after the main thread is idle — improves perceived perf
-  useEffect(() => {
-    const preload = () => {
-      import('@/components/AddBookmarkModal');
-      import('@/components/PricingModal');
-    };
-    const hasRIC = typeof window !== 'undefined'
-      && typeof window.requestIdleCallback === 'function'
-      && typeof window.cancelIdleCallback === 'function';
-    let timerId: ReturnType<typeof setTimeout> | undefined;
-    let ricId: number | undefined;
-    if (hasRIC) {
-      ricId = window.requestIdleCallback(preload, { timeout: 3000 });
-    } else {
-      timerId = setTimeout(preload, 2000);
-    }
-    return () => {
-      if (ricId !== undefined) window.cancelIdleCallback(ricId);
-      if (timerId !== undefined) clearTimeout(timerId);
-    };
-  }, []);
-  
   const { toast } = useToast();
 
   // Keyboard shortcuts

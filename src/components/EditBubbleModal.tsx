@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Pencil, ShieldCheck } from 'lucide-react';
-import { Bookmark } from '@/pages/Index';
+import type { Bookmark } from '@/pages/Index';
 import { BookmarkInputSchema, sanitizeText, sanitizeUrl, safeFavicon } from '@/utils/security';
 import { useToast } from '@/hooks/use-toast';
 

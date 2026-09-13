@@ -8,6 +8,9 @@
 ## Loading reliability
 - [x] Harden startup against older browsers and failed optional chunks.
 - [x] Verify empty, corrupted, legacy, and large saved sessions load after the latest fix.
+- [x] Remove the eager 1ms idle fallback from the startup path.
+- [x] Keep optional modal downloads off the initial load path.
+- [x] Stage dense bubble boards in smaller device-aware batches.
 
 ## Background visibility
 - [x] Brighten the bubble board while preserving its blue-violet space character.

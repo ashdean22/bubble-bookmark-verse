@@ -1,4 +1,3 @@
-import './polyfills.ts'
 import { installDiagnosticsCapture } from './utils/diagnosticsCapture.ts'
 import { createElement } from 'react'
 import { createRoot } from 'react-dom/client'
