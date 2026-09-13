@@ -29,29 +29,36 @@ const mount = async () => {
     return;
   }
 
+  // The entry script has started, so never leave the static watchdog covering
+  // the page while the application modules download.
+  clearBootScreen();
+  container.innerHTML =
+    '<div aria-label="Opening BubbleMark" style="min-height:100dvh;display:flex;align-items:center;justify-content:center;background:#080b1a;color:#e6ecff;font:600 14px system-ui,-apple-system,sans-serif">Opening BubbleMark…</div>';
+
   try {
-    // 1. Ensure polyfills are applied before any other module is even evaluated.
-    // This prevents race conditions where Safari hits requestIdleCallback before it's polyfilled.
+    // Apply browser fallbacks before evaluating any application module.
     await import('./polyfills.ts');
 
-    // 2. Install diagnostics before loading the main application graph.
-    const diagnostics = await import('./utils/diagnosticsCapture.ts');
-    diagnostics.installDiagnosticsCapture();
+    // Diagnostics are optional and must not block the main screen.
+    const diagnosticsPromise = import('./utils/diagnosticsCapture.ts').catch(() => null);
 
-    // 3. Load the core application dependencies in parallel.
-    // We keep the boot screen visible until the React tree is ready to mount.
+    // Load only the dependencies required to mount the application.
     const [react, reactDom, appModule] = await Promise.all([
       import('react'),
       import('react-dom/client'),
       import('./App.tsx'),
-      import('./index.css'),
     ]);
+
+    // A stylesheet delivery failure should not turn into a blank page.
+    void import('./index.css').catch((error) => console.warn('[BubbleMark] styles failed to load', error));
 
     const { createElement } = react;
     const { createRoot } = reactDom;
     const { default: App } = appModule;
     const root = createRoot(container);
     root.render(createElement(App));
+
+    void diagnosticsPromise.then((diagnostics) => diagnostics?.installDiagnosticsCapture());
   } catch (err) {
     renderStartupError(container, err);
   }
