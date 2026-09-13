@@ -25,4 +25,4 @@
 - [x] Enforce the 15-bubble limit in the add flow, keep existing bubbles intact.
 - [x] Gentle warning near 12 bubbles; upgrade prompt at the limit.
 - [x] Remove monthly pricing and outdated free-tier wording everywhere.
-- [ ] Verify add/edit/delete still work and build passes.
+- [x] Verify add/edit/delete still work and build passes.
