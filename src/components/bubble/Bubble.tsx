@@ -66,7 +66,9 @@ export const Bubble = ({
       ['--bm-film-angle' as string]: `${Math.round(normalized * 300)}deg`,
       ['--bm-highlight-x' as string]: `${10 + Math.round(normalized * 8)}%`,
       ['--bm-highlight-y' as string]: `${10 + Math.round(secondary * 8)}%`,
-      ['--bm-film-opacity' as string]: `${0.24 + normalized * 0.08}`,
+      ['--bm-highlight-angle' as string]: `${-38 + Math.round(secondary * 18)}deg`,
+      ['--bm-film-opacity' as string]: `${0.34 + normalized * 0.12}`,
+      ['--bm-rim-strength' as string]: `${0.72 + secondary * 0.22}`,
       ['--bm-smear-shift' as string]: `${Math.round((secondary - 0.5) * 8)}%`,
       ['--bm-cycle' as string]: `${26 + Math.round(normalized * 9)}s`,
     } as React.CSSProperties;

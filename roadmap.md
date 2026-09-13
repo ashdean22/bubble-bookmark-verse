@@ -34,3 +34,8 @@
 - [x] Improve BubbleMark branding, favicon fallback, and readable truncated labels.
 - [x] Add calm layered Twilight Glass background depth without changing canvas behavior.
 - [x] Verify desktop/mobile presentation, existing interactions, and production build.
+
+## Canvas and bubble realism follow-up
+- [ ] Lighten the blue-violet canvas without making it visually busy.
+- [ ] Increase soap-film realism with irregular rim color and natural reflections.
+- [ ] Verify the updated appearance on desktop and mobile.
