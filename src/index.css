@@ -391,6 +391,73 @@
   66%       { filter: drop-shadow(0 0 11px hsla(180, 80%, 50%, 0.7)) drop-shadow(0 0 22px hsla(200, 95%, 60%, 0.4)); }
 }
 
+.bm-brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  color: hsl(var(--canvas-foreground));
+}
+
+.bm-brand-mark {
+  position: relative;
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid hsl(var(--canvas-foreground) / 0.24);
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 28%, hsl(var(--bubble-glass) / 0.18), transparent 34%), conic-gradient(from 210deg, hsl(var(--bubble-rim-cyan) / 0.24), hsl(var(--bubble-rim-violet) / 0.18), hsl(var(--bubble-rim-rose) / 0.16), hsl(var(--bubble-rim-cyan) / 0.24));
+  box-shadow: 0 8px 24px hsl(var(--bubble-shadow) / 0.2), inset 0 0 0 1px hsl(var(--bubble-glass) / 0.08);
+}
+
+.bm-brand-mark > span {
+  width: 22px;
+  height: 22px;
+  border: 1.5px solid hsl(var(--bubble-rim-cyan) / 0.72);
+  border-radius: 50%;
+  box-shadow: inset 2px 2px 5px hsl(var(--bubble-glass) / 0.12), 0 0 10px hsl(var(--bubble-rim-violet) / 0.16);
+}
+
+.bm-brand-name {
+  margin: 0;
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-size: clamp(19px, 2.2vw, 25px);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.bm-brand-name span { font-weight: 600; }
+
+.bm-brand-tagline {
+  margin: 5px 0 0;
+  color: hsl(var(--canvas-muted) / 0.7);
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.bm-capacity {
+  border: 1px solid hsl(var(--canvas-foreground) / 0.12);
+  border-radius: 8px;
+  background: hsl(var(--canvas-base) / 0.48);
+  box-shadow: 0 8px 28px hsl(var(--bubble-shadow) / 0.2), inset 0 1px 0 hsl(var(--canvas-foreground) / 0.08);
+  color: hsl(var(--canvas-foreground) / 0.84);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+@media (max-width: 639px) {
+  .bm-brand-mark { width: 38px; height: 38px; }
+  .bm-brand-tagline { display: none; }
+  .bm-capacity {
+    min-width: 118px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+}
+
 @keyframes float-bubble-1 {
   0%, 100% { transform: translateY(0px) translateX(0px); }
   33% { transform: translateY(-6px) translateX(2px); }

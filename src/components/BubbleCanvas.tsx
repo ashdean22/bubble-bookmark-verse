@@ -4,8 +4,6 @@ import type { Bookmark } from '@/pages/Index';
 import { ExternalLink, Globe2, Pencil, Trash2 } from 'lucide-react';
 import { Bubble } from '@/components/bubble/Bubble';
 
-const FALLBACK_ICON = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMSA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDMgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K';
-
 const getInitialBubbleRenderLimit = () =>
   typeof window !== 'undefined' && window.innerWidth < 640 ? 24 : 48;
 
