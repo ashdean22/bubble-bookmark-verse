@@ -1,11 +1,3 @@
-import './polyfills.ts'
-import { installDiagnosticsCapture } from './utils/diagnosticsCapture.ts'
-import { createElement } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-
-installDiagnosticsCapture();
-
 const clearBootScreen = () => {
   const w = (window as unknown as { __bootWatchdog?: number }).__bootWatchdog;
   if (w) clearTimeout(w);
@@ -44,7 +36,20 @@ const mount = async () => {
     '<div aria-label="Loading BubbleMark" style="min-height:100dvh;background:#080b1a"></div>';
 
   try {
-    const { default: App } = await import('./App.tsx');
+    // Keep this entry module dependency-free. It can dismiss the watchdog
+    // before React, styles, or any other application chunk finishes loading.
+    const [, diagnostics, react, reactDom, appModule] = await Promise.all([
+      import('./polyfills.ts'),
+      import('./utils/diagnosticsCapture.ts'),
+      import('react'),
+      import('react-dom/client'),
+      import('./App.tsx'),
+      import('./index.css'),
+    ]);
+    diagnostics.installDiagnosticsCapture();
+    const { createElement } = react;
+    const { createRoot } = reactDom;
+    const { default: App } = appModule;
     const root = createRoot(container);
     root.render(createElement(App));
   } catch (err) {
