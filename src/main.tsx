@@ -9,6 +9,11 @@ installDiagnosticsCapture();
 const clearBootScreen = () => {
   const w = (window as unknown as { __bootWatchdog?: number }).__bootWatchdog;
   if (w) clearTimeout(w);
+  try {
+    window.sessionStorage.removeItem('bm_entry_retry_v1');
+  } catch {
+    // Startup recovery must also work when browser storage is unavailable.
+  }
   document.documentElement.classList.add('app-ready');
   const boot = document.getElementById('boot');
   if (boot) boot.remove();
