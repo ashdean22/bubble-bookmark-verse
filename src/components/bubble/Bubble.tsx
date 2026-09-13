@@ -123,7 +123,9 @@ export const Bubble = ({
       <div className={`bm-layer bm-maskable bm-core${refract && !small ? ' bm-refract' : ''}`} />
       <div className="bm-layer bm-maskable bm-film" />
       <div className="bm-layer bm-maskable bm-band" />
+      <div className="bm-layer bm-maskable bm-caustic" />
       <div className="bm-layer bm-maskable bm-rim" />
+
 
       <div className="bm-layer bm-maskable" aria-hidden="true">
         <span className="bm-spec" />
