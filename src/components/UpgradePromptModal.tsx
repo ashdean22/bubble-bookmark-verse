@@ -9,10 +9,11 @@ interface UpgradePromptModalProps {
 }
 
 const proBenefits = [
-  'Sync across all your devices',
-  'Automatic cloud backup',
-  'Premium themes and colors',
-  'Heat insights on your bubbles',
+  'Unlimited bubbles',
+  'Multi-device sync',
+  'Cloud backup',
+  'Premium themes',
+  'Heat insights',
 ];
 
 export const UpgradePromptModal = ({ isOpen, onClose, onUpgrade }: UpgradePromptModalProps) => {
@@ -24,21 +25,23 @@ export const UpgradePromptModal = ({ isOpen, onClose, onUpgrade }: UpgradePrompt
             <Sparkles className="w-8 h-8 text-white" />
           </div>
           <DialogTitle className="text-white text-xl font-brand font-bold">
-            Take your bubbles everywhere 🫧
+            You have filled all 15 free bubbles 🫧
           </DialogTitle>
           <DialogDescription className="text-purple-300">
-            Your bubbles live on this device only. Pro keeps them synced and backed up.
+            Free includes 15 bubbles on one device. Pro and Lifetime unlock unlimited bubbles,
+            and your current bubbles stay exactly as they are.
           </DialogDescription>
         </DialogHeader>
 
         <div className="bg-slate-800/50 rounded-lg p-4 border border-purple-500/20 text-center">
           <p className="text-white font-semibold">
-            $1.99<span className="text-purple-300 text-sm font-normal">/month</span>
-            <span className="text-purple-400 mx-2">·</span>
             $14.99<span className="text-purple-300 text-sm font-normal">/year</span>
+            <span className="text-purple-400 mx-2">·</span>
+            $24.99<span className="text-purple-300 text-sm font-normal"> lifetime</span>
           </p>
-          <p className="text-amber-400 text-xs mt-1">Save 37% with yearly billing</p>
+          <p className="text-amber-400 text-xs mt-1">One-time Lifetime option available</p>
         </div>
+
 
         <div className="space-y-3">
           <h3 className="text-white font-semibold flex items-center gap-2 font-brand">

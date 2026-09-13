@@ -31,14 +31,19 @@ const DeferredUtilities = () => {
     return () => window.clearTimeout(id);
   }, []);
   if (!ready) return null;
+  // Optional extras are isolated: if one of these chunks fails to load,
+  // the bookmark board must keep working instead of being replaced.
   return (
-    <Suspense fallback={null}>
-      <Toaster />
-      <Sonner />
-      <DiagnosticsButton />
-    </Suspense>
+    <ErrorBoundary fallback={null}>
+      <Suspense fallback={null}>
+        <Toaster />
+        <Sonner />
+        <DiagnosticsButton />
+      </Suspense>
+    </ErrorBoundary>
   );
 };
+
 
 const App = () => {
   const path = typeof window !== "undefined" ? window.location.pathname : "/";

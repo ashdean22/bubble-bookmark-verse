@@ -77,12 +77,16 @@ const AnalyticsPanel = memo(({
 ));
 AnalyticsPanel.displayName = 'AnalyticsPanel';
 
+const FREE_BUBBLE_LIMIT = 15;
+const LOW_BUBBLE_WARNING_AT = 12;
+const PAID_TIERS = ['pro', 'pro_yearly', 'lifetime', 'premium'];
+
 export const RefactoredIndex = () => {
   // State management using custom hooks
   const [bookmarks, setBookmarks] = useLocalStorage<Bookmark[]>('bubbleBookmarks', [], normalizeBookmarks);
   const [currentSubscription, setCurrentSubscription] = useLocalStorage<string | null>('currentSubscription', null);
 
-  // Kept only for older saved sessions; the free tier is unlimited now.
+  // Kept only for older saved sessions.
   const initializeBubbles = () => 999;
   
   const [availableBubbles, setAvailableBubbles] = useLocalStorage('availableBubbles', initializeBubbles(), normalizeBubbleCount);
@@ -92,8 +96,8 @@ export const RefactoredIndex = () => {
   
   const [showPricingModal, setShowPricingModal] = useState(false);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
-  const [upgradePromptDismissed, setUpgradePromptDismissed] = useLocalStorage('upgradePromptDismissed', false);
   const [showAnalytics, setShowAnalytics] = useState(false);
+
   const [editingBookmark, setEditingBookmark] = useState<Bookmark | null>(null);
 
   // Preload heavy chunks after the main thread is idle — improves perceived perf
@@ -131,30 +135,15 @@ export const RefactoredIndex = () => {
     }),
   });
 
-  // Free tier is unlimited for local bubbles.
-  const getMaxBubbles = () => Number.POSITIVE_INFINITY;
-
-  const maxBubbles = getMaxBubbles();
+  // Free includes 15 bubbles; paid plans are unlimited.
+  const isPaidPlan = !!currentSubscription && PAID_TIERS.includes(currentSubscription);
+  const maxBubbles = isPaidPlan ? Number.POSITIVE_INFINITY : FREE_BUBBLE_LIMIT;
   const usedBubbles = bookmarks.length;
-  const usagePercent = Number.isFinite(maxBubbles) ? (usedBubbles / maxBubbles) * 100 : 0;
-
-  // Show upgrade prompt at 80% capacity (only for non-premium users)
-  useEffect(() => {
-    if (
-      Number.isFinite(maxBubbles) &&
-      usagePercent >= 80 && 
-      currentSubscription !== 'premium' && 
-      !upgradePromptDismissed &&
-      !showPricingModal
-    ) {
-      setShowUpgradePrompt(true);
-    }
-  }, [usedBubbles, maxBubbles, currentSubscription, upgradePromptDismissed, showPricingModal]);
 
   const handleUpgradePromptClose = () => {
     setShowUpgradePrompt(false);
-    setUpgradePromptDismissed(true);
   };
+
 
   const handleUpgradeFromPrompt = () => {
     setShowUpgradePrompt(false);
@@ -167,10 +156,18 @@ export const RefactoredIndex = () => {
   };
 
   const addBookmark = (bookmark: Omit<Bookmark, 'id' | 'x' | 'y' | 'size' | 'color' | 'accessCount'>) => {
+    // Free plan cap. Existing bubbles are never removed — only new ones are blocked.
+    if (!isPaidPlan && bookmarks.length >= FREE_BUBBLE_LIMIT) {
+      setShowAddModal(false);
+      setShowUpgradePrompt(true);
+      return;
+    }
+
     if (!checkRateLimit('add_bookmark_main', 20, 60_000)) {
       toast({ title: "Too many requests", description: "Please slow down.", variant: "destructive" });
       return;
     }
+
 
     let safeUrl: string;
     let safeTitle: string;
@@ -215,10 +212,16 @@ export const RefactoredIndex = () => {
     saveBookmarks(newBookmarks);
     setAvailableBubbles(availableBubbles - 1);
     
+    const remaining = FREE_BUBBLE_LIMIT - newBookmarks.length;
+    const showLowWarning = !isPaidPlan && newBookmarks.length >= LOW_BUBBLE_WARNING_AT && remaining > 0;
+
     toast({
       title: "Bubble created! 🫧",
-      description: "Your new bubble is floating in the bubble universe ✨",
+      description: showLowWarning
+        ? `${remaining} free ${remaining === 1 ? 'bubble' : 'bubbles'} left.`
+        : "Your new bubble is floating in the bubble universe ✨",
     });
+
   };
 
   const removeBookmark = (id: string) => {
