@@ -212,10 +212,16 @@ export const RefactoredIndex = () => {
     saveBookmarks(newBookmarks);
     setAvailableBubbles(availableBubbles - 1);
     
+    const remaining = FREE_BUBBLE_LIMIT - newBookmarks.length;
+    const showLowWarning = !isPaidPlan && newBookmarks.length >= LOW_BUBBLE_WARNING_AT && remaining > 0;
+
     toast({
       title: "Bubble created! 🫧",
-      description: "Your new bubble is floating in the bubble universe ✨",
+      description: showLowWarning
+        ? `${remaining} free ${remaining === 1 ? 'bubble' : 'bubbles'} left.`
+        : "Your new bubble is floating in the bubble universe ✨",
     });
+
   };
 
   const removeBookmark = (id: string) => {
