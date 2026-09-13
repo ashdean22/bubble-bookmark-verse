@@ -156,10 +156,18 @@ export const RefactoredIndex = () => {
   };
 
   const addBookmark = (bookmark: Omit<Bookmark, 'id' | 'x' | 'y' | 'size' | 'color' | 'accessCount'>) => {
+    // Free plan cap. Existing bubbles are never removed — only new ones are blocked.
+    if (!isPaidPlan && bookmarks.length >= FREE_BUBBLE_LIMIT) {
+      setShowAddModal(false);
+      setShowUpgradePrompt(true);
+      return;
+    }
+
     if (!checkRateLimit('add_bookmark_main', 20, 60_000)) {
       toast({ title: "Too many requests", description: "Please slow down.", variant: "destructive" });
       return;
     }
+
 
     let safeUrl: string;
     let safeTitle: string;
