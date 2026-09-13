@@ -1,4 +1,4 @@
-import React, { useState, lazy, Suspense, memo } from 'react';
+import React, { useState, useEffect, lazy, Suspense, memo } from 'react';
 import { BubbleCanvas } from '@/components/BubbleCanvas';
 import { BubbleHeaderMinimal } from '@/components/BubbleHeaderMinimal';
 import { FloatingActionButton } from '@/components/FloatingActionButton';
@@ -9,7 +9,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useToast } from '@/hooks/use-toast';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
-import type { Bookmark } from '@/pages/Index';
+import { Bookmark } from '@/pages/Index';
 
 import { validateStoredBookmarks, sanitizeText, sanitizeUrl, safeFavicon, checkRateLimit } from '@/utils/security';
 
@@ -100,24 +100,33 @@ export const RefactoredIndex = () => {
 
   const [editingBookmark, setEditingBookmark] = useState<Bookmark | null>(null);
 
-  const { toast } = useToast();
-
-  // Free includes 15 bubbles; paid plans are unlimited.
-  const isPaidPlan = !!currentSubscription && PAID_TIERS.includes(currentSubscription);
-  const maxBubbles = isPaidPlan ? Number.POSITIVE_INFINITY : FREE_BUBBLE_LIMIT;
-  const usedBubbles = bookmarks.length;
-
-  const openAddBubble = () => {
-    if (!isPaidPlan && bookmarks.length >= FREE_BUBBLE_LIMIT) {
-      setShowUpgradePrompt(true);
-      return;
+  // Preload heavy chunks after the main thread is idle — improves perceived perf
+  useEffect(() => {
+    const preload = () => {
+      import('@/components/AddBookmarkModal');
+      import('@/components/PricingModal');
+    };
+    const hasRIC = typeof window !== 'undefined'
+      && typeof window.requestIdleCallback === 'function'
+      && typeof window.cancelIdleCallback === 'function';
+    let timerId: ReturnType<typeof setTimeout> | undefined;
+    let ricId: number | undefined;
+    if (hasRIC) {
+      ricId = window.requestIdleCallback(preload, { timeout: 3000 });
+    } else {
+      timerId = setTimeout(preload, 2000);
     }
-    setShowAddModal(true);
-  };
+    return () => {
+      if (ricId !== undefined) window.cancelIdleCallback(ricId);
+      if (timerId !== undefined) clearTimeout(timerId);
+    };
+  }, []);
+  
+  const { toast } = useToast();
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
-    onCreateBubble: openAddBubble,
+    onCreateBubble: () => setShowAddModal(true),
     onBuyBubbles: () => setShowPricingModal(true),
     onShowAnalytics: () => setShowAnalytics(prev => !prev),
     onShowHelp: () => toast({
@@ -125,6 +134,11 @@ export const RefactoredIndex = () => {
       description: "Ctrl/Cmd + N: Create bubble | Ctrl/Cmd + B: Buy bubbles | Ctrl/Cmd + A: Analytics | ?: Help",
     }),
   });
+
+  // Free includes 15 bubbles; paid plans are unlimited.
+  const isPaidPlan = !!currentSubscription && PAID_TIERS.includes(currentSubscription);
+  const maxBubbles = isPaidPlan ? Number.POSITIVE_INFINITY : FREE_BUBBLE_LIMIT;
+  const usedBubbles = bookmarks.length;
 
   const handleUpgradePromptClose = () => {
     setShowUpgradePrompt(false);
@@ -225,7 +239,7 @@ export const RefactoredIndex = () => {
             ...bookmark, 
             accessCount: bookmark.accessCount + 1,
             lastAccessed: now,
-            accessHistory: [...(bookmark.accessHistory || []).slice(-99), now],
+            accessHistory: [...(bookmark.accessHistory || []), now],
           }
         : bookmark
     );
@@ -261,7 +275,7 @@ export const RefactoredIndex = () => {
         />
 
         <FloatingActionButton
-          onCreateBubble={openAddBubble}
+          onCreateBubble={() => setShowAddModal(true)}
           onBuyBubbles={() => setShowPricingModal(true)}
           onShowAnalytics={() => setShowAnalytics(prev => !prev)}
           showAnalytics={showAnalytics}
@@ -284,42 +298,41 @@ export const RefactoredIndex = () => {
         />
 
         {bookmarks.length === 0 && (
-          <WelcomeMessage onCreateBubble={openAddBubble} />
+          <WelcomeMessage onCreateBubble={() => setShowAddModal(true)} />
         )}
 
         {/* Modals — only rendered (and their JS loaded) when actually opened */}
-        <ErrorBoundary fallback={null}>
-          <Suspense fallback={null}>
-            {editingBookmark && (
-              <EditBubbleModal
-                bookmark={editingBookmark}
-                isOpen={!!editingBookmark}
-                onClose={() => setEditingBookmark(null)}
-                onSave={editBookmark}
-              />
-            )}
+        <Suspense fallback={null}>
+          {editingBookmark && (
+            <EditBubbleModal
+              bookmark={editingBookmark}
+              isOpen={!!editingBookmark}
+              onClose={() => setEditingBookmark(null)}
+              onSave={editBookmark}
+            />
+          )}
 
-            {showAddModal && (
-              <AddBookmarkModal
-                isOpen={showAddModal}
-                onClose={() => setShowAddModal(false)}
-                onAdd={addBookmark}
-              />
-            )}
+          {showAddModal && (
+            <AddBookmarkModal
+              isOpen={showAddModal}
+              onClose={() => setShowAddModal(false)}
+              onAdd={addBookmark}
+            />
+          )}
 
-            {showPricingModal && (
-              <PricingModal isOpen={showPricingModal} onClose={() => setShowPricingModal(false)} />
-            )}
 
-            {showUpgradePrompt && (
-              <UpgradePromptModal
-                isOpen={showUpgradePrompt}
-                onClose={handleUpgradePromptClose}
-                onUpgrade={handleUpgradeFromPrompt}
-              />
-            )}
-          </Suspense>
-        </ErrorBoundary>
+          {showPricingModal && (
+            <PricingModal isOpen={showPricingModal} onClose={() => setShowPricingModal(false)} />
+          )}
+
+          {showUpgradePrompt && (
+            <UpgradePromptModal
+              isOpen={showUpgradePrompt}
+              onClose={handleUpgradePromptClose}
+              onUpgrade={handleUpgradeFromPrompt}
+            />
+          )}
+        </Suspense>
       </div>
     </ErrorBoundary>
   );

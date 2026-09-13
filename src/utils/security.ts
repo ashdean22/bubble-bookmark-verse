@@ -93,14 +93,7 @@ const isValidStoredBookmark = (item: unknown): boolean => {
   );
 };
 
-export const validateStoredBookmarks = (raw: unknown[]): unknown[] =>
-  raw.filter(isValidStoredBookmark).map((item) => {
-    const bookmark = item as Record<string, unknown>;
-    const accessHistory = Array.isArray(bookmark.accessHistory)
-      ? bookmark.accessHistory.slice(-100)
-      : undefined;
-    return accessHistory ? { ...bookmark, accessHistory } : bookmark;
-  });
+export const validateStoredBookmarks = (raw: unknown[]): unknown[] => raw.filter(isValidStoredBookmark);
 
 // ─────────────────────────────────────────────
 // 5. RATE LIMITER (in-memory, per action key)

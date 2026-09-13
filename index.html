@@ -49,14 +49,14 @@
 
     <!-- Fonts: non-render-blocking via media trick + font-display=swap -->
     <link
-      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Poppins:wght@700&display=swap"
       rel="stylesheet"
       media="print"
       fetchpriority="low"
       onload="this.media='all'"
     />
     <noscript>
-      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet" />
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Poppins:wght@700&display=swap" rel="stylesheet" />
     </noscript>
 
     <!-- Inline critical above-the-fold styles: paint background instantly, no FOUC -->
@@ -72,7 +72,6 @@
       @keyframes bootspin{to{transform:rotate(360deg)}}
       html.app-ready #boot{display:none}
     </style>
-    <noscript><style>#boot{display:none}</style></noscript>
     <script>
       // Boot watchdog: keep recovery visible until React has actually committed.
       window.__bootWatchdog = setTimeout(function () {
@@ -83,38 +82,6 @@
         var btn = b.querySelector('button');
         if (btn) btn.style.display = 'inline-block';
       }, 6000);
-
-      function showStartupRecovery() {
-        if (document.documentElement.classList.contains('app-ready')) return;
-        var b = document.getElementById('boot');
-        if (!b) return;
-        var m = b.querySelector('.msg');
-        if (m) m.textContent = 'Something interrupted startup.';
-        var btn = b.querySelector('button');
-        if (btn) btn.style.display = 'inline-block';
-      }
-
-      // Catch both script/network failures and rejected module imports.
-      window.addEventListener('error', showStartupRecovery);
-      window.addEventListener('unhandledrejection', showStartupRecovery);
-
-      window.__recoverBubbleMark = function () {
-        var url = new URL(location.href);
-        url.searchParams.set('bm-reload', String(Date.now()));
-        location.replace(url.toString());
-      };
-
-      // A tab left open across an app update can request an old generated file.
-      // Reload once so Vite can fetch the current file map instead of leaving a blank screen.
-      window.addEventListener('vite:preloadError', function (event) {
-        event.preventDefault();
-        var key = 'bm_preload_reload';
-        var previous = 0;
-        try { previous = Number(sessionStorage.getItem(key) || 0); } catch (_) {}
-        if (Date.now() - previous < 10000) return;
-        try { sessionStorage.setItem(key, String(Date.now())); } catch (_) {}
-        window.__recoverBubbleMark();
-      });
     </script>
 
     <!-- JSON-LD Structured Data -->
@@ -140,19 +107,8 @@
     <div id="boot">
       <div class="ring"></div>
       <div class="msg">Loading BubbleMark…</div>
-      <button type="button" onclick="window.__recoverBubbleMark ? window.__recoverBubbleMark() : location.reload()">Reload</button>
+      <button type="button" onclick="location.reload()">Reload</button>
     </div>
     <script type="module" src="/src/main.tsx" fetchpriority="high"></script>
-    <script nomodule>
-      // Browsers too old for modern JavaScript would otherwise spin forever.
-      document.documentElement.className += ' app-ready';
-      document.getElementById('root').innerHTML =
-        '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;font-family:system-ui,sans-serif;color:#e6ecff">BubbleMark needs a newer browser. Please update your browser or open BubbleMark in Chrome, Safari, Edge or Firefox.</div>';
-    </script>
-    <noscript>
-      <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;font-family:system-ui,sans-serif;color:#e6ecff">
-        BubbleMark needs JavaScript enabled to show your bubbles.
-      </div>
-    </noscript>
   </body>
 </html>

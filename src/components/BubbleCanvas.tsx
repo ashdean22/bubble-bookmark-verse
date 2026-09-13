@@ -1,51 +1,44 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import type { CSSProperties } from 'react';
-import type { Bookmark } from '@/pages/Index';
-import { ExternalLink, Globe2, Pencil, Trash2 } from 'lucide-react';
+import { Bookmark } from '@/pages/Index';
+import { ExternalLink, Pencil, Trash2 } from 'lucide-react';
 import { Bubble } from '@/components/bubble/Bubble';
 
-const getInitialBubbleRenderLimit = () =>
-  typeof window !== 'undefined' && window.innerWidth < 640 ? 24 : 48;
+const FALLBACK_ICON = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMSA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDMgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K';
 
-const getBubbleRenderChunk = () =>
-  typeof window !== 'undefined' && window.innerWidth < 640 ? 16 : 32;
+const INITIAL_BUBBLE_RENDER_LIMIT = 80;
+const BUBBLE_RENDER_CHUNK = 60;
 
 /** Bubble favicon — prioritizes only the first visible icons and falls back safely. */
 const BubbleFavicon = ({ url, alt, priority }: { url: string; alt: string; priority: boolean }) => {
-  const [failed, setFailed] = useState(!url);
-
-  if (failed) {
-    return (
-      <span className="bm-favicon-fallback" aria-label={`${alt} website`} role="img">
-        <Globe2 aria-hidden="true" />
-      </span>
-    );
-  }
-
   return (
     <img
-      src={url}
+      src={url || FALLBACK_ICON}
       alt={alt}
-      className="bm-favicon pointer-events-none"
+      className="pointer-events-none"
+      style={{
+        width: '72%',
+        height: '72%',
+        objectFit: 'contain',
+        imageRendering: 'auto',
+        filter: 'drop-shadow(0 1px 1px hsla(0,0%,0%,0.25))',
+      }}
       loading={priority ? 'eager' : 'lazy'}
       decoding="async"
-      onError={() => setFailed(true)}
+      onError={(e) => { e.currentTarget.src = FALLBACK_ICON; }}
     />
   );
 };
 
 const MenuFavicon = ({ url }: { url: string }) => {
-  const [failed, setFailed] = useState(!url);
-  if (failed) return <Globe2 aria-hidden="true" style={{ width: 18, height: 18, flexShrink: 0 }} />;
-
   return (
     <img
-      src={url}
+      src={url || FALLBACK_ICON}
       alt=""
       style={{ width: 18, height: 18, borderRadius: 4, flexShrink: 0 }}
       loading="lazy"
       decoding="async"
-      onError={() => setFailed(true)}
+      onError={(e) => { e.currentTarget.style.display = 'none'; }}
     />
   );
 };
@@ -137,7 +130,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
   const [clickedBubble, setClickedBubble] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null);
   const [poppingIds, setPoppingIds] = useState<Set<string>>(new Set());
-  const [visibleCount, setVisibleCount] = useState(() => Math.min(bookmarks.length, getInitialBubbleRenderLimit()));
+  const [visibleCount, setVisibleCount] = useState(() => Math.min(bookmarks.length, INITIAL_BUBBLE_RENDER_LIMIT));
   const animationRef = useRef<number>();
   const frameCountRef = useRef(0);
   const dragOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -153,13 +146,12 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
 
 
   useEffect(() => {
-    const initialLimit = getInitialBubbleRenderLimit();
     setVisibleCount((current) => {
-      if (bookmarks.length <= initialLimit) return bookmarks.length;
-      return Math.min(Math.max(current, initialLimit), bookmarks.length);
+      if (bookmarks.length <= INITIAL_BUBBLE_RENDER_LIMIT) return bookmarks.length;
+      return Math.min(Math.max(current, INITIAL_BUBBLE_RENDER_LIMIT), bookmarks.length);
     });
 
-    if (bookmarks.length <= initialLimit) return;
+    if (bookmarks.length <= INITIAL_BUBBLE_RENDER_LIMIT) return;
 
     let cancelled = false;
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
@@ -187,7 +179,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
       if (cancelled) return;
       let hasMore = false;
       setVisibleCount((current) => {
-        const next = Math.min(bookmarks.length, current + getBubbleRenderChunk());
+        const next = Math.min(bookmarks.length, current + BUBBLE_RENDER_CHUNK);
         hasMore = next < bookmarks.length;
         return next;
       });
@@ -207,25 +199,16 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
     [bookmarks, visibleCount],
   );
 
-  const maxAccessCount = useMemo(() => getMaxAccessCount(bookmarks), [bookmarks]);
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
-  const isTablet = typeof window !== 'undefined' && window.innerWidth >= 640 && window.innerWidth < 1024;
-  const heatStylesById = useMemo(() => {
-    const styles = new Map<string, ReturnType<typeof getHeatStylesAndSize>>();
-    activeBookmarks.forEach((bookmark) => {
-      styles.set(bookmark.id, getHeatStylesAndSize(bookmark.accessCount, maxAccessCount, isMobile, isTablet));
-    });
-    return styles;
-  }, [activeBookmarks, isMobile, isTablet, maxAccessCount]);
-
   // Initialize bubble data
   useEffect(() => {
+    const maxAccessCount = getMaxAccessCount(bookmarks);
+    const isMobile = window.innerWidth < 640;
+    const isTablet = window.innerWidth >= 640 && window.innerWidth < 1024;
     const headerHeight = isMobile ? 120 : 100;
 
     activeBookmarks.forEach((bookmark) => {
       if (!bubbleDataRef.current.has(bookmark.id)) {
-        const heatStyles = heatStylesById.get(bookmark.id);
-        if (!heatStyles) return;
+        const heatStyles = getHeatStylesAndSize(bookmark.accessCount, maxAccessCount, isMobile, isTablet);
 
         // Each bubble gets fully unique seeds and timing so they NEVER sync
         // wanderSpeed range deliberately spread wide: 0.0002–0.0008 (vs original 0.0003–0.0005)
@@ -273,7 +256,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
         bubbleElementsRef.current.delete(id);
       }
     });
-  }, [activeBookmarks, heatStylesById, isMobile]);
+  }, [activeBookmarks, bookmarks]);
 
   // Animation loop
   useEffect(() => {
@@ -672,13 +655,16 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
     }
   }, [draggedBubble, handleDragMove, handleDragEnd]);
 
+  const maxAccessCount = getMaxAccessCount(bookmarks);
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+  const isTablet = typeof window !== 'undefined' && window.innerWidth >= 640 && window.innerWidth < 1024;
+
   const contextBookmark = contextMenu ? activeBookmarks.find(b => b.id === contextMenu.bookmarkId) : null;
 
   return (
     <div ref={canvasRef} className="bm-board absolute inset-0 overflow-hidden">
       {activeBookmarks.map((bookmark, index) => {
-        const heatStyles = heatStylesById.get(bookmark.id);
-        if (!heatStyles) return null;
+        const heatStyles = getHeatStylesAndSize(bookmark.accessCount, maxAccessCount, isMobile, isTablet);
         const isDragging = draggedBubble === bookmark.id;
         const isPopping = poppingIds.has(bookmark.id);
         
@@ -710,12 +696,19 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
               sparkle
               refract={activeBookmarks.length <= 40 || heatStyles.size >= 80}
               label={bookmark.title}
-              showLabel
               popping={isPopping}
               onPopped={() => finishPop(bookmark.id)}
               onActivate={() => handleBubbleClick(bookmark)}
               glyph={
-                <span className="bm-favicon-well">
+                <span
+                  className="relative flex items-center justify-center rounded-full"
+                  style={{
+                    width: '46%',
+                    height: '46%',
+                    background: 'radial-gradient(circle at 50% 45%, hsla(0,0%,100%,0.9) 0%, hsla(0,0%,100%,0.7) 70%, hsla(0,0%,100%,0.4) 100%)',
+                    boxShadow: '0 2px 6px hsla(0,0%,0%,0.2), inset 0 0 0 1px hsla(0,0%,100%,0.45)',
+                  }}
+                >
                   <BubbleFavicon url={bookmark.favicon} alt={bookmark.title} priority={index < 12} />
                 </span>
               }
