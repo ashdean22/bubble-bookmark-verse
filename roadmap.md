@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Replace user-facing and metadata BubbleLink branding with BubbleMark.
-- [ ] Remove stale bubblelink.app references without inventing a production domain.
-- [ ] Preserve loading recovery, UI behavior, pricing, features, and backend behavior.
-- [ ] Verify references and production build.
+- [x] Standardize user-facing and metadata branding as BubbleMark.
+- [x] Remove stale former-domain references without inventing a production domain.
+- [x] Preserve loading recovery, UI behavior, pricing, features, and backend behavior.
+- [x] Verify references and production build.
