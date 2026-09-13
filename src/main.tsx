@@ -31,10 +31,7 @@ const mount = async () => {
 
   // The entry point must always dismiss the static watchdog, even when the
   // larger application graph is slow or a cached module fails to download.
-  clearBootScreen();
   container.innerHTML =
-    '<div aria-label="Opening BubbleMark" style="min-height:100dvh;display:flex;align-items:center;justify-content:center;background:#080b1a;color:#e6ecff;font:600 14px system-ui,-apple-system,sans-serif">Opening BubbleMark…</div>';
-
   try {
     // Install browser fallbacks before evaluating the application graph. Running
     // this import in parallel with App allowed older WebViews to evaluate App first.
