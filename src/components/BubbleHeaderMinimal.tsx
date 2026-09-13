@@ -1,6 +1,4 @@
 import { Progress } from '@/components/ui/progress';
-import bubbleLinkLogoWebP from '@/assets/bubblelink-logo.webp';
-import bubbleLinkLogoPNG from '@/assets/bubblelink-logo.png';
 
 interface BubbleHeaderMinimalProps {
   usedBubbles: number;
@@ -16,77 +14,31 @@ export const BubbleHeaderMinimal = ({
 
   return (
     <header 
-      className="relative z-20 p-2 md:p-3"
+      className="relative z-20 px-4 py-4 md:px-7 md:py-6"
       role="banner"
       aria-label="BubbleMark navigation"
     >
-      <div className="max-w-7xl mx-auto">
+      <div className="mx-auto max-w-[1600px]">
         <div className="flex items-start justify-between">
-          {/* Logo with decorative bubbles */}
-          <div className="flex items-center relative -mt-4 -ml-4 md:-mt-6 md:-ml-6">
-            <div className="h-44 md:h-64 w-44 md:w-64 shrink-0">
-              {/* <picture> serves WebP to modern browsers, PNG as fallback.
-                  fetchpriority="high" + decoding="sync" = zero flicker on first paint */}
-              <picture>
-                <source srcSet={bubbleLinkLogoWebP} type="image/webp" />
-                <img 
-                  src={bubbleLinkLogoPNG}
-                  alt="BubbleMark - Your Bookmarks. In a Bubble." 
-                  className="w-full h-full object-contain"
-                  decoding="sync"
-                  style={{
-                    willChange: 'filter',
-                    transform: 'translateZ(0)',
-                    animation: 'logo-glow-filter 4s ease-in-out infinite',
-                  }}
-                />
-              </picture>
+          <div className="bm-brand-lockup">
+            <span className="bm-brand-mark" aria-hidden="true">
+              <span />
+            </span>
+            <div>
+              <p className="bm-brand-name">Bubble<span>Mark</span></p>
+              <p className="bm-brand-tagline">Your bookmarks, in a bubble.</p>
             </div>
-            {/* Decorative bubble 1 — larger, top-right */}
-            <div
-              className="absolute pointer-events-none"
-              style={{
-                width: 28,
-                height: 28,
-                top: '2%',
-                right: '-10px',
-                borderRadius: '50%',
-                background: `radial-gradient(ellipse 60% 40% at 30% 25%, hsla(200, 80%, 90%, 0.85), transparent 50%),
-                             radial-gradient(ellipse 80% 80% at 50% 50%, hsla(210, 70%, 65%, 0.55), transparent 90%)`,
-                border: '1.5px solid hsla(210, 80%, 80%, 0.45)',
-                boxShadow: `0 4px 16px hsla(210, 60%, 40%, 0.2), 0 0 10px hsla(210, 80%, 70%, 0.3), inset 0 -4px 10px hsla(210, 60%, 30%, 0.2), inset 0 3px 6px hsla(0, 0%, 100%, 0.2)`,
-                backdropFilter: 'blur(2px)',
-                animation: 'float-bubble-1 4s ease-in-out infinite',
-              }}
-            />
-            {/* Decorative bubble 2 — smaller, slightly below and to the right */}
-            <div
-              className="absolute pointer-events-none"
-              style={{
-                width: 16,
-                height: 16,
-                top: '20%',
-                right: '-22px',
-                borderRadius: '50%',
-                background: `radial-gradient(ellipse 60% 40% at 30% 25%, hsla(190, 80%, 90%, 0.9), transparent 50%),
-                             radial-gradient(ellipse 80% 80% at 50% 50%, hsla(200, 65%, 60%, 0.5), transparent 90%)`,
-                border: '1px solid hsla(200, 80%, 80%, 0.4)',
-                boxShadow: `0 2px 8px hsla(200, 60%, 40%, 0.2), 0 0 6px hsla(200, 80%, 70%, 0.3), inset 0 -2px 6px hsla(200, 60%, 30%, 0.15), inset 0 2px 4px hsla(0, 0%, 100%, 0.2)`,
-                backdropFilter: 'blur(2px)',
-                animation: 'float-bubble-2 3.2s ease-in-out infinite',
-              }}
-            />
           </div>
           
           {/* Compact Capacity Indicator */}
           <div 
-            className="glass-card px-3 py-2 rounded-xl min-w-[140px]"
+            className="bm-capacity min-w-[140px] px-3 py-2"
             role="status"
             aria-label={`Bubbles used: ${usedBubbles} of ${isUnlimited ? 'unlimited' : maxBubbles}`}
           >
             <div className="flex items-center justify-between mb-1">
-              <span className="text-foreground/80 text-xs font-body">Bubbles</span>
-              <span className="text-foreground font-semibold text-sm font-body">
+              <span className="text-xs font-body">Bubbles</span>
+              <span className="font-semibold text-sm font-body">
                 {usedBubbles}/{isUnlimited ? '∞' : maxBubbles}
               </span>
             </div>

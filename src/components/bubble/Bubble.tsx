@@ -59,6 +59,19 @@ export const Bubble = ({
   const small = size < 90;
   const showSparkle = sparkle && !small;
 
+  const appearance = useMemo(() => {
+    const normalized = Math.abs(Math.sin((seed + 1) * 12.9898));
+    const secondary = Math.abs(Math.sin((seed + 1) * 43.758));
+    return {
+      ['--bm-film-angle' as string]: `${Math.round(normalized * 300)}deg`,
+      ['--bm-highlight-x' as string]: `${10 + Math.round(normalized * 8)}%`,
+      ['--bm-highlight-y' as string]: `${10 + Math.round(secondary * 8)}%`,
+      ['--bm-film-opacity' as string]: `${0.24 + normalized * 0.08}`,
+      ['--bm-smear-shift' as string]: `${Math.round((secondary - 0.5) * 8)}%`,
+      ['--bm-cycle' as string]: `${26 + Math.round(normalized * 9)}s`,
+    } as React.CSSProperties;
+  }, [seed]);
+
   const droplets = useMemo(() => {
     return Array.from({ length: DROPLETS }, (_, i) => {
       const r = (Math.sin((seed + i) * 12.9898) + 1) / 2;
@@ -111,7 +124,7 @@ export const Bubble = ({
       aria-label={label ? `Pop ${label}` : 'Pop bubble'}
       data-popping={popActive ? 'true' : 'false'}
       className={`bm-bubble ${className}`}
-      style={{ ['--bm-size' as string]: `${size}px`, ['--bm-eat' as string]: '0%', ...style }}
+      style={{ ['--bm-size' as string]: `${size}px`, ['--bm-eat' as string]: '0%', ...appearance, ...style }}
       onClick={activate}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {

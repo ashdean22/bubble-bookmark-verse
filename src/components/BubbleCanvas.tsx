@@ -1,10 +1,8 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import type { CSSProperties } from 'react';
 import type { Bookmark } from '@/pages/Index';
-import { ExternalLink, Pencil, Trash2 } from 'lucide-react';
+import { ExternalLink, Globe2, Pencil, Trash2 } from 'lucide-react';
 import { Bubble } from '@/components/bubble/Bubble';
-
-const FALLBACK_ICON = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMSA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDMgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K';
 
 const getInitialBubbleRenderLimit = () =>
   typeof window !== 'undefined' && window.innerWidth < 640 ? 24 : 48;
@@ -14,34 +12,40 @@ const getBubbleRenderChunk = () =>
 
 /** Bubble favicon — prioritizes only the first visible icons and falls back safely. */
 const BubbleFavicon = ({ url, alt, priority }: { url: string; alt: string; priority: boolean }) => {
+  const [failed, setFailed] = useState(!url);
+
+  if (failed) {
+    return (
+      <span className="bm-favicon-fallback" aria-label={`${alt} website`} role="img">
+        <Globe2 aria-hidden="true" />
+      </span>
+    );
+  }
+
   return (
     <img
-      src={url || FALLBACK_ICON}
+      src={url}
       alt={alt}
-      className="pointer-events-none"
-      style={{
-        width: '72%',
-        height: '72%',
-        objectFit: 'contain',
-        imageRendering: 'auto',
-        filter: 'drop-shadow(0 1px 1px hsla(0,0%,0%,0.25))',
-      }}
+      className="bm-favicon pointer-events-none"
       loading={priority ? 'eager' : 'lazy'}
       decoding="async"
-      onError={(e) => { e.currentTarget.src = FALLBACK_ICON; }}
+      onError={() => setFailed(true)}
     />
   );
 };
 
 const MenuFavicon = ({ url }: { url: string }) => {
+  const [failed, setFailed] = useState(!url);
+  if (failed) return <Globe2 aria-hidden="true" style={{ width: 18, height: 18, flexShrink: 0 }} />;
+
   return (
     <img
-      src={url || FALLBACK_ICON}
+      src={url}
       alt=""
       style={{ width: 18, height: 18, borderRadius: 4, flexShrink: 0 }}
       loading="lazy"
       decoding="async"
-      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+      onError={() => setFailed(true)}
     />
   );
 };
@@ -706,19 +710,12 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
               sparkle
               refract={activeBookmarks.length <= 40 || heatStyles.size >= 80}
               label={bookmark.title}
+              showLabel
               popping={isPopping}
               onPopped={() => finishPop(bookmark.id)}
               onActivate={() => handleBubbleClick(bookmark)}
               glyph={
-                <span
-                  className="relative flex items-center justify-center rounded-full"
-                  style={{
-                    width: '46%',
-                    height: '46%',
-                    background: 'radial-gradient(circle at 50% 45%, hsla(0,0%,100%,0.9) 0%, hsla(0,0%,100%,0.7) 70%, hsla(0,0%,100%,0.4) 100%)',
-                    boxShadow: '0 2px 6px hsla(0,0%,0%,0.2), inset 0 0 0 1px hsla(0,0%,100%,0.45)',
-                  }}
-                >
+                <span className="bm-favicon-well">
                   <BubbleFavicon url={bookmark.favicon} alt={bookmark.title} priority={index < 12} />
                 </span>
               }
