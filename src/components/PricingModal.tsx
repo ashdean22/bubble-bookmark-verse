@@ -12,22 +12,23 @@ interface PricingModalProps {
   onClose: () => void;
 }
 
-type PlanInterest = 'pro_monthly' | 'pro_yearly' | 'lifetime';
+type PlanInterest = 'pro_yearly' | 'lifetime';
 
 const freeFeatures = [
-  'Unlimited bubbles on this device',
-  'Floating bubble canvas',
-  'Automatic favicons',
-  'Stored locally, no account needed',
+  'Up to 15 bubbles',
+  'One device only',
+  'Saved locally on this device',
+  'Basic themes',
 ];
 
 const proFeatures = [
-  'Everything in Free',
-  'Sync across all your devices',
-  'Automatic cloud backup',
-  'Premium themes and colors',
-  'Heat insights on your bubbles',
+  'Unlimited bubbles',
+  'Multi-device sync',
+  'Cloud backup',
+  'Premium themes',
+  'Heat insights',
 ];
+
 
 export const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
   const { toast } = useToast();
