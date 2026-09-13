@@ -84,9 +84,7 @@
         if (btn) btn.style.display = 'inline-block';
       }, 6000);
 
-      // If startup throws before React commits, surface recovery immediately
-      // instead of leaving the spinner running on the user's device.
-      window.addEventListener('error', function () {
+      function showStartupRecovery() {
         if (document.documentElement.classList.contains('app-ready')) return;
         var b = document.getElementById('boot');
         if (!b) return;
@@ -94,7 +92,17 @@
         if (m) m.textContent = 'Something interrupted startup.';
         var btn = b.querySelector('button');
         if (btn) btn.style.display = 'inline-block';
-      });
+      }
+
+      // Catch both script/network failures and rejected module imports.
+      window.addEventListener('error', showStartupRecovery);
+      window.addEventListener('unhandledrejection', showStartupRecovery);
+
+      window.__recoverBubbleMark = function () {
+        var url = new URL(location.href);
+        url.searchParams.set('bm-reload', String(Date.now()));
+        location.replace(url.toString());
+      };
 
       // A tab left open across an app update can request an old generated file.
       // Reload once so Vite can fetch the current file map instead of leaving a blank screen.
@@ -105,7 +113,7 @@
         try { previous = Number(sessionStorage.getItem(key) || 0); } catch (_) {}
         if (Date.now() - previous < 10000) return;
         try { sessionStorage.setItem(key, String(Date.now())); } catch (_) {}
-        location.reload();
+        window.__recoverBubbleMark();
       });
     </script>
 
@@ -132,7 +140,7 @@
     <div id="boot">
       <div class="ring"></div>
       <div class="msg">Loading BubbleMark…</div>
-      <button type="button" onclick="location.reload()">Reload</button>
+      <button type="button" onclick="window.__recoverBubbleMark ? window.__recoverBubbleMark() : location.reload()">Reload</button>
     </div>
     <script type="module" src="/src/main.tsx" fetchpriority="high"></script>
     <script nomodule>
