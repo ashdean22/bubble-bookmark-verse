@@ -3,7 +3,6 @@ import { installDiagnosticsCapture } from './utils/diagnosticsCapture.ts'
 import { createElement } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
-import App from './App.tsx'
 
 installDiagnosticsCapture();
 
@@ -26,19 +25,23 @@ const renderStartupError = (container: HTMLElement, error: unknown) => {
   clearBootScreen();
 };
 
-const mount = () => {
+const mount = async () => {
   const container = document.getElementById('root');
   if (!container) {
     clearBootScreen();
     return;
   }
 
+  // The entry point must always dismiss the static watchdog, even when the
+  // larger application graph is slow or a cached module fails to download.
+  clearBootScreen();
+  container.innerHTML =
+    '<div aria-label="Loading BubbleMark" style="min-height:100dvh;background:#080b1a"></div>';
+
   try {
+    const { default: App } = await import('./App.tsx');
     const root = createRoot(container);
     root.render(createElement(App));
-    // Safety net: on browsers where effects are delayed or an optional
-    // feature throws, the loading overlay must never stay on screen.
-    window.setTimeout(clearBootScreen, 1500);
   } catch (err) {
     renderStartupError(container, err);
   }
@@ -54,4 +57,4 @@ window.addEventListener('unhandledrejection', () => {
   clearBootScreen();
 });
 
-mount();
+void mount();

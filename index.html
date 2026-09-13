@@ -73,7 +73,28 @@
       html.app-ready #boot{display:none}
     </style>
     <script>
-      // Boot watchdog: keep recovery visible until React has actually committed.
+      // If the browser cannot fetch the tiny entry module, recover once
+      // automatically instead of leaving the user behind the loading screen.
+      window.__entryFailed = function () {
+        var key = 'bm_entry_retry_v1';
+        var alreadyRetried = false;
+        try {
+          alreadyRetried = sessionStorage.getItem(key) === '1';
+          if (!alreadyRetried) sessionStorage.setItem(key, '1');
+        } catch (_) {}
+        if (!alreadyRetried) {
+          location.reload();
+          return;
+        }
+        var b = document.getElementById('boot');
+        if (!b) return;
+        var m = b.querySelector('.msg');
+        if (m) m.textContent = 'BubbleMark could not load this time.';
+        var btn = b.querySelector('button');
+        if (btn) btn.style.display = 'inline-block';
+      };
+
+      // Boot watchdog: keep recovery visible until the entry module starts.
       window.__bootWatchdog = setTimeout(function () {
         var b = document.getElementById('boot');
         if (!b || document.documentElement.classList.contains('app-ready')) return;
@@ -109,6 +130,6 @@
       <div class="msg">Loading BubbleMark…</div>
       <button type="button" onclick="location.reload()">Reload</button>
     </div>
-    <script type="module" src="/src/main.tsx" fetchpriority="high"></script>
+    <script type="module" src="/src/main.tsx" fetchpriority="high" onerror="window.__entryFailed()"></script>
   </body>
 </html>
