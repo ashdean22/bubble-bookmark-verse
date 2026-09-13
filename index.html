@@ -72,6 +72,7 @@
       @keyframes bootspin{to{transform:rotate(360deg)}}
       html.app-ready #boot{display:none}
     </style>
+    <noscript><style>#boot{display:none}</style></noscript>
     <script>
       // Boot watchdog: keep recovery visible until React has actually committed.
       window.__bootWatchdog = setTimeout(function () {
@@ -82,6 +83,18 @@
         var btn = b.querySelector('button');
         if (btn) btn.style.display = 'inline-block';
       }, 6000);
+
+      // If startup throws before React commits, surface recovery immediately
+      // instead of leaving the spinner running on the user's device.
+      window.addEventListener('error', function () {
+        if (document.documentElement.classList.contains('app-ready')) return;
+        var b = document.getElementById('boot');
+        if (!b) return;
+        var m = b.querySelector('.msg');
+        if (m) m.textContent = 'Something interrupted startup.';
+        var btn = b.querySelector('button');
+        if (btn) btn.style.display = 'inline-block';
+      });
 
       // A tab left open across an app update can request an old generated file.
       // Reload once so Vite can fetch the current file map instead of leaving a blank screen.
@@ -122,5 +135,16 @@
       <button type="button" onclick="location.reload()">Reload</button>
     </div>
     <script type="module" src="/src/main.tsx" fetchpriority="high"></script>
+    <script nomodule>
+      // Browsers too old for modern JavaScript would otherwise spin forever.
+      document.documentElement.className += ' app-ready';
+      document.getElementById('root').innerHTML =
+        '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;font-family:system-ui,sans-serif;color:#e6ecff">BubbleMark needs a newer browser. Please update your browser or open BubbleMark in Chrome, Safari, Edge or Firefox.</div>';
+    </script>
+    <noscript>
+      <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;font-family:system-ui,sans-serif;color:#e6ecff">
+        BubbleMark needs JavaScript enabled to show your bubbles.
+      </div>
+    </noscript>
   </body>
 </html>
