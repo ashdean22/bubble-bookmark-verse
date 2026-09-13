@@ -187,19 +187,67 @@
   pointer-events: none;
 }
 
+.bm-favicon-well {
+  position: relative;
+  display: flex;
+  width: 43%;
+  height: 43%;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid hsl(var(--bubble-glass) / 0.24);
+  border-radius: 50%;
+  background: radial-gradient(circle at 42% 36%, hsl(var(--bubble-glass) / 0.86), hsl(var(--bubble-glass) / 0.66) 65%, hsl(var(--bubble-rim-cyan) / 0.25));
+  box-shadow: 0 3px 8px hsl(var(--bubble-shadow) / 0.24), inset 0 1px 2px hsl(var(--bubble-glass) / 0.52);
+}
+
+.bm-favicon {
+  display: block;
+  width: 68%;
+  height: 68%;
+  object-fit: contain;
+  image-rendering: auto;
+  filter: drop-shadow(0 1px 1px hsl(var(--bubble-shadow) / 0.24));
+}
+
+.bm-favicon-fallback {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  color: hsl(var(--canvas-depth) / 0.78);
+}
+
+.bm-favicon-fallback svg {
+  width: 56%;
+  height: 56%;
+  stroke-width: 1.6;
+}
+
 .bm-label {
   position: absolute;
-  top: calc(100% + 6px);
+  top: calc(100% + 7px);
   left: 50%;
   transform: translateX(-50%);
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 11px;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-  max-width: 130%;
+  width: max-content;
+  max-width: clamp(76px, calc(var(--bm-size) * 1.55), 138px);
+  padding: 3px 7px 4px;
   overflow: hidden;
+  border: 1px solid hsl(var(--canvas-foreground) / 0.08);
+  border-radius: 999px;
+  background: hsl(var(--canvas-base) / 0.48);
+  box-shadow: 0 4px 12px hsl(var(--bubble-shadow) / 0.18);
+  color: hsl(var(--canvas-foreground) / 0.88);
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: 0;
+  white-space: nowrap;
   text-overflow: ellipsis;
   pointer-events: none;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 
 /* Torn film lip drawn exactly at the mask front */
@@ -245,8 +293,8 @@
 }
 
 @keyframes bm-smear {
-  0%, 100% { transform: translate3d(-4%, 2%, 0) rotate(-2deg); }
-  50% { transform: translate3d(5%, -3%, 0) rotate(3deg); }
+  0%, 100% { transform: translate3d(calc(-4% + var(--bm-smear-shift, 0%)), 2%, 0) rotate(-2deg); }
+  50% { transform: translate3d(calc(5% + var(--bm-smear-shift, 0%)), -3%, 0) rotate(3deg); }
 }
 
 @keyframes bm-float {
@@ -286,5 +334,23 @@
   .bm-bubble[data-popping='true'] .bm-maskable {
     -webkit-mask-image: none;
     mask-image: none;
+  }
+}
+
+@media (max-width: 639px) {
+  .bm-refract {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .bm-board::after { opacity: 0.08; }
+
+  .bm-label {
+    top: calc(100% + 5px);
+    max-width: 92px;
+    padding: 2px 6px 3px;
+    font-size: 10px;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
 }
