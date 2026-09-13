@@ -32,7 +32,7 @@ const proFeatures = [
 
 export const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
   const { toast } = useToast();
-  const [billing, setBilling] = useState<'yearly' | 'monthly'>('yearly');
+  const [selected2, setSelected2] = useState<null>(null);
   const [selected, setSelected] = useState<PlanInterest | null>(null);
   const [email, setEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
