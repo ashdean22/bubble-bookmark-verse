@@ -44,7 +44,7 @@ export const AbstractBackground = () => {
       <div
         className="absolute inset-0"
         style={{
-          background: 'radial-gradient(ellipse 120% 100% at 50% 50%, transparent 40%, hsl(220 55% 4% / 0.7) 100%)',
+          background: 'radial-gradient(ellipse 120% 100% at 50% 50%, transparent 40%, hsl(205 65% 88% / 0.5) 100%)',
         }}
       />
 

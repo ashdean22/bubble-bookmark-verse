@@ -21,7 +21,7 @@ export const WelcomeMessage = ({ onCreateBubble }: WelcomeMessageProps) => {
           Welcome to BubbleMark
         </h2>
         
-        <p className="text-white/80 mb-6 font-body">
+        <p className="text-muted-foreground mb-6 font-body">
           Your Bookmarks. In a Bubble.
         </p>
         
