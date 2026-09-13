@@ -6,6 +6,8 @@
 - [x] Verify references and production build.
 
 ## Loading reliability
+- [x] Remove the accidental analytics dependency from the initial app download.
+- [x] Recover startup script failures with a one-time cache-busting reload.
 - [x] Harden startup against older browsers and failed optional chunks.
 - [x] Verify empty, corrupted, legacy, and large saved sessions load after the latest fix.
 - [x] Remove the eager 1ms idle fallback from the startup path.
