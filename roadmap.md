@@ -11,6 +11,9 @@
 - [x] Remove the eager 1ms idle fallback from the startup path.
 - [x] Keep optional modal downloads off the initial load path.
 - [x] Stage dense bubble boards in smaller device-aware batches.
+- [x] Recover once from stale generated files after app updates.
+- [x] Isolate optional dialog failures from the bookmark board.
+- [x] Cap historical click data so long-lived sessions remain fast.
 
 ## Background visibility
 - [x] Brighten the bubble board while preserving its blue-violet space character.

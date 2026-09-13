@@ -82,6 +82,18 @@
         var btn = b.querySelector('button');
         if (btn) btn.style.display = 'inline-block';
       }, 6000);
+
+      // A tab left open across an app update can request an old generated file.
+      // Reload once so Vite can fetch the current file map instead of leaving a blank screen.
+      window.addEventListener('vite:preloadError', function (event) {
+        event.preventDefault();
+        var key = 'bm_preload_reload';
+        var previous = 0;
+        try { previous = Number(sessionStorage.getItem(key) || 0); } catch (_) {}
+        if (Date.now() - previous < 10000) return;
+        try { sessionStorage.setItem(key, String(Date.now())); } catch (_) {}
+        location.reload();
+      });
     </script>
 
     <!-- JSON-LD Structured Data -->

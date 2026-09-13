@@ -217,7 +217,7 @@ export const RefactoredIndex = () => {
             ...bookmark, 
             accessCount: bookmark.accessCount + 1,
             lastAccessed: now,
-            accessHistory: [...(bookmark.accessHistory || []), now],
+            accessHistory: [...(bookmark.accessHistory || []).slice(-99), now],
           }
         : bookmark
     );
@@ -280,37 +280,38 @@ export const RefactoredIndex = () => {
         )}
 
         {/* Modals — only rendered (and their JS loaded) when actually opened */}
-        <Suspense fallback={null}>
-          {editingBookmark && (
-            <EditBubbleModal
-              bookmark={editingBookmark}
-              isOpen={!!editingBookmark}
-              onClose={() => setEditingBookmark(null)}
-              onSave={editBookmark}
-            />
-          )}
+        <ErrorBoundary fallback={null}>
+          <Suspense fallback={null}>
+            {editingBookmark && (
+              <EditBubbleModal
+                bookmark={editingBookmark}
+                isOpen={!!editingBookmark}
+                onClose={() => setEditingBookmark(null)}
+                onSave={editBookmark}
+              />
+            )}
 
-          {showAddModal && (
-            <AddBookmarkModal
-              isOpen={showAddModal}
-              onClose={() => setShowAddModal(false)}
-              onAdd={addBookmark}
-            />
-          )}
+            {showAddModal && (
+              <AddBookmarkModal
+                isOpen={showAddModal}
+                onClose={() => setShowAddModal(false)}
+                onAdd={addBookmark}
+              />
+            )}
 
+            {showPricingModal && (
+              <PricingModal isOpen={showPricingModal} onClose={() => setShowPricingModal(false)} />
+            )}
 
-          {showPricingModal && (
-            <PricingModal isOpen={showPricingModal} onClose={() => setShowPricingModal(false)} />
-          )}
-
-          {showUpgradePrompt && (
-            <UpgradePromptModal
-              isOpen={showUpgradePrompt}
-              onClose={handleUpgradePromptClose}
-              onUpgrade={handleUpgradeFromPrompt}
-            />
-          )}
-        </Suspense>
+            {showUpgradePrompt && (
+              <UpgradePromptModal
+                isOpen={showUpgradePrompt}
+                onClose={handleUpgradePromptClose}
+                onUpgrade={handleUpgradeFromPrompt}
+              />
+            )}
+          </Suspense>
+        </ErrorBoundary>
       </div>
     </ErrorBoundary>
   );
