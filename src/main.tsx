@@ -1,3 +1,9 @@
+import './polyfills';
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import App from './App';
+import './index.css';
+
 const clearBootScreen = () => {
   const w = (window as unknown as { __bootWatchdog?: number }).__bootWatchdog;
   if (w) clearTimeout(w);
@@ -22,7 +28,7 @@ const renderStartupError = (container: HTMLElement, error: unknown) => {
   clearBootScreen();
 };
 
-const mount = async () => {
+const mount = () => {
   const container = document.getElementById('root');
   if (!container) {
     clearBootScreen();
@@ -32,33 +38,14 @@ const mount = async () => {
   // The entry script has started, so never leave the static watchdog covering
   // the page while the application modules download.
   clearBootScreen();
-  container.innerHTML =
-    '<div aria-label="Opening BubbleMark" style="min-height:100dvh;display:flex;align-items:center;justify-content:center;background:#080b1a;color:#e6ecff;font:600 14px system-ui,-apple-system,sans-serif">Opening BubbleMark…</div>';
-
   try {
-    // Apply browser fallbacks before evaluating any application module.
-    await import('./polyfills.ts');
-
-    // Diagnostics are optional and must not block the main screen.
-    const diagnosticsPromise = import('./utils/diagnosticsCapture.ts').catch(() => null);
-
-    // Load only the dependencies required to mount the application.
-    const [react, reactDom, appModule] = await Promise.all([
-      import('react'),
-      import('react-dom/client'),
-      import('./App.tsx'),
-    ]);
-
-    // A stylesheet delivery failure should not turn into a blank page.
-    void import('./index.css').catch((error) => console.warn('[BubbleMark] styles failed to load', error));
-
-    const { createElement } = react;
-    const { createRoot } = reactDom;
-    const { default: App } = appModule;
     const root = createRoot(container);
-    root.render(createElement(App));
+    root.render(React.createElement(App));
 
-    void diagnosticsPromise.then((diagnostics) => diagnostics?.installDiagnosticsCapture());
+    // Diagnostics remain optional and load only after the app is mounted.
+    void import('./utils/diagnosticsCapture.ts')
+      .then((diagnostics) => diagnostics.installDiagnosticsCapture())
+      .catch(() => null);
   } catch (err) {
     renderStartupError(container, err);
   }
@@ -74,4 +61,4 @@ window.addEventListener('unhandledrejection', () => {
   clearBootScreen();
 });
 
-void mount();
+mount();
