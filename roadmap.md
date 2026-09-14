@@ -14,6 +14,7 @@
 - [x] Verify the mobile action menu responds after startup.
 - [x] Remove mobile graphics contention that made the loaded app appear frozen.
 - [x] Verify smooth bubble movement and controls under a throttled Samsung-sized test.
+- [x] Keep bubble physics moving under Samsung reduced-motion settings and resume after backgrounding.
 
 ## Background visibility
 - [x] Brighten the bubble board while preserving its blue-violet space character.
