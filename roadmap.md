@@ -12,6 +12,8 @@
 - [x] Verify mobile startup completes without the error or recovery screen.
 - [x] Replace the asynchronous startup chain with direct mounting to prevent freezes.
 - [x] Verify the mobile action menu responds after startup.
+- [x] Remove mobile graphics contention that made the loaded app appear frozen.
+- [ ] Verify smooth bubble movement and controls under a throttled Samsung-sized test.
 
 ## Background visibility
 - [x] Brighten the bubble board while preserving its blue-violet space character.

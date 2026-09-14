@@ -357,6 +357,25 @@
 .beam          { animation: beam-fade 18s ease-in-out infinite; }
 .sparkle       { animation: sparkle-blink 2.5s ease-in-out infinite; }
 
+/* The bubble physics loop is the important motion on phones. Pausing the
+   oversized decorative layers prevents Samsung/Android GPUs from becoming
+   saturated while the board remains visually identical at rest. */
+@media (max-width: 639px) {
+  .abstract-bg .aurora-blob-0,
+  .abstract-bg .aurora-blob-1,
+  .abstract-bg .aurora-blob-2,
+  .abstract-bg .beam,
+  .abstract-bg .sparkle {
+    animation: none;
+    will-change: auto;
+  }
+
+  .abstract-bg .beam,
+  .abstract-bg .sparkle {
+    display: none;
+  }
+}
+
 @keyframes logo-glow-filter {
   0%, 100% { filter: drop-shadow(0 0 10px hsla(200, 95%, 60%, 0.7)) drop-shadow(0 0 20px hsla(180, 80%, 50%, 0.4)); }
   33%       { filter: drop-shadow(0 0 12px hsla(35, 100%, 58%, 0.75)) drop-shadow(0 0 24px hsla(25, 95%, 52%, 0.45)); }
