@@ -138,13 +138,6 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
   const isDraggingRef = useRef(false);
   const bubbleDataRef = useRef<Map<string, BubblePhysicsData>>(new Map());
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const prefersReducedMotionRef = useRef(
-    typeof window !== 'undefined' &&
-      typeof window.matchMedia === 'function' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches,
-  );
-
-
   useEffect(() => {
     setVisibleCount((current) => {
       if (bookmarks.length <= INITIAL_BUBBLE_RENDER_LIMIT) return bookmarks.length;
@@ -261,14 +254,16 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
   // Animation loop
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || activeBookmarks.length === 0 || prefersReducedMotionRef.current) return;
+    if (!canvas || activeBookmarks.length === 0) return;
 
     const headerHeight = window.innerWidth < 640 ? 120 : 100;
     let lastTime = 0;
+    let running = !document.hidden;
     const targetFPS = 60;
     const frameInterval = 1000 / targetFPS;
 
     const animate = (timestamp: number) => {
+      if (!running) return;
       const elapsed = timestamp - lastTime;
       
       if (elapsed >= frameInterval) {
@@ -502,11 +497,36 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
       animationRef.current = requestAnimationFrame(animate);
     };
 
-    animationRef.current = requestAnimationFrame(animate);
+    const startAnimation = () => {
+      if (running && animationRef.current === undefined) {
+        lastTime = 0;
+        animationRef.current = requestAnimationFrame(animate);
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        running = false;
+        if (animationRef.current !== undefined) {
+          cancelAnimationFrame(animationRef.current);
+          animationRef.current = undefined;
+        }
+        return;
+      }
+
+      running = true;
+      startAnimation();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    startAnimation();
 
     return () => {
-      if (animationRef.current) {
+      running = false;
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (animationRef.current !== undefined) {
         cancelAnimationFrame(animationRef.current);
+        animationRef.current = undefined;
       }
     };
   }, [activeBookmarks.length, draggedBubble]);
