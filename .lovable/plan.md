@@ -1,11 +1,10 @@
-# BubbleMark loading reliability fix
-
-## Scope
-- Preserve the current design, bubble physics, pricing, features, saved bookmarks, and startup recovery.
-- Fix only startup and loading failure paths.
+# Fix the mobile freeze
 
 ## Changes
-1. Guard optional browser APIs used during the first render so older Safari/WebViews cannot crash before BubbleMark appears.
-2. Isolate delayed utilities from the main app so a missing or failed optional chunk cannot replace the bookmark screen.
-3. Make startup failure recovery remain available even when rendering fails asynchronously.
-4. Test empty, corrupted, legacy, and large saved bookmark sessions in a real browser, then confirm the build is healthy.
+- Keep bubble movement, collisions, design, pricing, and saved bookmarks unchanged.
+- On phone-sized screens, stop redundant decorative CSS animations and disable the costliest live blur/refraction layers while retaining the soap-bubble appearance.
+- Simplify only the animated background workload on phones.
+- Verify startup, bubble movement, and menu interaction under a throttled Samsung-sized browser test, then confirm the production build.
+
+## Technical details
+The current phone stress test falls to roughly 15 animation frames per second because JavaScript bubble motion runs alongside multiple CSS filters, backdrop filters, oversized animated backgrounds, and per-bubble animations. Mobile-only rendering rules will remove that GPU contention without changing the physics loop.
