@@ -303,3 +303,35 @@
     mask-image: none;
   }
 }
+
+/* Phone GPUs can stall when every moving sphere owns several continuously
+   animated blur/filter layers. Keep the same film, highlights and colour,
+   but let the single physics transform be the only continuous animation. */
+@media (max-width: 639px) {
+  .bm-bubble {
+    animation: none;
+    filter: none;
+    will-change: auto;
+  }
+
+  .bm-film {
+    animation: none;
+    filter: saturate(1.45);
+    opacity: 0.68;
+  }
+
+  .bm-band {
+    animation: none;
+    filter: blur(2px);
+  }
+
+  .bm-caustic,
+  .bm-spec,
+  .bm-spec2 {
+    filter: none;
+  }
+
+  .bm-sparkle {
+    animation: none;
+  }
+}
