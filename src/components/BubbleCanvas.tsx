@@ -141,6 +141,9 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
   const lastMoveRef = useRef<{ x: number; y: number; time: number } | null>(null);
   const bubbleDataRef = useRef<Map<string, BubblePhysicsData>>(new Map());
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressPointRef = useRef<{ x: number; y: number } | null>(null);
+  const longPressTriggeredRef = useRef(false);
+  const suppressNextActivationRef = useRef(false);
   useEffect(() => {
     setVisibleCount((current) => {
       if (bookmarks.length <= INITIAL_BUBBLE_RENDER_LIMIT) return bookmarks.length;
@@ -540,7 +543,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
     };
   }, [activeBookmarks.length, draggedBubble]);
 
-  // Close context menu on outside click or after 3s
+  // Close the options menu on outside interaction or after 3s.
   useEffect(() => {
     if (!contextMenu) return;
     const close = () => setContextMenu(null);
@@ -555,7 +558,10 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
   }, [contextMenu]);
 
   const clearLongPress = () => {
-    if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
   };
 
   // Wrap delete with a pop animation: mark as popping → wait for keyframes → really delete
@@ -579,6 +585,11 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
   }, [onRemoveBookmark]);
 
   const handleBubbleClick = (bookmark: Bookmark) => {
+    if (suppressNextActivationRef.current || longPressTriggeredRef.current) {
+      suppressNextActivationRef.current = false;
+      longPressTriggeredRef.current = false;
+      return;
+    }
     if (!isDraggingRef.current) {
       setClickedBubble(bookmark.id);
       onBubbleClick(bookmark.id);
@@ -593,11 +604,14 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
     setContextMenu({ bookmarkId, x: e.clientX, y: e.clientY });
   };
 
-  const handleDragStart = (e: React.MouseEvent | React.TouchEvent, bookmarkId: string) => {
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+  const handleDragStart = (e: React.PointerEvent<HTMLDivElement>, bookmarkId: string) => {
+    const clientX = e.clientX;
+    const clientY = e.clientY;
+    e.currentTarget.setPointerCapture(e.pointerId);
 
     dragStartRef.current = { x: clientX, y: clientY, time: Date.now() };
+    longPressPointRef.current = { x: clientX, y: clientY };
+    longPressTriggeredRef.current = false;
 
     const bubble = e.currentTarget as HTMLElement;
     const rect = bubble.getBoundingClientRect();
@@ -609,21 +623,24 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
     setDraggedBubble(bookmarkId);
 
     // Touch: 2s hold → show URL + edit/delete menu
-    if ('touches' in e) {
+    if (e.pointerType === 'touch') {
       clearLongPress();
       longPressTimerRef.current = setTimeout(() => {
-        if (!isDraggingRef.current) {
-          setContextMenu({ bookmarkId, x: clientX, y: clientY });
-        }
+        const point = longPressPointRef.current ?? { x: clientX, y: clientY };
+        longPressTriggeredRef.current = true;
+        suppressNextActivationRef.current = true;
+        setContextMenu({ bookmarkId, x: point.x, y: point.y });
+        longPressTimerRef.current = null;
       }, 2000);
     }
   };
 
-  const handleDragMove = useCallback((e: MouseEvent | TouchEvent) => {
+  const handleDragMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     if (!dragStartRef.current || !draggedBubble) return;
 
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    const clientX = e.clientX;
+    const clientY = e.clientY;
+    longPressPointRef.current = { x: clientX, y: clientY };
 
     const deltaX = clientX - dragStartRef.current.x;
     const deltaY = clientY - dragStartRef.current.y;
@@ -631,7 +648,6 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
 
     if (!isDraggingRef.current && distance > 2) {
       isDraggingRef.current = true;
-      clearLongPress();
       setContextMenu(null);
     }
 
@@ -665,7 +681,11 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
     }
   }, [draggedBubble]);
 
-  const handleDragEnd = useCallback(() => {
+  const handleDragEnd = useCallback((e?: React.PointerEvent<HTMLDivElement>) => {
+    const heldForOptions = longPressTriggeredRef.current;
+    if (e?.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
     if (draggedBubble) {
       const data = bubbleDataRef.current.get(draggedBubble);
       if (data && isDraggingRef.current) {
@@ -680,34 +700,19 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
     }
     dragStartRef.current = null;
     lastMoveRef.current = null;
+    longPressPointRef.current = null;
     setDraggedBubble(null);
     clearLongPress();
     setTimeout(() => {
       isDraggingRef.current = false;
     }, 50);
-  }, [draggedBubble]);
-
-
-  useEffect(() => {
-    if (draggedBubble) {
-      const handleMouseMove = (e: MouseEvent) => handleDragMove(e);
-      const handleTouchMove = (e: TouchEvent) => { handleDragMove(e); };
-
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('touchmove', handleTouchMove, { passive: false });
-      document.addEventListener('mouseup', handleDragEnd);
-      document.addEventListener('touchend', handleDragEnd);
-      document.addEventListener('touchcancel', handleDragEnd);
-
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('touchmove', handleTouchMove);
-        document.removeEventListener('mouseup', handleDragEnd);
-        document.removeEventListener('touchend', handleDragEnd);
-        document.removeEventListener('touchcancel', handleDragEnd);
-      };
+    if (heldForOptions) {
+      setTimeout(() => {
+        suppressNextActivationRef.current = false;
+        longPressTriggeredRef.current = false;
+      }, 600);
     }
-  }, [draggedBubble, handleDragMove, handleDragEnd]);
+  }, [draggedBubble]);
 
   const maxAccessCount = getMaxAccessCount(bookmarks);
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
@@ -743,8 +748,10 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
               WebkitUserSelect: 'none',
               WebkitTouchCallout: 'none',
             }}
-            onMouseDown={(e) => handleDragStart(e, bookmark.id)}
-            onTouchStart={(e) => handleDragStart(e, bookmark.id)}
+            onPointerDown={(e) => handleDragStart(e, bookmark.id)}
+            onPointerMove={handleDragMove}
+            onPointerUp={handleDragEnd}
+            onPointerCancel={handleDragEnd}
             onContextMenu={(e) => handleContextMenu(e, bookmark.id)}
           >
             <Bubble
@@ -777,7 +784,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
         );
       })}
 
-      {/* Context menu (3s touch hold / right-click) */}
+      {/* Options menu (2s touch hold / right-click) */}
       {contextMenu && contextBookmark && (
         <div
           className="fixed inset-0 z-50 flex items-end justify-center pb-10 select-none"
