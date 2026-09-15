@@ -141,6 +141,9 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
   const lastMoveRef = useRef<{ x: number; y: number; time: number } | null>(null);
   const bubbleDataRef = useRef<Map<string, BubblePhysicsData>>(new Map());
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressPointRef = useRef<{ x: number; y: number } | null>(null);
+  const longPressTriggeredRef = useRef(false);
+  const suppressNextActivationRef = useRef(false);
   useEffect(() => {
     setVisibleCount((current) => {
       if (bookmarks.length <= INITIAL_BUBBLE_RENDER_LIMIT) return bookmarks.length;
@@ -540,7 +543,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
     };
   }, [activeBookmarks.length, draggedBubble]);
 
-  // Close context menu on outside click or after 3s
+  // Close the options menu on outside interaction or after 3s.
   useEffect(() => {
     if (!contextMenu) return;
     const close = () => setContextMenu(null);
@@ -555,7 +558,10 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
   }, [contextMenu]);
 
   const clearLongPress = () => {
-    if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
   };
 
   // Wrap delete with a pop animation: mark as popping → wait for keyframes → really delete
@@ -579,6 +585,11 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
   }, [onRemoveBookmark]);
 
   const handleBubbleClick = (bookmark: Bookmark) => {
+    if (suppressNextActivationRef.current || longPressTriggeredRef.current) {
+      suppressNextActivationRef.current = false;
+      longPressTriggeredRef.current = false;
+      return;
+    }
     if (!isDraggingRef.current) {
       setClickedBubble(bookmark.id);
       onBubbleClick(bookmark.id);
@@ -598,6 +609,8 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
 
     dragStartRef.current = { x: clientX, y: clientY, time: Date.now() };
+    longPressPointRef.current = { x: clientX, y: clientY };
+    longPressTriggeredRef.current = false;
 
     const bubble = e.currentTarget as HTMLElement;
     const rect = bubble.getBoundingClientRect();
@@ -612,9 +625,11 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
     if ('touches' in e) {
       clearLongPress();
       longPressTimerRef.current = setTimeout(() => {
-        if (!isDraggingRef.current) {
-          setContextMenu({ bookmarkId, x: clientX, y: clientY });
-        }
+        const point = longPressPointRef.current ?? { x: clientX, y: clientY };
+        longPressTriggeredRef.current = true;
+        suppressNextActivationRef.current = true;
+        setContextMenu({ bookmarkId, x: point.x, y: point.y });
+        longPressTimerRef.current = null;
       }, 2000);
     }
   };
@@ -624,6 +639,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
 
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    longPressPointRef.current = { x: clientX, y: clientY };
 
     const deltaX = clientX - dragStartRef.current.x;
     const deltaY = clientY - dragStartRef.current.y;
@@ -631,7 +647,6 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
 
     if (!isDraggingRef.current && distance > 2) {
       isDraggingRef.current = true;
-      clearLongPress();
       setContextMenu(null);
     }
 
@@ -680,6 +695,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
     }
     dragStartRef.current = null;
     lastMoveRef.current = null;
+    longPressPointRef.current = null;
     setDraggedBubble(null);
     clearLongPress();
     setTimeout(() => {
@@ -777,7 +793,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
         );
       })}
 
-      {/* Context menu (3s touch hold / right-click) */}
+      {/* Options menu (2s touch hold / right-click) */}
       {contextMenu && contextBookmark && (
         <div
           className="fixed inset-0 z-50 flex items-end justify-center pb-10 select-none"
