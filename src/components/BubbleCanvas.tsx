@@ -488,6 +488,12 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
           const data = bubbleDataRef.current.get(id);
           if (!data) return;
 
+          // The bubble under the finger/cursor tracks it exactly — no smoothing lag
+          if (draggedBubble === id) {
+            data.displayX = data.x;
+            data.displayY = data.y;
+          }
+
           const el = bubbleElementsRef.current.get(id);
           if (el) {
             const x = data.displayX - data.baseSize / 2;
