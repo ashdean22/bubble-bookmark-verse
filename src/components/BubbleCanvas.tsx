@@ -685,7 +685,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
   useEffect(() => {
     if (draggedBubble) {
       const handleMouseMove = (e: MouseEvent) => handleDragMove(e);
-      const handleTouchMove = (e: TouchEvent) => { e.preventDefault(); handleDragMove(e); };
+      const handleTouchMove = (e: TouchEvent) => { handleDragMove(e); };
       
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('touchmove', handleTouchMove, { passive: false });
