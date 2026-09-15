@@ -681,6 +681,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
   }, [draggedBubble]);
 
   const handleDragEnd = useCallback(() => {
+    const heldForOptions = longPressTriggeredRef.current;
     if (draggedBubble) {
       const data = bubbleDataRef.current.get(draggedBubble);
       if (data && isDraggingRef.current) {
@@ -701,6 +702,12 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
     setTimeout(() => {
       isDraggingRef.current = false;
     }, 50);
+    if (heldForOptions) {
+      setTimeout(() => {
+        suppressNextActivationRef.current = false;
+        longPressTriggeredRef.current = false;
+      }, 600);
+    }
   }, [draggedBubble]);
 
 
