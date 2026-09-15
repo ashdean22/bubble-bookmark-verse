@@ -594,6 +594,10 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
     const rect = bubble.getBoundingClientRect();
     dragOffsetRef.current = { x: clientX - rect.left, y: clientY - rect.top };
     isDraggingRef.current = false;
+    lastMoveRef.current = { x: clientX, y: clientY, time: performance.now() };
+
+    // Take control of this bubble as soon as it is touched
+    setDraggedBubble(bookmarkId);
 
     // Touch: 3s hold → show URL + edit/delete menu
     if ('touches' in e) {
@@ -607,7 +611,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
   };
 
   const handleDragMove = useCallback((e: MouseEvent | TouchEvent) => {
-    if (!dragStartRef.current) return;
+    if (!dragStartRef.current || !draggedBubble) return;
 
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
@@ -615,20 +619,15 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
     const deltaX = clientX - dragStartRef.current.x;
     const deltaY = clientY - dragStartRef.current.y;
     const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-    
-    if (!isDraggingRef.current && distance > 10) {
+
+    if (!isDraggingRef.current && distance > 4) {
       isDraggingRef.current = true;
       clearLongPress();
       setContextMenu(null);
-      const draggedElement = document.elementFromPoint(dragStartRef.current.x, dragStartRef.current.y)?.closest('[data-bubble-id]') as HTMLElement;
-      if (draggedElement) {
-        const bubbleId = draggedElement.getAttribute('data-bubble-id');
-        if (bubbleId) setDraggedBubble(bubbleId);
-      }
     }
-    
-    if (isDraggingRef.current && draggedBubble) {
-      e.preventDefault();
+
+    if (isDraggingRef.current) {
+      if (e.cancelable) e.preventDefault();
       const data = bubbleDataRef.current.get(draggedBubble);
       if (data) {
         const headerHeight = window.innerWidth < 640 ? 120 : 100;
@@ -643,18 +642,42 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
           const y = Math.round(data.y - data.baseSize / 2);
           bubble.style.transform = `translate3d(${x}px, ${y}px, 0)`;
         }
+
+        // Track pointer speed so releasing the bubble flings it naturally
+        const now = performance.now();
+        const last = lastMoveRef.current;
+        if (last) {
+          const dt = Math.max(now - last.time, 8);
+          data.dragVx = ((clientX - last.x) / dt) * 14;
+          data.dragVy = ((clientY - last.y) / dt) * 14;
+        }
+        lastMoveRef.current = { x: clientX, y: clientY, time: now };
       }
     }
   }, [draggedBubble]);
 
   const handleDragEnd = useCallback(() => {
+    if (draggedBubble) {
+      const data = bubbleDataRef.current.get(draggedBubble);
+      if (data && isDraggingRef.current) {
+        const clamp = (v: number) => Math.max(-6, Math.min(6, v || 0));
+        data.vx = clamp(data.dragVx);
+        data.vy = clamp(data.dragVy);
+      }
+      if (data) {
+        data.dragVx = 0;
+        data.dragVy = 0;
+      }
+    }
     dragStartRef.current = null;
+    lastMoveRef.current = null;
     setDraggedBubble(null);
     clearLongPress();
     setTimeout(() => {
       isDraggingRef.current = false;
     }, 50);
-  }, []);
+  }, [draggedBubble]);
+
 
   useEffect(() => {
     if (draggedBubble) {
