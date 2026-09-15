@@ -115,6 +115,8 @@ interface BubblePhysicsData {
   prevVy: number;
   ax: number;
   ay: number;
+  dragVx?: number;
+  dragVy?: number;
 }
 
 const getMaxAccessCount = (bookmarks: Bookmark[]) =>
@@ -136,6 +138,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
   const dragOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const dragStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
   const isDraggingRef = useRef(false);
+  const lastMoveRef = useRef<{ x: number; y: number; time: number } | null>(null);
   const bubbleDataRef = useRef<Map<string, BubblePhysicsData>>(new Map());
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
