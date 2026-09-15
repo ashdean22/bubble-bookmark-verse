@@ -608,14 +608,14 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
     // Take control of this bubble as soon as it is touched
     setDraggedBubble(bookmarkId);
 
-    // Touch: 3s hold → show URL + edit/delete menu
+    // Touch: 2s hold → show URL + edit/delete menu
     if ('touches' in e) {
       clearLongPress();
       longPressTimerRef.current = setTimeout(() => {
         if (!isDraggingRef.current) {
           setContextMenu({ bookmarkId, x: clientX, y: clientY });
         }
-      }, 3000);
+      }, 2000);
     }
   };
 
@@ -629,7 +629,7 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
     const deltaY = clientY - dragStartRef.current.y;
     const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
-    if (!isDraggingRef.current && distance > 4) {
+    if (!isDraggingRef.current && distance > 2) {
       isDraggingRef.current = true;
       clearLongPress();
       setContextMenu(null);
@@ -692,17 +692,19 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
     if (draggedBubble) {
       const handleMouseMove = (e: MouseEvent) => handleDragMove(e);
       const handleTouchMove = (e: TouchEvent) => { handleDragMove(e); };
-      
+
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('touchmove', handleTouchMove, { passive: false });
       document.addEventListener('mouseup', handleDragEnd);
       document.addEventListener('touchend', handleDragEnd);
-      
+      document.addEventListener('touchcancel', handleDragEnd);
+
       return () => {
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('touchmove', handleTouchMove);
         document.removeEventListener('mouseup', handleDragEnd);
         document.removeEventListener('touchend', handleDragEnd);
+        document.removeEventListener('touchcancel', handleDragEnd);
       };
     }
   }, [draggedBubble, handleDragMove, handleDragEnd]);
@@ -737,6 +739,9 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
               height: `${heatStyles.size}px`,
               zIndex: isDragging ? 30 : 10,
               willChange: 'transform',
+              touchAction: 'none',
+              WebkitUserSelect: 'none',
+              WebkitTouchCallout: 'none',
             }}
             onMouseDown={(e) => handleDragStart(e, bookmark.id)}
             onTouchStart={(e) => handleDragStart(e, bookmark.id)}
