@@ -68,27 +68,6 @@
   overflow: hidden;
 }
 
-/* Curved, broken horizon reflections give the clear film a real environment. */
-.bm-core::before {
-  content: '';
-  position: absolute;
-  left: 7%;
-  right: 6%;
-  top: 54%;
-  height: 16%;
-  border-radius: 50%;
-  border-top: 1px solid rgba(225, 247, 247, 0.32);
-  background: linear-gradient(
-    180deg,
-    rgba(20, 38, 49, 0.04),
-    rgba(5, 16, 31, 0.2) 43%,
-    rgba(61, 119, 112, 0.09) 52%,
-    transparent 76%
-  );
-  transform: rotate(-4deg) scaleX(1.08);
-  opacity: 0.72;
-}
-
 .bm-refract {
   backdrop-filter: blur(1px) saturate(1.35) contrast(1.06) brightness(1.02);
   -webkit-backdrop-filter: blur(1px) saturate(1.35) contrast(1.06) brightness(1.02);
@@ -145,12 +124,11 @@
 }
 
 
-/* Hairline lip with a bright crown and a clearly shaded underside. */
+/* Even hairline lip without directional lower-edge shading. */
 .bm-rim {
   box-shadow:
     inset 0 0 0 0.75px rgba(226, 246, 250, 0.9),
     inset 0 1.5px 2px rgba(255, 255, 255, 0.96),
-    inset 0 -2.5px 5px rgba(52, 102, 140, 0.6),
     0 0 0 0.8px rgba(88, 138, 168, 0.35);
 }
 
