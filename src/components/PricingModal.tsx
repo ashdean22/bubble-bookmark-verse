@@ -15,7 +15,7 @@ interface PricingModalProps {
 type PlanInterest = 'pro_yearly' | 'lifetime';
 
 const freeFeatures = [
-  'Up to 15 bubbles',
+  'Up to 10 bubbles',
   'One device only',
   'Saved locally on this device',
   'Basic themes',
@@ -85,7 +85,7 @@ export const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
           <DialogHeader className="text-center space-y-2 mb-6">
             <DialogTitle className="text-2xl font-heading">Simple pricing for BubbleMark</DialogTitle>
             <DialogDescription className="text-muted-foreground">
-              Free includes 15 bubbles on one device. Go Pro for unlimited bubbles everywhere.
+              Free includes 10 bubbles on one device. Go Pro for unlimited bubbles everywhere.
             </DialogDescription>
           </DialogHeader>
 
@@ -96,7 +96,7 @@ export const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
                 <h3 className="font-heading text-lg">Free</h3>
               </div>
               <div className="mt-4 mb-1"><span className="text-3xl font-bold">$0</span></div>
-              <p className="text-sm text-muted-foreground mb-5">15 bubbles, one device.</p>
+              <p className="text-sm text-muted-foreground mb-5">10 bubbles, one device.</p>
               <ul className="space-y-3 flex-1">
                 {freeFeatures.map((f) => (
                   <li key={f} className="flex items-start gap-2 text-sm">

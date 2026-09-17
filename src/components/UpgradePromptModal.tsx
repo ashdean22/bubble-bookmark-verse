@@ -25,10 +25,10 @@ export const UpgradePromptModal = ({ isOpen, onClose, onUpgrade }: UpgradePrompt
             <Sparkles className="w-8 h-8 text-white" />
           </div>
           <DialogTitle className="text-white text-xl font-brand font-bold">
-            You have filled all 15 free bubbles 🫧
+            You have filled all 10 free bubbles 🫧
           </DialogTitle>
           <DialogDescription className="text-purple-300">
-            Free includes 15 bubbles on one device. Pro and Lifetime unlock unlimited bubbles,
+            Free includes 10 bubbles on one device. Pro and Lifetime unlock unlimited bubbles,
             and your current bubbles stay exactly as they are.
           </DialogDescription>
         </DialogHeader>

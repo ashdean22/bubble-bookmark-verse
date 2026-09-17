@@ -77,8 +77,8 @@ const AnalyticsPanel = memo(({
 ));
 AnalyticsPanel.displayName = 'AnalyticsPanel';
 
-const FREE_BUBBLE_LIMIT = 15;
-const LOW_BUBBLE_WARNING_AT = 12;
+const FREE_BUBBLE_LIMIT = 10;
+const LOW_BUBBLE_WARNING_AT = 8;
 const PAID_TIERS = ['pro', 'pro_yearly', 'lifetime', 'premium'];
 
 export const RefactoredIndex = () => {
@@ -135,7 +135,7 @@ export const RefactoredIndex = () => {
     }),
   });
 
-  // Free includes 15 bubbles; paid plans are unlimited.
+  // Free includes 10 bubbles; paid plans are unlimited.
   const isPaidPlan = !!currentSubscription && PAID_TIERS.includes(currentSubscription);
   const maxBubbles = isPaidPlan ? Number.POSITIVE_INFINITY : FREE_BUBBLE_LIMIT;
   const usedBubbles = bookmarks.length;
