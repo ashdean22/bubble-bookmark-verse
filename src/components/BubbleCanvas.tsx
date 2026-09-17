@@ -463,9 +463,9 @@ export const BubbleCanvas = ({ bookmarks, onRemoveBookmark, onBubbleClick, onEdi
                     const vRelY = data2.vy - data1.vy;
                     const vAlong = vRelX * nx + vRelY * ny;
                     if (vAlong < 0) {
-                      // Soft bounce: most of the impact energy is absorbed, so
-                      // bubbles kiss and drift apart rather than ricochet.
-                      const restitution = 0.95;
+                      // Slightly lively rebound so contact is clearly visible
+                      // without changing the bubbles' normal drift speed.
+                      const restitution = 1.08;
                       const j = -(1 + restitution) * vAlong / totalMass;
                       data1.vx -= nx * j * m2;
                       data1.vy -= ny * j * m2;
