@@ -78,7 +78,7 @@ const AnalyticsPanel = memo(({
 AnalyticsPanel.displayName = 'AnalyticsPanel';
 
 const FREE_BUBBLE_LIMIT = 10;
-const LOW_BUBBLE_WARNING_AT = 12;
+const LOW_BUBBLE_WARNING_AT = 8;
 const PAID_TIERS = ['pro', 'pro_yearly', 'lifetime', 'premium'];
 
 export const RefactoredIndex = () => {

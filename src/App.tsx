@@ -5,9 +5,6 @@ import { TearFilter } from "@/components/bubble/Bubble";
 
 const Toaster = lazy(() => import("@/components/ui/toaster").then((m) => ({ default: m.Toaster })));
 const Sonner = lazy(() => import("@/components/ui/sonner").then((m) => ({ default: m.Toaster })));
-const DiagnosticsButton = lazy(() =>
-  import("@/components/DiagnosticsButton").then((m) => ({ default: m.DiagnosticsButton })),
-);
 
 const RouteFallback = () => (
   <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
@@ -40,7 +37,6 @@ const DeferredUtilities = () => {
       <Suspense fallback={null}>
         <Toaster />
         <Sonner />
-        <DiagnosticsButton />
       </Suspense>
     </ErrorBoundary>
   );
