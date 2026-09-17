@@ -364,14 +364,16 @@
 
   .bm-film {
     animation: none;
-    filter: saturate(1.7);
-    opacity: 0.78;
+    filter: saturate(2.1);
+    opacity: 0.95;
   }
 
   .bm-band {
     animation: none;
-    filter: blur(2px);
+    filter: blur(3px) saturate(1.6);
+    opacity: 0.8;
   }
+
 
   .bm-caustic,
   .bm-spec,
