@@ -125,8 +125,8 @@
     transparent 329deg,
     rgba(255, 82, 190, 0.92) 360deg
   );
-  filter: blur(1.7px) saturate(1.75);
-  opacity: 0.76;
+  filter: blur(1.4px) saturate(2);
+  opacity: 0.9;
   mix-blend-mode: multiply;
   -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent 76%, rgba(0, 0, 0, 0.18) 84%, #000 94%, rgba(0, 0, 0, 0.35) 100%);
   mask-image: radial-gradient(circle at 50% 50%, transparent 76%, rgba(0, 0, 0, 0.18) 84%, #000 94%, rgba(0, 0, 0, 0.35) 100%);
