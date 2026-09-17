@@ -129,7 +129,7 @@
     transparent 338deg,
     rgba(255, 46, 176, 0.98) 360deg
   );
-  filter: blur(2.4px) saturate(2.3);
+  filter: blur(1.6px) saturate(3.4) contrast(1.35);
   opacity: 1;
   mix-blend-mode: multiply;
   -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent 40%, rgba(0, 0, 0, 0.3) 62%, rgba(0, 0, 0, 0.78) 80%, #000 93%, rgba(0, 0, 0, 0.45) 100%);
@@ -149,7 +149,7 @@
     rgba(246, 222, 62, 0.26) 77%,
     transparent 88% 100%
   );
-  filter: blur(6px) saturate(1.6);
+  filter: blur(5px) saturate(2.4) contrast(1.2);
   mix-blend-mode: multiply;
   opacity: 0.85;
   -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent 34%, rgba(0, 0, 0, 0.8) 70%, rgba(0, 0, 0, 0.5) 98%);
@@ -364,14 +364,14 @@
 
   .bm-film {
     animation: none;
-    filter: saturate(2.1);
-    opacity: 0.95;
+    filter: saturate(3.2) contrast(1.35);
+    opacity: 1;
   }
 
   .bm-band {
     animation: none;
-    filter: blur(3px) saturate(1.6);
-    opacity: 0.8;
+    filter: blur(3px) saturate(2.4) contrast(1.2);
+    opacity: 0.9;
   }
 
 
