@@ -107,51 +107,56 @@
   -webkit-backdrop-filter: blur(1px) saturate(1.35) contrast(1.06) brightness(1.02);
 }
 
-/* Thin-film interference appears in uneven rim patches, as it does in life. */
+/* Thin-film interference: saturated bands wrapping the outer third of the
+   sphere, uneven in width and colour, as in real backlit soap film. */
 .bm-film {
   background: conic-gradient(
     from 224deg,
-    rgba(255, 82, 190, 0.92) 0deg,
-    rgba(116, 72, 255, 0.74) 24deg,
-    transparent 48deg,
-    transparent 87deg,
-    rgba(65, 221, 224, 0.68) 110deg,
-    rgba(117, 255, 119, 0.82) 137deg,
-    transparent 162deg,
-    transparent 210deg,
-    rgba(255, 220, 76, 0.58) 233deg,
-    rgba(255, 93, 186, 0.86) 266deg,
-    rgba(71, 126, 255, 0.7) 302deg,
-    transparent 329deg,
-    rgba(255, 82, 190, 0.92) 360deg
+    rgba(255, 46, 176, 0.98) 0deg,
+    rgba(120, 58, 255, 0.92) 22deg,
+    rgba(58, 132, 255, 0.72) 40deg,
+    transparent 62deg,
+    transparent 84deg,
+    rgba(40, 226, 232, 0.86) 106deg,
+    rgba(96, 255, 128, 0.95) 132deg,
+    rgba(226, 255, 74, 0.7) 152deg,
+    transparent 176deg,
+    transparent 204deg,
+    rgba(255, 214, 54, 0.8) 228deg,
+    rgba(255, 74, 168, 0.98) 262deg,
+    rgba(92, 96, 255, 0.9) 296deg,
+    rgba(48, 208, 226, 0.6) 320deg,
+    transparent 338deg,
+    rgba(255, 46, 176, 0.98) 360deg
   );
-  filter: blur(1.4px) saturate(2);
-  opacity: 0.9;
+  filter: blur(1.6px) saturate(3.4) contrast(1.35);
+  opacity: 1;
   mix-blend-mode: multiply;
-  -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent 76%, rgba(0, 0, 0, 0.18) 84%, #000 94%, rgba(0, 0, 0, 0.35) 100%);
-  mask-image: radial-gradient(circle at 50% 50%, transparent 76%, rgba(0, 0, 0, 0.18) 84%, #000 94%, rgba(0, 0, 0, 0.35) 100%);
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent 40%, rgba(0, 0, 0, 0.3) 62%, rgba(0, 0, 0, 0.78) 80%, #000 93%, rgba(0, 0, 0, 0.45) 100%);
+  mask-image: radial-gradient(circle at 50% 50%, transparent 40%, rgba(0, 0, 0, 0.3) 62%, rgba(0, 0, 0, 0.78) 80%, #000 93%, rgba(0, 0, 0, 0.45) 100%);
   animation: bm-hue 30s linear infinite;
 }
 
-/* A restrained film wash; the centre remains optically clear. */
+/* A second, counter-drifting film wash gives the colour depth and variation. */
 .bm-band {
   background: conic-gradient(
     from 120deg at 49% 52%,
-    transparent 0 23%,
-    rgba(255, 82, 187, 0.1) 29%,
-    rgba(87, 103, 255, 0.08) 35%,
-    transparent 43% 63%,
-    rgba(56, 232, 176, 0.09) 70%,
-    rgba(246, 225, 78, 0.07) 76%,
-    transparent 84% 100%
+    transparent 0 16%,
+    rgba(255, 60, 176, 0.36) 26%,
+    rgba(96, 88, 255, 0.3) 34%,
+    transparent 44% 58%,
+    rgba(38, 232, 190, 0.32) 68%,
+    rgba(246, 222, 62, 0.26) 77%,
+    transparent 88% 100%
   );
-  filter: blur(5px);
+  filter: blur(5px) saturate(2.4) contrast(1.2);
   mix-blend-mode: multiply;
-  opacity: 0.46;
-  -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent 51%, rgba(0, 0, 0, 0.55) 72%, transparent 98%);
-  mask-image: radial-gradient(circle at 50% 50%, transparent 51%, rgba(0, 0, 0, 0.55) 72%, transparent 98%);
+  opacity: 0.85;
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent 34%, rgba(0, 0, 0, 0.8) 70%, rgba(0, 0, 0, 0.5) 98%);
+  mask-image: radial-gradient(circle at 50% 50%, transparent 34%, rgba(0, 0, 0, 0.8) 70%, rgba(0, 0, 0, 0.5) 98%);
   animation: bm-smear 15s ease-in-out infinite;
 }
+
 
 /* Hairline lip with a bright crown and a clearly shaded underside. */
 .bm-rim {
@@ -359,14 +364,16 @@
 
   .bm-film {
     animation: none;
-    filter: saturate(1.7);
-    opacity: 0.78;
+    filter: saturate(3.2) contrast(1.35);
+    opacity: 1;
   }
 
   .bm-band {
     animation: none;
-    filter: blur(2px);
+    filter: blur(3px) saturate(2.4) contrast(1.2);
+    opacity: 0.9;
   }
+
 
   .bm-caustic,
   .bm-spec,
