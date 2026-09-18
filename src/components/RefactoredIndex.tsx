@@ -1,26 +1,29 @@
-import React, { useState, useEffect, lazy, Suspense, memo } from 'react';
+import React, { useState, useEffect, Suspense, memo } from 'react';
 import { BubbleCanvas } from '@/components/BubbleCanvas';
 import { BubbleHeaderMinimal } from '@/components/BubbleHeaderMinimal';
 import { FloatingActionButton } from '@/components/FloatingActionButton';
 import { WelcomeMessage } from '@/components/WelcomeMessage';
 import { AbstractBackground } from '@/components/AbstractBackground';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+// Small and always needed the moment the free limit is reached — never lazy,
+// so a flaky mobile chunk request can never break the limit flow.
+import { UpgradePromptModal } from '@/components/UpgradePromptModal';
 
 import { useToast } from '@/hooks/use-toast';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { Bookmark } from '@/pages/Index';
+import { lazyWithRetry } from '@/utils/lazyWithRetry';
 
 import { validateStoredBookmarks, sanitizeText, sanitizeUrl, safeFavicon, checkRateLimit } from '@/utils/security';
 
-// ── Lazy-load ALL heavy modals & analytics so they never block first paint ──
-const AddBookmarkModal    = lazy(() => import('@/components/AddBookmarkModal').then(m => ({ default: m.AddBookmarkModal })));
-const EditBubbleModal     = lazy(() => import('@/components/EditBubbleModal').then(m => ({ default: m.EditBubbleModal })));
+// ── Lazy-load heavy modals & analytics so they never block first paint ──
+const AddBookmarkModal    = lazyWithRetry(() => import('@/components/AddBookmarkModal').then(m => ({ default: m.AddBookmarkModal })));
+const EditBubbleModal     = lazyWithRetry(() => import('@/components/EditBubbleModal').then(m => ({ default: m.EditBubbleModal })));
 
-const PricingModal        = lazy(() => import('@/components/PricingModal').then(m => ({ default: m.PricingModal })));
-const UpgradePromptModal  = lazy(() => import('@/components/UpgradePromptModal').then(m => ({ default: m.UpgradePromptModal })));
+const PricingModal        = lazyWithRetry(() => import('@/components/PricingModal').then(m => ({ default: m.PricingModal })));
 // AnalyticsInsights is the heaviest — recharts 223 KB — always lazy
-const AnalyticsInsights   = lazy(() => import('@/components/AnalyticsInsights').then(m => ({ default: m.AnalyticsInsights })));
+const AnalyticsInsights   = lazyWithRetry(() => import('@/components/AnalyticsInsights').then(m => ({ default: m.AnalyticsInsights })));
 
 // Normalize hostname: strip www. so nba.com and www.nba.com are treated as the same
 const getHostname = (url: string) => {
@@ -126,7 +129,7 @@ export const RefactoredIndex = () => {
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
-    onCreateBubble: () => setShowAddModal(true),
+    onCreateBubble: () => handleCreateBubble(),
     onBuyBubbles: () => setShowPricingModal(true),
     onShowAnalytics: () => setShowAnalytics(prev => !prev),
     onShowHelp: () => toast({
@@ -142,6 +145,15 @@ export const RefactoredIndex = () => {
 
   const handleUpgradePromptClose = () => {
     setShowUpgradePrompt(false);
+  };
+
+  // Reaching the free limit opens the upgrade prompt instead of the add form.
+  const handleCreateBubble = () => {
+    if (!isPaidPlan && bookmarks.length >= FREE_BUBBLE_LIMIT) {
+      setShowUpgradePrompt(true);
+      return;
+    }
+    setShowAddModal(true);
   };
 
 
@@ -275,7 +287,7 @@ export const RefactoredIndex = () => {
         />
 
         <FloatingActionButton
-          onCreateBubble={() => setShowAddModal(true)}
+          onCreateBubble={handleCreateBubble}
           onBuyBubbles={() => setShowPricingModal(true)}
           onShowAnalytics={() => setShowAnalytics(prev => !prev)}
           showAnalytics={showAnalytics}
@@ -298,41 +310,44 @@ export const RefactoredIndex = () => {
         />
 
         {bookmarks.length === 0 && (
-          <WelcomeMessage onCreateBubble={() => setShowAddModal(true)} />
+          <WelcomeMessage onCreateBubble={handleCreateBubble} />
         )}
 
-        {/* Modals — only rendered (and their JS loaded) when actually opened */}
-        <Suspense fallback={null}>
-          {editingBookmark && (
-            <EditBubbleModal
-              bookmark={editingBookmark}
-              isOpen={!!editingBookmark}
-              onClose={() => setEditingBookmark(null)}
-              onSave={editBookmark}
-            />
-          )}
+        {/* Limit prompt is bundled with the app so it always opens instantly */}
+        {showUpgradePrompt && (
+          <UpgradePromptModal
+            isOpen={showUpgradePrompt}
+            onClose={handleUpgradePromptClose}
+            onUpgrade={handleUpgradeFromPrompt}
+          />
+        )}
 
-          {showAddModal && (
-            <AddBookmarkModal
-              isOpen={showAddModal}
-              onClose={() => setShowAddModal(false)}
-              onAdd={addBookmark}
-            />
-          )}
+        {/* Modals — only rendered (and their JS loaded) when actually opened.
+            A failed chunk closes the modal instead of taking the app down. */}
+        <ErrorBoundary fallback={null}>
+          <Suspense fallback={null}>
+            {editingBookmark && (
+              <EditBubbleModal
+                bookmark={editingBookmark}
+                isOpen={!!editingBookmark}
+                onClose={() => setEditingBookmark(null)}
+                onSave={editBookmark}
+              />
+            )}
 
+            {showAddModal && (
+              <AddBookmarkModal
+                isOpen={showAddModal}
+                onClose={() => setShowAddModal(false)}
+                onAdd={addBookmark}
+              />
+            )}
 
-          {showPricingModal && (
-            <PricingModal isOpen={showPricingModal} onClose={() => setShowPricingModal(false)} />
-          )}
-
-          {showUpgradePrompt && (
-            <UpgradePromptModal
-              isOpen={showUpgradePrompt}
-              onClose={handleUpgradePromptClose}
-              onUpgrade={handleUpgradeFromPrompt}
-            />
-          )}
-        </Suspense>
+            {showPricingModal && (
+              <PricingModal isOpen={showPricingModal} onClose={() => setShowPricingModal(false)} />
+            )}
+          </Suspense>
+        </ErrorBoundary>
       </div>
     </ErrorBoundary>
   );
