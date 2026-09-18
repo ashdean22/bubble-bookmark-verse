@@ -304,38 +304,41 @@ export const RefactoredIndex = () => {
           <WelcomeMessage onCreateBubble={() => setShowAddModal(true)} />
         )}
 
-        {/* Modals — only rendered (and their JS loaded) when actually opened */}
-        <Suspense fallback={null}>
-          {editingBookmark && (
-            <EditBubbleModal
-              bookmark={editingBookmark}
-              isOpen={!!editingBookmark}
-              onClose={() => setEditingBookmark(null)}
-              onSave={editBookmark}
-            />
-          )}
+        {/* Limit prompt is bundled with the app so it always opens instantly */}
+        {showUpgradePrompt && (
+          <UpgradePromptModal
+            isOpen={showUpgradePrompt}
+            onClose={handleUpgradePromptClose}
+            onUpgrade={handleUpgradeFromPrompt}
+          />
+        )}
 
-          {showAddModal && (
-            <AddBookmarkModal
-              isOpen={showAddModal}
-              onClose={() => setShowAddModal(false)}
-              onAdd={addBookmark}
-            />
-          )}
+        {/* Modals — only rendered (and their JS loaded) when actually opened.
+            A failed chunk closes the modal instead of taking the app down. */}
+        <ErrorBoundary fallback={null}>
+          <Suspense fallback={null}>
+            {editingBookmark && (
+              <EditBubbleModal
+                bookmark={editingBookmark}
+                isOpen={!!editingBookmark}
+                onClose={() => setEditingBookmark(null)}
+                onSave={editBookmark}
+              />
+            )}
 
+            {showAddModal && (
+              <AddBookmarkModal
+                isOpen={showAddModal}
+                onClose={() => setShowAddModal(false)}
+                onAdd={addBookmark}
+              />
+            )}
 
-          {showPricingModal && (
-            <PricingModal isOpen={showPricingModal} onClose={() => setShowPricingModal(false)} />
-          )}
-
-          {showUpgradePrompt && (
-            <UpgradePromptModal
-              isOpen={showUpgradePrompt}
-              onClose={handleUpgradePromptClose}
-              onUpgrade={handleUpgradeFromPrompt}
-            />
-          )}
-        </Suspense>
+            {showPricingModal && (
+              <PricingModal isOpen={showPricingModal} onClose={() => setShowPricingModal(false)} />
+            )}
+          </Suspense>
+        </ErrorBoundary>
       </div>
     </ErrorBoundary>
   );
