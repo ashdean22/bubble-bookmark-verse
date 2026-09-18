@@ -147,6 +147,15 @@ export const RefactoredIndex = () => {
     setShowUpgradePrompt(false);
   };
 
+  // Reaching the free limit opens the upgrade prompt instead of the add form.
+  const handleCreateBubble = () => {
+    if (!isPaidPlan && bookmarks.length >= FREE_BUBBLE_LIMIT) {
+      setShowUpgradePrompt(true);
+      return;
+    }
+    setShowAddModal(true);
+  };
+
 
   const handleUpgradeFromPrompt = () => {
     setShowUpgradePrompt(false);
