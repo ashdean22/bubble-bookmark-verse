@@ -47,11 +47,11 @@
     --gradient-glow: radial-gradient(ellipse at center, hsla(200, 85%, 55%, 0.2), hsla(180, 60%, 50%, 0.1), transparent 70%);
     --gradient-board: radial-gradient(60% 45% at 8% 4%, hsl(200 90% 94% / 0.9), transparent 70%), radial-gradient(55% 40% at 94% 6%, hsl(199 85% 92% / 0.8), transparent 70%), linear-gradient(180deg, hsl(202 90% 95%) 0%, hsl(204 80% 89%) 55%, hsl(208 70% 84%) 100%);
 
-    /* Photographic soap-film stage */
-    --bubble-stage-background: 210 40% 98%;
-    --bubble-stage-foreground: 215 45% 16%;
-    --bubble-stage-muted: 213 22% 42%;
-    --bubble-board: radial-gradient(60% 45% at 8% 4%, hsl(200 90% 94% / 0.9), transparent 70%), radial-gradient(55% 40% at 94% 6%, hsl(199 85% 92% / 0.8), transparent 70%), linear-gradient(180deg, hsl(202 90% 95%) 0%, hsl(204 80% 89%) 55%, hsl(208 70% 84%) 100%);
+    /* Photographic soap-film stage — deep navy canvas (#081525) */
+    --bubble-stage-background: 213 64% 9%;
+    --bubble-stage-foreground: 202 35% 96%;
+    --bubble-stage-muted: 207 20% 70%;
+    --bubble-board: radial-gradient(60% 45% at 8% 4%, hsl(213 70% 14% / 0.85), transparent 70%), radial-gradient(55% 40% at 94% 6%, hsl(210 60% 13% / 0.75), transparent 70%), linear-gradient(180deg, hsl(213 64% 10%) 0%, hsl(214 62% 9%) 55%, hsl(216 60% 7%) 100%);
     --bubble-optical-shadow: 0 12px 20px hsl(228 60% 2% / 0.48), 0 0 13px hsl(195 88% 62% / 0.12);
     --bubble-focus: 0 0% 100%;
     --bubble-core-surface: radial-gradient(circle at 35% 25%, hsl(0 0% 100% / 0.11) 0%, transparent 18%), radial-gradient(circle at 50% 48%, transparent 0%, transparent 64%, hsl(198 92% 77% / 0.06) 77%, hsl(225 90% 71% / 0.14) 91%, hsl(0 0% 100% / 0.28) 99%, transparent 100%);
