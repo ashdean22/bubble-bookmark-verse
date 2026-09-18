@@ -266,7 +266,7 @@ export const RefactoredIndex = () => {
 
   return (
     <ErrorBoundary>
-      <div className="bubble-stage min-h-screen bg-background relative overflow-hidden font-body">
+      <div className="min-h-screen bg-background relative overflow-hidden font-body">
         <AbstractBackground />
 
         <BubbleHeaderMinimal
