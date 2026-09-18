@@ -27,3 +27,8 @@
 - [x] Gentle warning near 8 bubbles; upgrade prompt at the limit (no crash).
 - [x] Remove monthly pricing and outdated free-tier wording everywhere.
 - [x] Verify the limit prompt, pricing view, and build pass.
+
+## Payments (deferred to launch)
+- [ ] Enable Paddle payments (recommended; eligibility check passed) — user approved setup, then asked to save all payments for launch.
+- [ ] Create Pro ($14.99/year) and Lifetime ($24.99 one-time) products.
+- [ ] Replace Pro "Coming soon" button with real checkout; wire Lifetime waitlist to purchase.
