@@ -139,16 +139,12 @@ export const PricingModal = ({ isOpen, onClose }: PricingModalProps) => {
                 ))}
               </ul>
 
-              {joined === 'pro_yearly' || selected === 'pro_yearly' ? (
-                <WaitlistForm plan="pro_yearly" />
-              ) : (
-                <Button
-                  className="relative mt-6 w-full min-h-[44px] bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0"
-                  onClick={() => setSelected('pro_yearly')}
-                >
-                  Notify me when Pro launches
-                </Button>
-              )}
+              <Button
+                className="relative mt-6 w-full min-h-[44px] bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0"
+                disabled
+              >
+                Coming soon
+              </Button>
             </div>
 
 
