@@ -129,7 +129,7 @@ export const RefactoredIndex = () => {
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
-    onCreateBubble: () => setShowAddModal(true),
+    onCreateBubble: () => handleCreateBubble(),
     onBuyBubbles: () => setShowPricingModal(true),
     onShowAnalytics: () => setShowAnalytics(prev => !prev),
     onShowHelp: () => toast({
@@ -287,7 +287,7 @@ export const RefactoredIndex = () => {
         />
 
         <FloatingActionButton
-          onCreateBubble={() => setShowAddModal(true)}
+          onCreateBubble={handleCreateBubble}
           onBuyBubbles={() => setShowPricingModal(true)}
           onShowAnalytics={() => setShowAnalytics(prev => !prev)}
           showAnalytics={showAnalytics}
@@ -310,7 +310,7 @@ export const RefactoredIndex = () => {
         />
 
         {bookmarks.length === 0 && (
-          <WelcomeMessage onCreateBubble={() => setShowAddModal(true)} />
+          <WelcomeMessage onCreateBubble={handleCreateBubble} />
         )}
 
         {/* Limit prompt is bundled with the app so it always opens instantly */}
