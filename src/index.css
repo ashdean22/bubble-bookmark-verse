@@ -46,6 +46,21 @@
     --gradient-hero: linear-gradient(180deg, hsl(210 40% 98%), hsl(210 35% 95%), hsl(210 30% 92%));
     --gradient-glow: radial-gradient(ellipse at center, hsla(200, 85%, 55%, 0.2), hsla(180, 60%, 50%, 0.1), transparent 70%);
     --gradient-board: radial-gradient(60% 45% at 8% 4%, hsl(200 90% 94% / 0.9), transparent 70%), radial-gradient(55% 40% at 94% 6%, hsl(199 85% 92% / 0.8), transparent 70%), linear-gradient(180deg, hsl(202 90% 95%) 0%, hsl(204 80% 89%) 55%, hsl(208 70% 84%) 100%);
+
+    /* Photographic soap-film stage */
+    --bubble-stage-background: 222 39% 6%;
+    --bubble-stage-foreground: 202 35% 96%;
+    --bubble-stage-muted: 207 20% 70%;
+    --bubble-board: radial-gradient(90% 70% at 46% 38%, hsl(213 40% 14%) 0%, hsl(220 42% 9%) 52%, hsl(228 38% 5%) 100%);
+    --bubble-optical-shadow: 0 12px 20px hsl(228 60% 2% / 0.48), 0 0 13px hsl(195 88% 62% / 0.12);
+    --bubble-focus: 0 0% 100%;
+    --bubble-core-surface: radial-gradient(circle at 35% 25%, hsl(0 0% 100% / 0.11) 0%, transparent 18%), radial-gradient(circle at 50% 48%, transparent 0%, transparent 64%, hsl(198 92% 77% / 0.06) 77%, hsl(225 90% 71% / 0.14) 91%, hsl(0 0% 100% / 0.28) 99%, transparent 100%);
+    --bubble-core-shadow: inset 0 0 12px hsl(194 100% 83% / 0.06), inset 0 0 0 0.7px hsl(200 100% 92% / 0.38);
+    --bubble-film-spectrum: conic-gradient(from 218deg, hsl(329 100% 63%) 0deg, hsl(283 100% 64%) 24deg, hsl(221 100% 61%) 46deg, hsl(187 100% 54%) 68deg, transparent 81deg 98deg, hsl(174 100% 51%) 110deg, hsl(132 100% 54%) 133deg, hsl(190 100% 57%) 151deg, transparent 165deg 187deg, hsl(5 100% 59%) 201deg, hsl(342 100% 61%) 225deg, hsl(300 100% 64%) 249deg, hsl(252 100% 65%) 269deg, transparent 281deg 296deg, hsl(213 100% 57%) 309deg, hsl(185 100% 54%) 334deg, transparent 348deg 360deg);
+    --bubble-film-depth: conic-gradient(from 71deg at 48% 52%, transparent 0deg 27deg, hsl(202 100% 62% / 0.88) 43deg, hsl(147 100% 56% / 0.9) 65deg, transparent 83deg 130deg, hsl(1 100% 60% / 0.94) 148deg, hsl(325 100% 63% / 0.94) 170deg, hsl(283 100% 65% / 0.9) 190deg, transparent 207deg 243deg, hsl(186 100% 56% / 0.94) 264deg, hsl(226 100% 63% / 0.9) 291deg, transparent 311deg 360deg);
+    --bubble-rim-shadow: inset 0 0 0 0.65px hsl(193 100% 92% / 0.82), inset 1.5px 1px 2px hsl(0 0% 100% / 0.42), 0 0 0 0.65px hsl(206 100% 79% / 0.44), 0 0 8px hsl(190 100% 63% / 0.12);
+    --bubble-side-refraction: radial-gradient(ellipse 10% 34% at 96% 54%, hsl(192 100% 76% / 0.28), hsl(280 100% 74% / 0.11) 48%, transparent 76%);
+    --bubble-reflection: 0 0% 100%;
     
     /* Light shadows */
     --shadow-glow: 0 0 40px hsla(200, 85%, 50%, 0.25), 0 0 80px hsla(180, 60%, 45%, 0.15);
@@ -127,6 +142,12 @@
     --sidebar-border: 215 32% 16%;
     --sidebar-ring: 200 95% 60%;
   }
+}
+
+.bubble-stage {
+  --background: var(--bubble-stage-background);
+  --foreground: var(--bubble-stage-foreground);
+  --muted-foreground: var(--bubble-stage-muted);
 }
 
 @layer base {

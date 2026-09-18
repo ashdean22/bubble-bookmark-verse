@@ -1,7 +1,7 @@
-/* ── BubbleMark: photoreal soap film, tuned for a light sky canvas ── */
+/* ── BubbleMark: photoreal transparent soap film on a deep canvas ── */
 
 .bm-board {
-  background: var(--gradient-board);
+  background: var(--bubble-board);
 }
 
 .bm-bubble {
@@ -17,12 +17,11 @@
   -webkit-tap-highlight-color: transparent;
   animation: bm-breathe 7.5s ease-in-out infinite;
   will-change: transform;
-  /* A soft optical shadow so the film reads clearly against the light sky. */
-  filter: drop-shadow(0 10px 14px rgba(28, 16, 58, 0.28));
+  filter: drop-shadow(var(--bubble-optical-shadow));
 }
 
 .bm-bubble:focus-visible {
-  outline: 2px solid rgba(255, 255, 255, 0.9);
+  outline: 2px solid hsl(var(--bubble-focus) / 0.9);
   outline-offset: 6px;
   border-radius: 50%;
 }
@@ -48,101 +47,53 @@
   );
 }
 
-/* Refraction shell: clearer centre, but a visibly tinted turn so the
-   bubble's footprint always reads against the sky. */
+/* The centre remains optically clear; only the curved film catches light. */
 .bm-core {
-  background:
-    radial-gradient(
-      circle at 46% 42%,
-      rgba(255, 255, 255, 0) 0%,
-      rgba(210, 236, 246, 0.05) 48%,
-      rgba(126, 188, 210, 0.13) 70%,
-      rgba(58, 98, 142, 0.26) 87%,
-      rgba(126, 196, 220, 0.42) 95%,
-      rgba(255, 255, 255, 0.82) 99%,
-      rgba(255, 255, 255, 0.3) 100%
-    );
-  box-shadow:
-    inset 0 7px 10px -8px rgba(255, 255, 255, 0.7),
-    inset 0 0 0 1px rgba(96, 148, 178, 0.18);
+  background: var(--bubble-core-surface);
+  box-shadow: var(--bubble-core-shadow);
   overflow: hidden;
 }
 
 .bm-refract {
-  backdrop-filter: blur(1px) saturate(1.35) contrast(1.06) brightness(1.02);
-  -webkit-backdrop-filter: blur(1px) saturate(1.35) contrast(1.06) brightness(1.02);
+  backdrop-filter: blur(0.45px) saturate(1.42) contrast(1.08) brightness(1.04);
+  -webkit-backdrop-filter: blur(0.45px) saturate(1.42) contrast(1.08) brightness(1.04);
 }
 
-/* Thin-film interference: saturated bands wrapping the outer third of the
-   sphere, uneven in width and colour, as in real backlit soap film. */
+/* Irregular thin-film interference: intense colour appears only where the
+   transparent membrane turns toward the light. */
 .bm-film {
-  background: conic-gradient(
-    from 224deg,
-    rgba(255, 46, 176, 0.98) 0deg,
-    rgba(120, 58, 255, 0.92) 22deg,
-    rgba(58, 132, 255, 0.72) 40deg,
-    transparent 62deg,
-    transparent 84deg,
-    rgba(40, 226, 232, 0.86) 106deg,
-    rgba(96, 255, 128, 0.95) 132deg,
-    rgba(226, 255, 74, 0.7) 152deg,
-    transparent 176deg,
-    transparent 204deg,
-    rgba(255, 214, 54, 0.8) 228deg,
-    rgba(255, 74, 168, 0.98) 262deg,
-    rgba(92, 96, 255, 0.9) 296deg,
-    rgba(48, 208, 226, 0.6) 320deg,
-    transparent 338deg,
-    rgba(255, 46, 176, 0.98) 360deg
-  );
-  filter: blur(1.6px) saturate(2.4) contrast(1.25);
-  opacity: 0.78;
-  mix-blend-mode: multiply;
-  -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent 40%, rgba(0, 0, 0, 0.3) 62%, rgba(0, 0, 0, 0.78) 80%, #000 93%, rgba(0, 0, 0, 0.45) 100%);
-  mask-image: radial-gradient(circle at 50% 50%, transparent 40%, rgba(0, 0, 0, 0.3) 62%, rgba(0, 0, 0, 0.78) 80%, #000 93%, rgba(0, 0, 0, 0.45) 100%);
+  background: var(--bubble-film-spectrum);
+  filter: blur(0.5px) saturate(1.9) contrast(1.22);
+  opacity: 1;
+  mix-blend-mode: screen;
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent 0 54%, hsl(0 0% 0% / 0.2) 62%, hsl(0 0% 0% / 0.9) 82%, hsl(0 0% 0%) 96%, hsl(0 0% 0% / 0.68) 100%);
+  mask-image: radial-gradient(circle at 50% 50%, transparent 0 54%, hsl(0 0% 0% / 0.2) 62%, hsl(0 0% 0% / 0.9) 82%, hsl(0 0% 0%) 96%, hsl(0 0% 0% / 0.68) 100%);
   animation: bm-hue 30s linear infinite;
 }
 
 /* A second, counter-drifting film wash gives the colour depth and variation. */
 .bm-band {
-  background: conic-gradient(
-    from 120deg at 49% 52%,
-    transparent 0 16%,
-    rgba(255, 60, 176, 0.36) 26%,
-    rgba(96, 88, 255, 0.3) 34%,
-    transparent 44% 58%,
-    rgba(38, 232, 190, 0.32) 68%,
-    rgba(246, 222, 62, 0.26) 77%,
-    transparent 88% 100%
-  );
-  filter: blur(5px) saturate(2) contrast(1.15);
-  mix-blend-mode: multiply;
-  opacity: 0.62;
-  -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent 34%, rgba(0, 0, 0, 0.8) 70%, rgba(0, 0, 0, 0.5) 98%);
-  mask-image: radial-gradient(circle at 50% 50%, transparent 34%, rgba(0, 0, 0, 0.8) 70%, rgba(0, 0, 0, 0.5) 98%);
+  background: var(--bubble-film-depth);
+  filter: blur(2.2px) saturate(1.9) contrast(1.14);
+  mix-blend-mode: screen;
+  opacity: 0.88;
+  -webkit-mask-image: radial-gradient(circle at 48% 51%, transparent 0 69%, hsl(0 0% 0% / 0.7) 83%, hsl(0 0% 0% / 0.25) 100%);
+  mask-image: radial-gradient(circle at 48% 51%, transparent 0 69%, hsl(0 0% 0% / 0.7) 83%, hsl(0 0% 0% / 0.25) 100%);
   animation: bm-smear 15s ease-in-out infinite;
 }
 
 
-/* Even hairline lip without directional lower-edge shading. */
+/* Fine illuminated lip, with no opaque lower-hemisphere shading. */
 .bm-rim {
-  box-shadow:
-    inset 0 0 0 0.75px rgba(226, 246, 250, 0.9),
-    inset 0 1.5px 2px rgba(255, 255, 255, 0.96),
-    0 0 0 0.8px rgba(88, 138, 168, 0.35);
+  box-shadow: var(--bubble-rim-shadow);
 }
 
-/* Light gathered and thrown back up through the bottom of the film */
+/* A narrow side refraction suggests curvature without clouding the centre. */
 .bm-caustic {
-  background: radial-gradient(
-    ellipse 42% 13% at 55% 91%,
-    rgba(243, 255, 255, 0.52),
-    rgba(138, 207, 222, 0.2) 48%,
-    transparent 78%
-  );
-  filter: blur(1.6px);
+  background: var(--bubble-side-refraction);
+  filter: blur(1px);
   mix-blend-mode: screen;
-  opacity: 0.68;
+  opacity: 0.76;
 }
 
 .bm-spec,
@@ -151,28 +102,28 @@
   position: absolute;
   pointer-events: none;
   border-radius: 50%;
-  background: #fff;
+  background: hsl(var(--bubble-reflection));
 }
 
 /* Primary window reflection, soft-edged like a real light source */
 .bm-spec {
-  width: 27%;
-  height: 8%;
-  top: 10%;
-  left: 18%;
-  transform: rotate(-27deg);
-  filter: blur(2.2px);
-  opacity: 0.82;
+  width: 29%;
+  height: 7%;
+  top: 11%;
+  left: 17%;
+  transform: rotate(-25deg);
+  filter: blur(1.7px);
+  opacity: 0.88;
 }
 
 .bm-spec2 {
-  width: 12%;
-  height: 3.5%;
-  top: 18%;
-  left: 12%;
-  transform: rotate(-48deg);
-  filter: blur(1px);
-  opacity: 0.68;
+  width: 8%;
+  height: 19%;
+  top: 23%;
+  left: 7%;
+  transform: rotate(16deg);
+  filter: blur(1.4px);
+  opacity: 0.54;
 }
 
 .bm-glint {
@@ -182,7 +133,7 @@
   left: 27%;
   opacity: 0.96;
   filter: blur(0.2px);
-  box-shadow: 0 0 5px 1.5px rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 5px 1.5px hsl(var(--bubble-reflection) / 0.8);
 }
 
 .bm-sparkle {
@@ -329,14 +280,14 @@
 
   .bm-film {
     animation: none;
-    filter: saturate(2.3) contrast(1.25);
-    opacity: 0.8;
+    filter: saturate(1.8) contrast(1.2);
+    opacity: 1;
   }
 
   .bm-band {
     animation: none;
-    filter: blur(3px) saturate(2) contrast(1.15);
-    opacity: 0.66;
+    filter: blur(1.5px) saturate(1.8) contrast(1.12);
+    opacity: 0.88;
   }
 
 
