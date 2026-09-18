@@ -1,26 +1,29 @@
-import React, { useState, useEffect, lazy, Suspense, memo } from 'react';
+import React, { useState, useEffect, Suspense, memo } from 'react';
 import { BubbleCanvas } from '@/components/BubbleCanvas';
 import { BubbleHeaderMinimal } from '@/components/BubbleHeaderMinimal';
 import { FloatingActionButton } from '@/components/FloatingActionButton';
 import { WelcomeMessage } from '@/components/WelcomeMessage';
 import { AbstractBackground } from '@/components/AbstractBackground';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+// Small and always needed the moment the free limit is reached — never lazy,
+// so a flaky mobile chunk request can never break the limit flow.
+import { UpgradePromptModal } from '@/components/UpgradePromptModal';
 
 import { useToast } from '@/hooks/use-toast';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { Bookmark } from '@/pages/Index';
+import { lazyWithRetry } from '@/utils/lazyWithRetry';
 
 import { validateStoredBookmarks, sanitizeText, sanitizeUrl, safeFavicon, checkRateLimit } from '@/utils/security';
 
-// ── Lazy-load ALL heavy modals & analytics so they never block first paint ──
-const AddBookmarkModal    = lazy(() => import('@/components/AddBookmarkModal').then(m => ({ default: m.AddBookmarkModal })));
-const EditBubbleModal     = lazy(() => import('@/components/EditBubbleModal').then(m => ({ default: m.EditBubbleModal })));
+// ── Lazy-load heavy modals & analytics so they never block first paint ──
+const AddBookmarkModal    = lazyWithRetry(() => import('@/components/AddBookmarkModal').then(m => ({ default: m.AddBookmarkModal })));
+const EditBubbleModal     = lazyWithRetry(() => import('@/components/EditBubbleModal').then(m => ({ default: m.EditBubbleModal })));
 
-const PricingModal        = lazy(() => import('@/components/PricingModal').then(m => ({ default: m.PricingModal })));
-const UpgradePromptModal  = lazy(() => import('@/components/UpgradePromptModal').then(m => ({ default: m.UpgradePromptModal })));
+const PricingModal        = lazyWithRetry(() => import('@/components/PricingModal').then(m => ({ default: m.PricingModal })));
 // AnalyticsInsights is the heaviest — recharts 223 KB — always lazy
-const AnalyticsInsights   = lazy(() => import('@/components/AnalyticsInsights').then(m => ({ default: m.AnalyticsInsights })));
+const AnalyticsInsights   = lazyWithRetry(() => import('@/components/AnalyticsInsights').then(m => ({ default: m.AnalyticsInsights })));
 
 // Normalize hostname: strip www. so nba.com and www.nba.com are treated as the same
 const getHostname = (url: string) => {
