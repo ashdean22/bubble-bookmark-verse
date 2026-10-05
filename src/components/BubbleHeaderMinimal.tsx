@@ -1,5 +1,5 @@
 import { Progress } from '@/components/ui/progress';
-import { CloudCheck, CloudAlert, RefreshCw } from 'lucide-react';
+import { Cloud as CloudCheck, CloudAlert, RefreshCw } from 'lucide-react';
 import bubbleLinkLogoWebP from '@/assets/bubblelink-logo.webp';
 import bubbleLinkLogoPNG from '@/assets/bubblelink-logo.png';
 
