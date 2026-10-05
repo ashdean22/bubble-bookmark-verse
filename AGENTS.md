@@ -1,0 +1,1 @@
+- Plan tier is read only from the server `subscriptions` table (written by payment webhooks), never localStorage — prevents self-unlocking Pro.

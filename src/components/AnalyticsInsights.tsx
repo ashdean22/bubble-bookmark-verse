@@ -427,7 +427,7 @@ const LockedContent = ({ onUpgradeClick }: { onUpgradeClick: () => void }) => (
 // ─── root export ───────────────────────────────────────────────────────────────
 
 export const AnalyticsInsights = ({ bookmarks, currentSubscription, onUpgradeClick }: AnalyticsInsightsProps) => {
-  const isPremium = currentSubscription === 'premium';
+  const isPremium = !!currentSubscription && ['pro', 'pro_yearly', 'lifetime', 'premium'].includes(currentSubscription);
   return (
     <Card className="border" style={{ background: 'hsla(270,30%,10%,0.6)', borderColor: 'hsla(270,50%,50%,0.25)', backdropFilter: 'blur(12px)' }}>
       <CardHeader>

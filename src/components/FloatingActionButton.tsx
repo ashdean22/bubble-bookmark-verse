@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, ShoppingCart, BarChart3, X } from 'lucide-react';
+import { Plus, ShoppingCart, BarChart3, X, UserRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -7,10 +7,12 @@ interface FloatingActionButtonProps {
   onCreateBubble: () => void;
   onBuyBubbles: () => void;
   onShowAnalytics: () => void;
+  onShowAccount: () => void;
   showAnalytics: boolean;
 }
 
 const fabItems = [
+  { key: 'account',   label: 'Account & Themes', Icon: UserRound, action: 'onShowAccount' },
   { key: 'analytics', label: 'Analytics',     Icon: BarChart3,    action: 'onShowAnalytics'   },
   { key: 'buy',       label: 'Buy Bubbles',   Icon: ShoppingCart, action: 'onBuyBubbles'      },
   { key: 'create',    label: 'Create Bubble', Icon: Plus,         action: 'onCreateBubble'    },
@@ -20,6 +22,7 @@ export const FloatingActionButton = ({
   onCreateBubble,
   onBuyBubbles,
   onShowAnalytics,
+  onShowAccount,
   showAnalytics,
 }: FloatingActionButtonProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -29,7 +32,7 @@ export const FloatingActionButton = ({
     setIsExpanded(false);
   };
 
-  const actionMap = { onCreateBubble, onBuyBubbles, onShowAnalytics };
+  const actionMap = { onCreateBubble, onBuyBubbles, onShowAnalytics, onShowAccount };
 
   return (
     <div className="fixed top-0 right-4 sm:right-6 z-50 flex flex-col items-end gap-2 sm:gap-3">
