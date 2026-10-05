@@ -1,15 +1,28 @@
 import { Progress } from '@/components/ui/progress';
+import { Cloud as CloudCheck, CloudAlert, RefreshCw } from 'lucide-react';
 import bubbleLinkLogoWebP from '@/assets/bubblelink-logo.webp';
 import bubbleLinkLogoPNG from '@/assets/bubblelink-logo.png';
+
+type SyncStatus = 'off' | 'syncing' | 'synced' | 'error';
+
+const SYNC_UI = {
+  syncing: { label: 'Syncing…', Icon: RefreshCw, cls: 'text-foreground/70' },
+  synced: { label: 'Synced', Icon: CloudCheck, cls: 'text-emerald-400' },
+  error: { label: 'Sync needs attention', Icon: CloudAlert, cls: 'text-amber-400' },
+} as const;
 
 interface BubbleHeaderMinimalProps {
   usedBubbles: number;
   maxBubbles: number;
+  syncStatus?: SyncStatus;
+  onSyncClick?: () => void;
 }
 
 export const BubbleHeaderMinimal = ({ 
   usedBubbles,
   maxBubbles,
+  syncStatus,
+  onSyncClick,
 }: BubbleHeaderMinimalProps) => {
   const isUnlimited = !Number.isFinite(maxBubbles) || maxBubbles === 999;
   const usagePercent = isUnlimited ? 0 : (usedBubbles / maxBubbles) * 100;
@@ -99,6 +112,21 @@ export const BubbleHeaderMinimal = ({
                 {usedBubbles >= maxBubbles ? 'Full!' : 'Almost full'}
               </p>
             )}
+            {syncStatus && syncStatus !== 'off' && (() => {
+              const s = SYNC_UI[syncStatus];
+              return (
+                <button
+                  type="button"
+                  onClick={onSyncClick}
+                  role="status"
+                  aria-label={`Cloud sync: ${s.label}`}
+                  className={`mt-1.5 flex w-full items-center justify-end gap-1.5 text-xs font-body min-h-[24px] ${s.cls}`}
+                >
+                  <s.Icon className={`w-3.5 h-3.5 ${syncStatus === 'syncing' ? 'animate-spin' : ''}`} />
+                  {s.label}
+                </button>
+              );
+            })()}
           </div>
         </div>
       </div>
