@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      bubble_backups: {
+        Row: {
+          bookmarks: Json
+          theme: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bookmarks?: Json
+          theme?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bookmarks?: Json
+          theme?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          tier: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          tier?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          tier?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       waitlist: {
         Row: {
           created_at: string
@@ -40,7 +79,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_paid_user: { Args: { _uid: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
