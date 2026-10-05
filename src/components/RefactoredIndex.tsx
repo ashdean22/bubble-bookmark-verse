@@ -287,6 +287,8 @@ export const RefactoredIndex = () => {
         <BubbleHeaderMinimal
           usedBubbles={usedBubbles}
           maxBubbles={maxBubbles}
+          syncStatus={sync.status}
+          onSyncClick={() => setShowAccount(true)}
         />
 
         <FloatingActionButton

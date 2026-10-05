@@ -77,7 +77,9 @@ export const AccountModal = ({
               <p className="font-semibold">Plan: {isPaid ? 'Pro' : 'Free'}</p>
               {isPaid ? (
                 <p className="text-muted-foreground">
-                  Sync: {syncStatus}{lastBackup ? ` · last backup ${new Date(lastBackup).toLocaleString()}` : ''}
+                  Sync: <span className={syncStatus === 'error' ? 'text-amber-400 font-medium' : syncStatus === 'synced' ? 'text-emerald-400 font-medium' : ''}>
+                    {syncStatus === 'synced' ? 'Bubbles & theme synced' : syncStatus === 'syncing' ? 'Syncing…' : syncStatus === 'error' ? 'Needs attention — tap Back up now to retry' : 'Off'}
+                  </span>{lastBackup ? ` · last backup ${new Date(lastBackup).toLocaleString()}` : ''}
                 </p>
               ) : (
                 <p className="text-muted-foreground">Sync across devices and cloud backup are included with Pro.</p>
