@@ -32,3 +32,8 @@
 - [ ] Enable Paddle payments (recommended; eligibility check passed) — user approved setup, then asked to save all payments for launch.
 - [ ] Create Pro ($14.99/year) and Lifetime ($24.99 one-time) products.
 - [ ] Replace Pro "Coming soon" button with real checkout; wire Lifetime waitlist to purchase.
+
+## Pro features
+- [x] Sign-in (email + Google), plan read from the server.
+- [x] Pro: unlimited bubbles, multi-device sync, cloud backup/restore, premium themes, heat insights.
+- [ ] Pro unlock waits on payments at launch.
