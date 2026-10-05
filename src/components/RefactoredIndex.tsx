@@ -14,6 +14,9 @@ import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { Bookmark } from '@/pages/Index';
 import { lazyWithRetry } from '@/utils/lazyWithRetry';
+import { useAccount } from '@/hooks/useAccount';
+import { useCloudSync } from '@/hooks/useCloudSync';
+import { getTheme } from '@/config/themes';
 
 import { validateStoredBookmarks, sanitizeText, sanitizeUrl, safeFavicon, checkRateLimit } from '@/utils/security';
 
@@ -23,6 +26,7 @@ const EditBubbleModal     = lazyWithRetry(() => import('@/components/EditBubbleM
 
 const PricingModal        = lazyWithRetry(() => import('@/components/PricingModal').then(m => ({ default: m.PricingModal })));
 // AnalyticsInsights is the heaviest — recharts 223 KB — always lazy
+const AccountModal        = lazyWithRetry(() => import('@/components/AccountModal').then(m => ({ default: m.AccountModal })));
 const AnalyticsInsights   = lazyWithRetry(() => import('@/components/AnalyticsInsights').then(m => ({ default: m.AnalyticsInsights })));
 
 // Normalize hostname: strip www. so nba.com and www.nba.com are treated as the same
@@ -82,12 +86,16 @@ AnalyticsPanel.displayName = 'AnalyticsPanel';
 
 const FREE_BUBBLE_LIMIT = 10;
 const LOW_BUBBLE_WARNING_AT = 8;
-const PAID_TIERS = ['pro', 'pro_yearly', 'lifetime', 'premium'];
 
 export const RefactoredIndex = () => {
   // State management using custom hooks
   const [bookmarks, setBookmarks] = useLocalStorage<Bookmark[]>('bubbleBookmarks', [], normalizeBookmarks);
-  const [currentSubscription, setCurrentSubscription] = useLocalStorage<string | null>('currentSubscription', null);
+  // Plan comes from the server only, so it can't be unlocked by editing the browser.
+  const { user, tier, isPaid: isPaidPlan } = useAccount();
+  const currentSubscription = isPaidPlan ? tier : null;
+  const [themeId, setThemeId] = useLocalStorage<string>('bubbleTheme', 'navy');
+  const [showAccount, setShowAccount] = useState(false);
+  const activeTheme = getTheme(themeId, isPaidPlan);
 
   // Kept only for older saved sessions.
   const initializeBubbles = () => 999;
@@ -139,7 +147,7 @@ export const RefactoredIndex = () => {
   });
 
   // Free includes 10 bubbles; paid plans are unlimited.
-  const isPaidPlan = !!currentSubscription && PAID_TIERS.includes(currentSubscription);
+  const sync = useCloudSync(user, isPaidPlan, bookmarks, setBookmarks, themeId, setThemeId);
   const maxBubbles = isPaidPlan ? Number.POSITIVE_INFINITY : FREE_BUBBLE_LIMIT;
   const usedBubbles = bookmarks.length;
 
@@ -267,18 +275,13 @@ export const RefactoredIndex = () => {
   };
 
 
-  const onPurchaseComplete = (bubbleCount: number, tier?: string) => {
-    setAvailableBubbles(availableBubbles + bubbleCount);
-    if (tier) setCurrentSubscription(tier);
-    toast({
-      title: "Bubbles delivered! 🎉",
-      description: `${bubbleCount} fresh bubbles added to your collection!`,
-    });
-  };
 
   return (
     <ErrorBoundary>
-      <div className="bubble-stage min-h-screen bg-background relative overflow-hidden font-body">
+      <div
+        className="bubble-stage min-h-screen bg-background relative overflow-hidden font-body"
+        style={{ ['--bubble-stage-background' as string]: activeTheme.stage, ['--bubble-board' as string]: activeTheme.board } as React.CSSProperties}
+      >
         <AbstractBackground />
 
         <BubbleHeaderMinimal
@@ -290,6 +293,7 @@ export const RefactoredIndex = () => {
           onCreateBubble={handleCreateBubble}
           onBuyBubbles={() => setShowPricingModal(true)}
           onShowAnalytics={() => setShowAnalytics(prev => !prev)}
+          onShowAccount={() => setShowAccount(true)}
           showAnalytics={showAnalytics}
         />
 
@@ -340,6 +344,22 @@ export const RefactoredIndex = () => {
                 isOpen={showAddModal}
                 onClose={() => setShowAddModal(false)}
                 onAdd={addBookmark}
+              />
+            )}
+
+            {showAccount && (
+              <AccountModal
+                isOpen={showAccount}
+                onClose={() => setShowAccount(false)}
+                user={user}
+                isPaid={isPaidPlan}
+                theme={activeTheme.id}
+                onThemeChange={setThemeId}
+                syncStatus={sync.status}
+                lastBackup={sync.lastBackup}
+                onBackup={sync.backupNow}
+                onRestore={sync.restore}
+                onUpgrade={() => { setShowAccount(false); setShowPricingModal(true); }}
               />
             )}
 
